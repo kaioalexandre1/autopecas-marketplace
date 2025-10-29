@@ -39,9 +39,9 @@ export default function EntregadoresModal({ isOpen, onClose, nomePeca }: Entrega
       snapshot.forEach((doc) => {
         const data = doc.data();
         entregadoresData.push({
-          ...data,
           id: doc.id,
           createdAt: data.createdAt?.toDate() || new Date(),
+          ...data,
         } as Entregador);
       });
 

@@ -96,10 +96,10 @@ export default function OfertasFreteModal({
       snapshot.forEach((doc) => {
         const data = doc.data();
         ofertasData.push({
-          ...data,
           id: doc.id,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
+          ...data,
         } as OfertaFrete);
       });
       ofertasData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
