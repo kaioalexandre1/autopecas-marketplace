@@ -491,7 +491,7 @@ export default function ChatsPage() {
                             {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
                           </h3>
                           {naoLidas && (
-                            <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                            <span className="ml-2 w-2 h-2 bg-red-500 rounded-full"></span>
                           )}
                         </div>
                         {chat.mensagens.length > 0 && (

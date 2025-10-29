@@ -36,9 +36,9 @@ export default function LoginPage() {
       {/* Elementos decorativos de fundo - IDÊNTICOS à página de cadastro */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Círculos grandes desfocados */}
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-indigo-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-indigo-400 rounded-full opacity-20 blur-3xl"></div>
         
         {/* Raios de luz diagonais */}
         <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent opacity-20 animate-beam"></div>
@@ -91,7 +91,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-center gap-4 mb-3">
             {/* Logo */}
             <div className="relative flex-shrink-0">
-              <div className="bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 p-3 rounded-2xl shadow-xl shadow-yellow-500/50 ring-4 ring-white/30 animate-pulse">
+              <div className="bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 p-3 rounded-2xl shadow-xl shadow-yellow-500/50 ring-4 ring-white/30">
                 <Car className="text-blue-900" size={36} strokeWidth={3} />
                 <Wrench 
                   className="absolute -bottom-1 -right-1 text-white bg-gradient-to-br from-blue-600 to-blue-800 rounded-full p-1.5 shadow-lg ring-2 ring-yellow-300" 

@@ -181,7 +181,7 @@ export default function Home() {
             {/* Logo com Animação */}
             <div className="relative">
               {/* Círculo de fundo brilhante */}
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-all animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-all"></div>
               
               {/* Container da logo */}
               <div className="relative bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 p-4 rounded-2xl shadow-xl shadow-yellow-500/50 transform group-hover:scale-110 group-hover:rotate-3 transition-all ring-4 ring-white/30">

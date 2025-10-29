@@ -407,9 +407,9 @@ export default function DashboardPage() {
       {/* Elementos decorativos de fundo - IDÊNTICOS à página de cadastro */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Círculos grandes desfocados */}
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-indigo-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-indigo-400 rounded-full opacity-20 blur-3xl"></div>
         
         {/* Raios de luz diagonais */}
         <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent opacity-20 animate-beam"></div>
@@ -471,7 +471,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2 mb-3">
                 {/* Badge LIVE */}
                 <div className="flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full shadow-md">
-                  <Radio className="text-white animate-pulse" size={16} strokeWidth={3} />
+                  <Radio className="text-white" size={16} strokeWidth={3} />
                   <span className="text-white text-xs font-black uppercase tracking-wider">
                     AO VIVO
                   </span>

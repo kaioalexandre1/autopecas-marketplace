@@ -92,12 +92,12 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-blue-700">
+    <nav className="bg-blue-700 opacity-100" style={{ backgroundColor: '#1d4ed8', opacity: 1 }}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex items-center space-x-6">
-            <Link href="/" className="flex items-center space-x-4 group">
+            <Link href="/" className="flex items-center space-x-4">
               {/* Logo Marketplace de Autopeças - Design Moderno */}
               <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {/* Hexágono externo (como uma porca) - Gradiente azul para laranja */}
