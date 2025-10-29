@@ -19,7 +19,7 @@ import {
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pedido, Oferta } from '@/types';
-import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight } from 'lucide-react';
+import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatarPreco } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import OfertasFreteModal from '@/components/OfertasFreteModal';
@@ -69,6 +69,15 @@ export default function DashboardPage() {
     return `${horas}h ${minutos}m`;
   };
 
+  // Função para toggle de expansão de pedido
+  const toggleExpansaoPedido = (pedidoId: string) => {
+    setPedidosExpandidos(prev => 
+      prev.includes(pedidoId) 
+        ? prev.filter(id => id !== pedidoId)
+        : [...prev, pedidoId]
+    );
+  };
+
   // Carregar cidades selecionadas do localStorage
   useEffect(() => {
     const cidadesSalvas = localStorage.getItem('cidadesSelecionadas');
@@ -109,6 +118,9 @@ export default function DashboardPage() {
 
   // Filtro de condição da peça
   const [filtroCondicao, setFiltroCondicao] = useState<'todas' | 'Nova' | 'Usada'>('todas');
+  const [modoResumido, setModoResumido] = useState(false);
+  const [pedidosExpandidos, setPedidosExpandidos] = useState<string[]>([]);
+  const [mostrarDropdownFiltros, setMostrarDropdownFiltros] = useState(false);
 
   useEffect(() => {
     if (cidadesSelecionadas.length === 0) return;
@@ -598,51 +610,124 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Filtro de Condição da Peça */}
+      {/* Dropdown de Filtros */}
       {pedidos.length > 0 && (
-        <div className="mb-6 flex items-center gap-3">
-          <span className="text-sm font-semibold text-gray-700">Filtrar por:</span>
-          <div className="flex gap-2">
+        <div className="mb-6 flex justify-end">
+          <div className="relative">
             <button
-              onClick={() => setFiltroCondicao('todas')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filtroCondicao === 'todas'
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-              }`}
+              onClick={() => setMostrarDropdownFiltros(!mostrarDropdownFiltros)}
+              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all shadow-lg"
             >
-              Todas
+              <Filter size={20} />
+              FILTROS
+              <ChevronDown size={18} className={`transition-transform ${mostrarDropdownFiltros ? 'rotate-180' : ''}`} />
             </button>
-            <button
-              onClick={() => setFiltroCondicao('Nova')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                filtroCondicao === 'Nova'
-                  ? 'bg-green-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-              }`}
-            >
-              <span className="text-lg">✨</span>
-              Peças Novas
-            </button>
-            <button
-              onClick={() => setFiltroCondicao('Usada')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                filtroCondicao === 'Usada'
-                  ? 'bg-orange-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-              }`}
-            >
-              <span className="text-lg">🔄</span>
-              Peças Usadas
-            </button>
+
+            {mostrarDropdownFiltros && (
+              <>
+                {/* Overlay para fechar ao clicar fora */}
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setMostrarDropdownFiltros(false)}
+                />
+                
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-2xl border-2 border-blue-200 py-2 min-w-[280px] z-20">
+                  <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
+                    <p className="text-xs font-bold text-gray-600 uppercase">Opções de Filtro</p>
+                  </div>
+                  
+                  {/* Filtro de Condição */}
+                  <div className="px-4 py-3 space-y-2">
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Condição da Peça</p>
+                    
+                    <button
+                      onClick={() => {
+                        setFiltroCondicao('todas');
+                        setMostrarDropdownFiltros(false);
+                      }}
+                      className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        filtroCondicao === 'todas'
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Car size={16} />
+                      Todas
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setFiltroCondicao('Nova');
+                        setMostrarDropdownFiltros(false);
+                      }}
+                      className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        filtroCondicao === 'Nova'
+                          ? 'bg-green-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span className="text-lg">✨</span>
+                      Peças Novas
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setFiltroCondicao('Usada');
+                        setMostrarDropdownFiltros(false);
+                      }}
+                      className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        filtroCondicao === 'Usada'
+                          ? 'bg-orange-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span className="text-lg">🔄</span>
+                      Peças Usadas
+                    </button>
+                  </div>
+
+                  <div className="border-t border-gray-200 my-2"></div>
+
+                  {/* Toggle de Modo Resumido */}
+                  <div className="px-4 py-3">
+                    <button
+                      onClick={() => {
+                        setModoResumido(!modoResumido);
+                        setPedidosExpandidos([]); // Resetar expansões ao trocar modo
+                      }}
+                      className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-between ${
+                        modoResumido
+                          ? 'bg-purple-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-lg">📋</span>
+                        Ver pedidos resumidos
+                      </span>
+                      <div className={`w-10 h-5 rounded-full relative transition-colors ${
+                        modoResumido ? 'bg-purple-800' : 'bg-gray-400'
+                      }`}>
+                        <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
+                          modoResumido ? 'translate-x-5' : 'translate-x-0'
+                        }`}></div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
+                    <p className="text-xs text-gray-600 font-semibold">
+                      📊 {pedidos.filter(p => {
+                        if (filtroCondicao === 'todas') return true;
+                        if (!p.condicaoPeca) return false;
+                        return p.condicaoPeca === filtroCondicao;
+                      }).length} pedido(s) {modoResumido && '(modo compacto)'}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-          <span className="text-sm text-gray-500 ml-auto">
-            {pedidos.filter(p => {
-              if (filtroCondicao === 'todas') return true;
-              if (!p.condicaoPeca) return false;
-              return p.condicaoPeca === filtroCondicao;
-            }).length} pedido(s)
-          </span>
         </div>
       )}
 
@@ -661,7 +746,7 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={`grid gap-6 ${modoResumido ? 'md:grid-cols-1 lg:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
               {pedidos
                 .filter(pedido => {
                   if (filtroCondicao === 'todas') return true;
@@ -676,6 +761,7 @@ export default function DashboardPage() {
                 .map((pedido) => {
                 const horasRestantes = calcularHorasRestantes(pedido.createdAt);
                 const corTimer = getCorTimer(horasRestantes);
+                const isExpandido = pedidosExpandidos.includes(pedido.id);
                 
                 // Calcular se é hoje ou ontem
                 let diaIndicador = '';
@@ -696,11 +782,71 @@ export default function DashboardPage() {
                   }
                 }
                 
+                // MODO RESUMIDO - Cards compactos (3x no espaço de 1)
+                if (modoResumido && !isExpandido) {
+                  return (
+                    <div
+                      key={pedido.id}
+                      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out p-4 border-2 border-blue-600 hover:border-blue-700 cursor-pointer"
+                      onClick={() => toggleExpansaoPedido(pedido.id)}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        {/* Nome da Peça + Badge de Condição */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-bold text-lg text-gray-900 truncate">
+                              {pedido.nomePeca}
+                            </h3>
+                            {pedido.condicaoPeca && (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-semibold text-xs whitespace-nowrap ${
+                                pedido.condicaoPeca === 'Nova' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-orange-100 text-orange-800'
+                              }`}>
+                                {pedido.condicaoPeca}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 font-medium">
+                            {pedido.marcaCarro} {pedido.modeloCarro} - {pedido.anoCarro}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {diaIndicador} - {pedido.oficinaNome}
+                          </p>
+                        </div>
+
+                        {/* Seta para expandir */}
+                        <div className="flex items-center gap-2">
+                          {pedido.ofertas && pedido.ofertas.length > 0 && (
+                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
+                              {pedido.ofertas.length} {pedido.ofertas.length === 1 ? 'oferta' : 'ofertas'}
+                            </span>
+                          )}
+                          <ChevronDown size={24} className="text-blue-600" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // MODO COMPLETO (ou card expandido no modo resumido)
                 return (
             <div
               key={pedido.id}
-              className="bg-white rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] transition-all duration-300 ease-in-out p-6 border-2 border-blue-800 hover:border-blue-900 animate-slide-in"
+              className={`bg-white rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] transition-all duration-300 ease-in-out p-6 border-2 border-blue-800 hover:border-blue-900 ${
+                !modoResumido && 'animate-slide-in'
+              }`}
             >
+              {/* Botão de fechar (apenas no modo resumido quando expandido) */}
+              {modoResumido && isExpandido && (
+                <button
+                  onClick={() => toggleExpansaoPedido(pedido.id)}
+                  className="float-right bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full p-2 transition-colors"
+                  title="Recolher"
+                >
+                  <ChevronUp size={20} />
+                </button>
+              )}
               {/* Dia + Cidade */}
               <div className="mb-3">
                 {diaIndicador && (
