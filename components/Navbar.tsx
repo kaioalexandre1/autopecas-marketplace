@@ -99,12 +99,23 @@ export default function Navbar() {
           <div className="flex items-center space-x-6">
             <Link href="/" className="flex items-center space-x-4 group">
               <div className="relative">
-                <Car className="text-white" size={48} strokeWidth={2.5} />
-                <Wrench
-                  className="absolute -bottom-1 -right-1 text-yellow-400 bg-blue-900 rounded-full p-1"
-                  size={24}
-                  strokeWidth={3}
-                />
+                {/* Carro Amarelo e Azul Customizado */}
+                <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Corpo do carro - Amarelo */}
+                  <path d="M12 32 L18 22 L28 18 L45 18 L52 24 L56 32 L56 42 L52 46 L12 46 L8 42 L8 32 Z" fill="#FCD34D" stroke="#FBBF24" strokeWidth="2"/>
+                  {/* Janelas - Azul */}
+                  <path d="M20 24 L28 20 L42 20 L48 26 L48 32 L20 32 Z" fill="#3B82F6" stroke="#2563EB" strokeWidth="1.5"/>
+                  {/* Rodas - Azul escuro */}
+                  <circle cx="20" cy="46" r="6" fill="#1E40AF" stroke="#1E3A8A" strokeWidth="2"/>
+                  <circle cx="48" cy="46" r="6" fill="#1E40AF" stroke="#1E3A8A" strokeWidth="2"/>
+                  {/* Centros das rodas - Amarelo */}
+                  <circle cx="20" cy="46" r="2.5" fill="#FCD34D"/>
+                  <circle cx="48" cy="46" r="2.5" fill="#FCD34D"/>
+                  {/* Farol - Amarelo claro */}
+                  <circle cx="54" cy="36" r="3" fill="#FEF08A" stroke="#FCD34D" strokeWidth="1.5"/>
+                  {/* Detalhe lateral - Azul */}
+                  <rect x="12" y="34" width="40" height="6" fill="#3B82F6" stroke="#2563EB" strokeWidth="1"/>
+                </svg>
               </div>
               <div className="text-3xl font-black text-white group-hover:text-yellow-400 transition-colors uppercase tracking-wide">
                 Grupão das Autopeças
