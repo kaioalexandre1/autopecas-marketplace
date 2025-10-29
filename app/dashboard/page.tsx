@@ -135,14 +135,19 @@ export default function DashboardPage() {
         if (horasPassadas >= 24) {
           // Marcar para exclusão
           pedidosExpirados.push(docSnapshot.id);
-        } else if (cidadesSelecionadas.includes(data.cidade)) {
+        } else {
+          // Extrair apenas o nome da cidade (sem o sufixo de estado como -PR, -SP)
+          const nomeCidade = data.cidade?.split('-')[0]?.trim() || data.cidade;
+          
           // Adicionar apenas pedidos válidos das cidades selecionadas
-          pedidosData.push({
-            id: docSnapshot.id,
-            ...data,
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date(),
-          } as Pedido);
+          if (cidadesSelecionadas.includes(nomeCidade)) {
+            pedidosData.push({
+              id: docSnapshot.id,
+              ...data,
+              createdAt: data.createdAt?.toDate() || new Date(),
+              updatedAt: data.updatedAt?.toDate() || new Date(),
+            } as Pedido);
+          }
         }
       });
 
@@ -696,18 +701,17 @@ export default function DashboardPage() {
               key={pedido.id}
               className="bg-white rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] transition-all duration-300 ease-in-out p-6 border-2 border-blue-800 hover:border-blue-900 animate-slide-in"
             >
-              {/* Nome da Loja Centralizado */}
-              <div className="text-center mb-3">
-                <p className="text-2xl font-black text-blue-600 uppercase tracking-wide">{pedido.oficinaNome}</p>
+              {/* Dia + Cidade */}
+              <div className="mb-3">
+                {diaIndicador && (
+                  <p className="text-center text-sm text-gray-700 font-bold">
+                    {diaIndicador} - {pedido.cidade}
+                  </p>
+                )}
               </div>
 
               {/* Horário de Criação */}
               <div className="mb-4">
-                {diaIndicador && (
-                  <p className="text-center text-xs text-gray-600 mb-2 font-semibold">
-                    {diaIndicador}
-                  </p>
-                )}
                 <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 border-blue-200 bg-blue-50 font-bold text-sm text-blue-700">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
@@ -721,6 +725,11 @@ export default function DashboardPage() {
                       : 'Agora'}
                   </span>
                 </div>
+              </div>
+
+              {/* Nome da Loja Centralizado */}
+              <div className="text-center mb-3">
+                <p className="text-2xl font-black text-blue-600 uppercase tracking-wide">{pedido.oficinaNome}</p>
               </div>
 
               {/* Retângulo com Nome da Peça */}

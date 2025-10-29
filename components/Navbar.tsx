@@ -4,7 +4,35 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield } from 'lucide-react';
+import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight } from 'lucide-react';
+
+// Estrutura hierárquica: Brasil > Estados > Cidades
+const estruturaBrasil = {
+  'Paraná': [
+    'Curitiba', 'Londrina', 'Maringá', 'Ponta Grossa', 'Cascavel',
+    'São José dos Pinhais', 'Foz do Iguaçu', 'Colombo', 'Guarapuava', 'Paranaguá'
+  ],
+  'São Paulo': [
+    'São Paulo', 'Guarulhos', 'Campinas', 'São Bernardo do Campo', 'Santo André',
+    'Osasco', 'São José dos Campos', 'Ribeirão Preto', 'Sorocaba', 'Mauá'
+  ],
+  'Santa Catarina': [
+    'Joinville', 'Florianópolis', 'Blumenau', 'São José', 'Criciúma',
+    'Chapecó', 'Itajaí', 'Jaraguá do Sul', 'Lages', 'Palhoça'
+  ],
+  'Rio Grande do Sul': [
+    'Porto Alegre', 'Caxias do Sul', 'Pelotas', 'Canoas', 'Santa Maria',
+    'Gravataí', 'Viamão', 'Novo Hamburgo', 'São Leopoldo', 'Rio Grande'
+  ],
+  'Rio de Janeiro': [
+    'Rio de Janeiro', 'São Gonçalo', 'Duque de Caxias', 'Nova Iguaçu', 'Niterói',
+    'Belford Roxo', 'São João de Meriti', 'Campos dos Goytacazes', 'Petrópolis', 'Volta Redonda'
+  ],
+  'Minas Gerais': [
+    'Belo Horizonte', 'Uberlândia', 'Contagem', 'Juiz de Fora', 'Betim',
+    'Montes Claros', 'Ribeirão das Neves', 'Uberaba', 'Governador Valadares', 'Ipatinga'
+  ]
+};
 
 export default function Navbar() {
   const { userData, signOut } = useAuth();
@@ -12,28 +40,102 @@ export default function Navbar() {
   const pathname = usePathname();
   const [cidadesSelecionadas, setCidadesSelecionadas] = useState<string[]>([]);
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
+  const [estadosExpandidos, setEstadosExpandidos] = useState<string[]>([]);
+  const [brasilSelecionado, setBrasilSelecionado] = useState(false);
 
-  const cidadesDisponiveis = [
-    'Maringá-PR',
-    'Londrina-PR',
-    'Curitiba-PR',
-    'Cascavel-PR',
-    'Ponta Grossa-PR'
-  ];
+  // Função auxiliar para obter todas as cidades do Brasil
+  const obterTodasCidades = (): string[] => {
+    const todasCidades: string[] = [];
+    Object.entries(estruturaBrasil).forEach(([estado, cidades]) => {
+      cidades.forEach(cidade => todasCidades.push(cidade));
+    });
+    return todasCidades;
+  };
 
   // Carregar cidades selecionadas do localStorage
   useEffect(() => {
     if (userData?.cidade && cidadesSelecionadas.length === 0) {
       const cidadesSalvas = localStorage.getItem('cidadesSelecionadas');
-      if (cidadesSalvas) {
-        setCidadesSelecionadas(JSON.parse(cidadesSalvas));
+      const brasilSalvo = localStorage.getItem('brasilSelecionado');
+      
+      if (brasilSalvo === 'true') {
+        setBrasilSelecionado(true);
+        setCidadesSelecionadas(obterTodasCidades());
+      } else if (cidadesSalvas) {
+        const cidades = JSON.parse(cidadesSalvas);
+        setCidadesSelecionadas(cidades);
+        // Verificar se todas as cidades estão selecionadas (Brasil)
+        if (cidades.length === obterTodasCidades().length) {
+          setBrasilSelecionado(true);
+        }
       } else {
-        setCidadesSelecionadas([userData.cidade]);
-        localStorage.setItem('cidadesSelecionadas', JSON.stringify([userData.cidade]));
+        // Extrair apenas o nome da cidade (remover estado)
+        const nomeCidade = userData.cidade.split('-')[0];
+        setCidadesSelecionadas([nomeCidade]);
+        localStorage.setItem('cidadesSelecionadas', JSON.stringify([nomeCidade]));
       }
     }
-  }, [userData, cidadesSelecionadas]);
+  }, [userData, cidadesSelecionadas.length]);
 
+  // Verificar se um estado está totalmente selecionado
+  const estadoTotalmenteSelecionado = (estado: string): boolean => {
+    const cidadesDoEstado = estruturaBrasil[estado as keyof typeof estruturaBrasil];
+    return cidadesDoEstado.every(cidade => cidadesSelecionadas.includes(cidade));
+  };
+
+  // Toggle Brasil inteiro
+  const toggleBrasil = () => {
+    if (brasilSelecionado) {
+      // Desmarcar Brasil - voltar para cidade do usuário
+      const nomeCidade = userData?.cidade?.split('-')[0] || 'Maringá';
+      setCidadesSelecionadas([nomeCidade]);
+      setBrasilSelecionado(false);
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify([nomeCidade]));
+      localStorage.setItem('brasilSelecionado', 'false');
+    } else {
+      // Selecionar Brasil inteiro
+      const todasCidades = obterTodasCidades();
+      setCidadesSelecionadas(todasCidades);
+      setBrasilSelecionado(true);
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify(todasCidades));
+      localStorage.setItem('brasilSelecionado', 'true');
+    }
+    setTimeout(() => window.location.reload(), 100);
+  };
+
+  // Toggle Estado inteiro
+  const toggleEstado = (estado: string) => {
+    const cidadesDoEstado = estruturaBrasil[estado as keyof typeof estruturaBrasil];
+    
+    if (estadoTotalmenteSelecionado(estado)) {
+      // Desmarcar todas as cidades do estado
+      const novaSelecao = cidadesSelecionadas.filter(c => !cidadesDoEstado.includes(c));
+      // Garantir pelo menos uma cidade
+      if (novaSelecao.length === 0) {
+        const nomeCidade = userData?.cidade?.split('-')[0] || 'Maringá';
+        novaSelecao.push(nomeCidade);
+      }
+      setCidadesSelecionadas(novaSelecao);
+      setBrasilSelecionado(false);
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify(novaSelecao));
+      localStorage.setItem('brasilSelecionado', 'false');
+    } else {
+      // Selecionar todas as cidades do estado
+      const novaSelecao = [...new Set([...cidadesSelecionadas, ...cidadesDoEstado])];
+      setCidadesSelecionadas(novaSelecao);
+      
+      // Verificar se agora Brasil está completo
+      if (novaSelecao.length === obterTodasCidades().length) {
+        setBrasilSelecionado(true);
+        localStorage.setItem('brasilSelecionado', 'true');
+      }
+      
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify(novaSelecao));
+    }
+    setTimeout(() => window.location.reload(), 100);
+  };
+
+  // Toggle cidade individual
   const toggleCidade = (cidade: string) => {
     setCidadesSelecionadas(prev => {
       let novaSelecao: string[];
@@ -43,14 +145,30 @@ export default function Navbar() {
           return prev;
         }
         novaSelecao = prev.filter(c => c !== cidade);
+        setBrasilSelecionado(false);
+        localStorage.setItem('brasilSelecionado', 'false');
       } else {
         novaSelecao = [...prev, cidade];
+        
+        // Verificar se agora Brasil está completo
+        if (novaSelecao.length === obterTodasCidades().length) {
+          setBrasilSelecionado(true);
+          localStorage.setItem('brasilSelecionado', 'true');
+        }
       }
       localStorage.setItem('cidadesSelecionadas', JSON.stringify(novaSelecao));
-      // Recarregar página para aplicar filtro
       setTimeout(() => window.location.reload(), 100);
       return novaSelecao;
     });
+  };
+
+  // Toggle expansão de estado
+  const toggleEstadoExpansao = (estado: string) => {
+    setEstadosExpandidos(prev => 
+      prev.includes(estado) 
+        ? prev.filter(e => e !== estado)
+        : [...prev, estado]
+    );
   };
 
   const handleLogout = async () => {
@@ -143,15 +261,17 @@ export default function Navbar() {
                 >
                   <MapPin size={18} className="text-yellow-400" />
                   <span>
-                    {cidadesSelecionadas.length === 1
+                    {brasilSelecionado 
+                      ? 'Brasil' 
+                      : cidadesSelecionadas.length === 1
                       ? cidadesSelecionadas[0]
-                      : `${cidadesSelecionadas.length} cidades`
+                      : `${cidadesSelecionadas.length} locais`
                     }
                   </span>
                   <ChevronDown size={18} className={`text-yellow-400 ${mostrarDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Dropdown com checkboxes */}
+                {/* Dropdown hierárquico */}
                 {mostrarDropdown && (
                   <>
                     {/* Overlay para fechar ao clicar fora */}
@@ -160,40 +280,114 @@ export default function Navbar() {
                       onClick={() => setMostrarDropdown(false)}
                     />
                     
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border-2 border-blue-200 py-2 min-w-[200px] z-20">
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border-2 border-blue-200 py-2 min-w-[300px] max-w-[400px] max-h-[500px] overflow-y-auto z-20">
                       <div className="px-3 py-2 border-b border-gray-200">
-                        <p className="text-xs font-semibold text-gray-600">Selecione as cidades</p>
+                        <p className="text-xs font-semibold text-gray-600">Selecione Brasil, Estados ou Cidades</p>
                       </div>
-                      {cidadesDisponiveis.map((cidade) => (
-                        <button
-                          key={cidade}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleCidade(cidade);
-                          }}
-                          className="w-full px-3 py-2 flex items-center gap-2 text-left"
-                        >
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                            cidadesSelecionadas.includes(cidade)
-                              ? 'bg-blue-600 border-blue-600'
-                              : 'border-gray-300'
-                          }`}>
-                            {cidadesSelecionadas.includes(cidade) && (
-                              <CheckCircle size={14} className="text-white" />
-                            )}
+                      
+                      {/* BRASIL */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleBrasil();
+                        }}
+                        className="w-full px-3 py-2.5 flex items-center gap-2 text-left hover:bg-blue-50 font-bold"
+                      >
+                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                          brasilSelecionado
+                            ? 'bg-blue-600 border-blue-600'
+                            : 'border-gray-400'
+                        }`}>
+                          {brasilSelecionado && (
+                            <CheckCircle size={16} className="text-white" />
+                          )}
+                        </div>
+                        <span className="text-base text-blue-900">🇧🇷 BRASIL</span>
+                      </button>
+                      
+                      <div className="border-t border-gray-200 my-1"></div>
+                      
+                      {/* ESTADOS */}
+                      {Object.entries(estruturaBrasil).map(([estado, cidades]) => (
+                        <div key={estado}>
+                          {/* Botão do Estado */}
+                          <div className="flex items-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleEstadoExpansao(estado);
+                              }}
+                              className="px-2 py-2 hover:bg-gray-100"
+                            >
+                              <ChevronRight 
+                                size={16} 
+                                className={`text-gray-600 transition-transform ${estadosExpandidos.includes(estado) ? 'rotate-90' : ''}`}
+                              />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleEstado(estado);
+                              }}
+                              className="flex-1 px-2 py-2 flex items-center gap-2 text-left hover:bg-blue-50"
+                            >
+                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                estadoTotalmenteSelecionado(estado)
+                                  ? 'bg-blue-600 border-blue-600'
+                                  : 'border-gray-300'
+                              }`}>
+                                {estadoTotalmenteSelecionado(estado) && (
+                                  <CheckCircle size={14} className="text-white" />
+                                )}
+                              </div>
+                              <span className={`text-sm ${
+                                estadoTotalmenteSelecionado(estado)
+                                  ? 'font-bold text-blue-800'
+                                  : 'font-semibold text-gray-700'
+                              }`}>
+                                {estado}
+                              </span>
+                            </button>
                           </div>
-                          <span className={`text-sm ${
-                            cidadesSelecionadas.includes(cidade)
-                              ? 'font-semibold text-blue-900'
-                              : 'text-gray-700'
-                          }`}>
-                            {cidade}
-                          </span>
-                        </button>
+                          
+                          {/* Cidades do Estado (expansível) */}
+                          {estadosExpandidos.includes(estado) && (
+                            <div className="ml-8 border-l-2 border-gray-200">
+                              {cidades.map((cidade) => (
+                                <button
+                                  key={cidade}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleCidade(cidade);
+                                  }}
+                                  className="w-full px-3 py-1.5 flex items-center gap-2 text-left hover:bg-blue-50"
+                                >
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                    cidadesSelecionadas.includes(cidade)
+                                      ? 'bg-green-500 border-green-500'
+                                      : 'border-gray-300'
+                                  }`}>
+                                    {cidadesSelecionadas.includes(cidade) && (
+                                      <CheckCircle size={10} className="text-white" />
+                                    )}
+                                  </div>
+                                  <span className={`text-xs ${
+                                    cidadesSelecionadas.includes(cidade)
+                                      ? 'font-semibold text-green-700'
+                                      : 'text-gray-600'
+                                  }`}>
+                                    {cidade}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       ))}
-                      <div className="px-3 py-2 border-t border-gray-200 mt-2">
-                        <p className="text-xs text-gray-500">
-                          ✓ {cidadesSelecionadas.length} selecionada{cidadesSelecionadas.length > 1 ? 's' : ''}
+                      
+                      <div className="px-3 py-2 border-t border-gray-200 mt-2 bg-gray-50">
+                        <p className="text-xs text-gray-600 font-semibold">
+                          ✓ {brasilSelecionado ? 'Brasil inteiro' : `${cidadesSelecionadas.length} ${cidadesSelecionadas.length === 1 ? 'cidade' : 'cidades'}`} selecionada{cidadesSelecionadas.length > 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
