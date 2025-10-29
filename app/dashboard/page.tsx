@@ -19,7 +19,7 @@ import {
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pedido, Oferta } from '@/types';
-import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { formatarPreco } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import OfertasFreteModal from '@/components/OfertasFreteModal';
@@ -242,6 +242,27 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Erro ao criar pedido:', error);
       toast.error('Erro ao criar pedido. Tente novamente.');
+    }
+  };
+
+  const cancelarPedido = async (pedidoId: string) => {
+    if (!userData || userData.tipo !== 'oficina') {
+      toast.error('Apenas oficinas podem cancelar pedidos');
+      return;
+    }
+
+    const confirmacao = window.confirm(
+      'Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita.'
+    );
+
+    if (!confirmacao) return;
+
+    try {
+      await deleteDoc(doc(db, 'pedidos', pedidoId));
+      toast.success('Pedido cancelado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao cancelar pedido:', error);
+      toast.error('Erro ao cancelar pedido. Tente novamente.');
     }
   };
 
@@ -473,12 +494,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Conteúdo principal (com z-index para ficar acima do fundo) */}
-      <div className="relative z-10 p-6">
+      <div className="relative z-10 p-3 sm:p-6">
         {/* Header com Banner Horizontal */}
-        <div className="flex items-stretch gap-6 mb-8">
+        <div className="flex flex-col lg:flex-row items-stretch gap-3 sm:gap-6 mb-6 sm:mb-8">
         {/* Título à Esquerda - Quadrado Moderno */}
-        <div className="flex-shrink-0">
-          <div className="bg-gradient-to-br from-red-50 via-pink-50 to-orange-50 rounded-2xl shadow-lg border-2 border-red-200 p-6 relative overflow-hidden h-full">
+        <div className="flex-shrink-0 w-full lg:w-auto">
+          <div className="bg-gradient-to-br from-red-50 via-pink-50 to-orange-50 rounded-2xl shadow-lg border-2 border-red-200 p-4 sm:p-6 relative overflow-hidden h-full">
             {/* Decoração de fundo */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-full opacity-30 -mr-16 -mt-16"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-100 rounded-full opacity-30 -ml-12 -mb-12"></div>
@@ -495,7 +516,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              <h1 className="text-2xl font-black text-gray-900 mb-3 leading-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 sm:mb-3 leading-tight">
                 Pedidos ao Vivo
               </h1>
               
@@ -513,8 +534,8 @@ export default function DashboardPage() {
 
         {/* Banner Horizontal à Direita */}
         {userData?.tipo === 'autopeca' && pedidos.length > 0 && (
-          <div className="flex-1">
-            <div className="bg-gradient-to-r from-green-500 via-emerald-600 to-teal-700 rounded-2xl shadow-xl p-6 text-white overflow-hidden relative h-full">
+          <div className="flex-1 w-full lg:w-auto">
+            <div className="bg-gradient-to-r from-green-500 via-emerald-600 to-teal-700 rounded-2xl shadow-xl p-4 sm:p-6 text-white overflow-hidden relative h-full">
               {/* Decoração de Fundo */}
               <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-24 -mt-24"></div>
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-white opacity-5 rounded-full -ml-16 -mb-16"></div>
@@ -602,9 +623,9 @@ export default function DashboardPage() {
         {userData?.tipo === 'oficina' && (
           <button
             onClick={() => setMostrarModal(true)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold flex items-center shadow-lg hover:shadow-xl transition-all flex-shrink-0"
+            className="w-full lg:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 font-semibold flex items-center justify-center shadow-lg hover:shadow-xl transition-all flex-shrink-0"
           >
-            <Plus size={20} className="mr-2" />
+            <Plus size={22} className="mr-2" />
             Novo Pedido
           </button>
         )}
@@ -612,15 +633,15 @@ export default function DashboardPage() {
 
       {/* Dropdown de Filtros */}
       {pedidos.length > 0 && (
-        <div className="mb-6 flex justify-end">
-          <div className="relative">
+        <div className="mb-6 flex justify-end px-3 sm:px-0">
+          <div className="relative w-full sm:w-auto">
             <button
               onClick={() => setMostrarDropdownFiltros(!mostrarDropdownFiltros)}
-              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all shadow-lg"
+              className="flex items-center justify-center gap-2 px-5 py-4 sm:py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all shadow-lg w-full sm:w-auto"
             >
-              <Filter size={20} />
+              <Filter size={22} />
               FILTROS
-              <ChevronDown size={18} className={`transition-transform ${mostrarDropdownFiltros ? 'rotate-180' : ''}`} />
+              <ChevronDown size={20} className={`transition-transform ${mostrarDropdownFiltros ? 'rotate-180' : ''}`} />
             </button>
 
             {mostrarDropdownFiltros && (
@@ -631,7 +652,7 @@ export default function DashboardPage() {
                   onClick={() => setMostrarDropdownFiltros(false)}
                 />
                 
-                <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-2xl border-2 border-blue-200 py-2 min-w-[280px] z-20">
+                <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 bg-white rounded-lg shadow-2xl border-2 border-blue-200 py-2 w-full sm:min-w-[280px] sm:w-auto z-20">
                   <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
                     <p className="text-xs font-bold text-gray-600 uppercase">Opções de Filtro</p>
                   </div>
@@ -746,7 +767,7 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
-            <div className={`grid gap-6 ${modoResumido ? 'md:grid-cols-1 lg:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+            <div className={`grid gap-3 sm:gap-4 px-3 sm:px-0 ${modoResumido ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
               {pedidos
                 .filter(pedido => {
                   if (filtroCondicao === 'todas') return true;
@@ -782,48 +803,84 @@ export default function DashboardPage() {
                   }
                 }
                 
-                // MODO RESUMIDO - Cards compactos (3x no espaço de 1)
+                // MODO RESUMIDO - Cards compactos em formato quadrado com estilo completo
                 if (modoResumido && !isExpandido) {
                   return (
                     <div
                       key={pedido.id}
-                      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out p-4 border-2 border-blue-600 hover:border-blue-700 cursor-pointer"
+                      className="bg-white rounded-lg shadow-[0_0_10px_2px_rgba(0,51,102,0.4)] hover:shadow-[0_0_15px_3px_rgba(0,51,102,0.7)] transition-all duration-300 ease-in-out p-1.5 border-2 border-blue-800 hover:border-blue-900 cursor-pointer aspect-square flex flex-col justify-between min-h-0 relative"
                       onClick={() => toggleExpansaoPedido(pedido.id)}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        {/* Nome da Peça + Badge de Condição */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold text-lg text-gray-900 truncate">
-                              {pedido.nomePeca}
-                            </h3>
-                            {pedido.condicaoPeca && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-semibold text-xs whitespace-nowrap ${
-                                pedido.condicaoPeca === 'Nova' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-orange-100 text-orange-800'
-                              }`}>
-                                {pedido.condicaoPeca}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 font-medium">
-                            {pedido.marcaCarro} {pedido.modeloCarro} - {pedido.anoCarro}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {diaIndicador} - {pedido.oficinaNome}
-                          </p>
-                        </div>
+                      {/* Botão de cancelar (canto superior direito) */}
+                      {userData?.tipo === 'oficina' && userData?.id === pedido.oficinaId && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cancelarPedido(pedido.id);
+                          }}
+                          className="absolute top-1 right-1 bg-red-100 text-red-600 hover:bg-red-200 rounded-full p-1 transition-colors z-10"
+                          title="Cancelar pedido"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                      
+                      {/* Nome da Oficina no topo */}
+                      <div className="text-center mb-0.5">
+                        <p className="text-base font-black text-blue-600 uppercase tracking-tight line-clamp-1 px-0.5">
+                          {pedido.oficinaNome}
+                        </p>
+                      </div>
 
-                        {/* Seta para expandir */}
-                        <div className="flex items-center gap-2">
-                          {pedido.ofertas && pedido.ofertas.length > 0 && (
-                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
-                              {pedido.ofertas.length} {pedido.ofertas.length === 1 ? 'oferta' : 'ofertas'}
+                      {/* Retângulo com Nome da Peça - mesmo estilo do card completo */}
+                      <div className={`rounded-lg p-1.5 mb-0.5 border shadow-sm flex-1 flex flex-col justify-center ${
+                        pedido.condicaoPeca === 'Nova' 
+                          ? 'bg-gradient-to-br from-green-50 via-green-100 to-green-50 border-green-400'
+                          : pedido.condicaoPeca === 'Usada'
+                          ? 'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 border-orange-400'
+                          : 'bg-gradient-to-br from-blue-50 via-blue-100 to-cyan-100 border-blue-400'
+                      }`}>
+                        {/* Nome da Peça */}
+                        <h3 className="font-black text-xl text-gray-900 line-clamp-2 leading-tight uppercase text-center mb-0.5 px-0.5">
+                          {pedido.nomePeca}
+                        </h3>
+                        
+                        {/* Badge de Condição */}
+                        {pedido.condicaoPeca && (
+                          <div className="flex justify-center">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-bold text-sm ${
+                              pedido.condicaoPeca === 'Nova' 
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
+                                : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
+                            }`}>
+                              {pedido.condicaoPeca.toUpperCase()}
                             </span>
-                          )}
-                          <ChevronDown size={24} className="text-blue-600" />
-                        </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Informações do Carro */}
+                      <div className="bg-white rounded-md p-1 mb-0.5 shadow-sm border border-gray-200">
+                        <p className="text-base text-gray-900 font-black leading-tight line-clamp-1 text-center px-0.5">
+                          {pedido.marcaCarro} {pedido.modeloCarro}
+                        </p>
+                        <p className="text-base text-blue-700 font-black text-center">
+                          {pedido.anoCarro}
+                        </p>
+                      </div>
+
+                      {/* Rodapé com ofertas e seta */}
+                      <div className="flex flex-col items-center gap-0.5">
+                        {pedido.ofertas && pedido.ofertas.length > 0 ? (
+                          <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-base font-bold">
+                            {pedido.ofertas.length} {pedido.ofertas.length === 1 ? 'oferta' : 'ofertas'}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-base font-black">
+                            Sem ofertas
+                          </span>
+                        )}
+                        <ChevronDown size={20} className="text-blue-600" />
                       </div>
                     </div>
                   );
@@ -833,20 +890,37 @@ export default function DashboardPage() {
                 return (
             <div
               key={pedido.id}
-              className={`bg-white rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] transition-all duration-300 ease-in-out p-6 border-2 border-blue-800 hover:border-blue-900 ${
+              className={`bg-white rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] transition-all duration-300 ease-in-out p-4 border-2 border-blue-800 hover:border-blue-900 ${
                 !modoResumido && 'animate-slide-in'
               }`}
             >
-              {/* Botão de fechar (apenas no modo resumido quando expandido) */}
-              {modoResumido && isExpandido && (
-                <button
-                  onClick={() => toggleExpansaoPedido(pedido.id)}
-                  className="float-right bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full p-2 transition-colors"
-                  title="Recolher"
-                >
-                  <ChevronUp size={20} />
-                </button>
-              )}
+              {/* Botões no canto superior direito */}
+              <div className="float-right flex gap-2">
+                {/* Botão de cancelar pedido (apenas para oficina dona do pedido) */}
+                {userData?.tipo === 'oficina' && userData?.id === pedido.oficinaId && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      cancelarPedido(pedido.id);
+                    }}
+                    className="bg-red-100 text-red-600 hover:bg-red-200 rounded-full p-2 transition-colors"
+                    title="Cancelar pedido"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+                
+                {/* Botão de fechar (apenas no modo resumido quando expandido) */}
+                {modoResumido && isExpandido && (
+                  <button
+                    onClick={() => toggleExpansaoPedido(pedido.id)}
+                    className="bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full p-2 transition-colors"
+                    title="Recolher"
+                  >
+                    <ChevronUp size={20} />
+                  </button>
+                )}
+              </div>
               {/* Dia + Cidade */}
               <div className="mb-3">
                 {diaIndicador && (
@@ -1119,8 +1193,8 @@ export default function DashboardPage() {
 
       {/* Modal - Novo Pedido */}
       {mostrarModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-900">Novo Pedido</h2>
             
             <form onSubmit={criarPedido} className="space-y-6">
@@ -1259,17 +1333,17 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex space-x-4 pt-4">
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
                 <button
                   type="button"
                   onClick={() => setMostrarModal(false)}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+                  className="flex-1 px-4 py-3.5 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold text-base"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold"
+                  className="flex-1 bg-blue-600 text-white py-3.5 rounded-lg hover:bg-blue-700 font-bold text-base shadow-lg"
                 >
                   Criar Pedido
                 </button>
@@ -1281,8 +1355,8 @@ export default function DashboardPage() {
 
       {/* Modal - Nova Oferta */}
       {mostrarModalOferta && pedidoSelecionado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-gray-900">Fazer Oferta</h2>
             
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
@@ -1361,7 +1435,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="flex space-x-4 pt-4">
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -1370,13 +1444,13 @@ export default function DashboardPage() {
                     setPreco('');
                     setObservacaoOferta('');
                   }}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+                  className="flex-1 px-4 py-3.5 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold text-base"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold"
+                  className="flex-1 bg-green-600 text-white py-3.5 rounded-lg hover:bg-green-700 font-bold text-base shadow-lg"
                 >
                   Enviar Oferta
                 </button>
