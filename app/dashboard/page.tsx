@@ -660,7 +660,7 @@ export default function DashboardPage() {
               {pedidos
                 .filter(pedido => {
                   if (filtroCondicao === 'todas') return true;
-                  if (!pedido.condicaoPeca) return filtroCondicao === 'todas'; // Pedidos antigos aparecem só em "todas"
+                  if (!pedido.condicaoPeca) return false; // Pedidos antigos só aparecem em "todas"
                   return pedido.condicaoPeca === filtroCondicao;
                 })
                 .sort((a, b) => {
