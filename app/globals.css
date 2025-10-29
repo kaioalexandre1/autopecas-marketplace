@@ -77,6 +77,23 @@ body {
   background: #555;
 }
 
+/* Navbar com opacidade máxima */
+.navbar-custom,
+.navbar-custom *,
+.navbar-custom svg,
+.navbar-custom path,
+.navbar-custom circle,
+.navbar-custom div,
+.navbar-custom button,
+.navbar-custom a,
+.navbar-custom span {
+  opacity: 1 !important;
+}
+
+.navbar-custom {
+  background-color: #1d4ed8 !important;
+}
+
 /* Padrão de grade de fundo */
 .bg-grid-pattern {
   background-image: 
