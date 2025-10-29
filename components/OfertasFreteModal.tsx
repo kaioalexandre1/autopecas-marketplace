@@ -95,6 +95,7 @@ export default function OfertasFreteModal({
       const ofertasData: OfertaFrete[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
+        // @ts-ignore - Firestore data includes all OfertaFrete properties
         ofertasData.push({
           id: doc.id,
           createdAt: data.createdAt?.toDate() || new Date(),

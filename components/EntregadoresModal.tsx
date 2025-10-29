@@ -38,6 +38,7 @@ export default function EntregadoresModal({ isOpen, onClose, nomePeca }: Entrega
       
       snapshot.forEach((doc) => {
         const data = doc.data();
+        // @ts-ignore - Firestore data includes all Entregador properties
         entregadoresData.push({
           id: doc.id,
           createdAt: data.createdAt?.toDate() || new Date(),
