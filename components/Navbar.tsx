@@ -92,14 +92,14 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-blue-700 opacity-100" style={{ backgroundColor: '#1d4ed8', opacity: 1 }}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+    <nav className="bg-blue-700" style={{ backgroundColor: 'rgb(29, 78, 216)', opacity: 1 }}>
+      <div className="container mx-auto px-4" style={{ opacity: 1 }}>
+        <div className="flex items-center justify-between h-20" style={{ opacity: 1 }}>
           {/* Logo */}
-          <div className="flex items-center space-x-6">
-            <Link href="/" className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6" style={{ opacity: 1 }}>
+            <Link href="/" className="flex items-center space-x-4" style={{ opacity: 1 }}>
               {/* Logo Marketplace de Autopeças - Design Moderno */}
-              <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 1 }}>
                   {/* Hexágono externo (como uma porca) - Gradiente azul para laranja */}
                   <defs>
                     <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -152,7 +152,7 @@ export default function Navbar() {
                   <circle cx="27" cy="70" r="2.5" fill="#1E40AF"/>
                   <circle cx="27" cy="30" r="2.5" fill="#1E40AF"/>
               </svg>
-              <div className="text-3xl font-black text-white uppercase tracking-wide">
+              <div className="text-3xl font-black text-white uppercase tracking-wide" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>
                 Grupão das Autopeças
               </div>
             </Link>
@@ -227,7 +227,7 @@ export default function Navbar() {
           </div>
 
           {/* Navigation Links */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1" style={{ opacity: 1 }}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -250,10 +250,10 @@ export default function Navbar() {
           </div>
 
           {/* User Info */}
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <div className="text-sm font-bold text-white">{userData?.nome}</div>
-              <div className={`text-xs px-3 py-1 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`}>
+          <div className="flex items-center space-x-4" style={{ opacity: 1 }}>
+            <div className="text-right" style={{ opacity: 1 }}>
+              <div className="text-sm font-bold text-white" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>{userData?.nome}</div>
+              <div className={`text-xs px-3 py-1 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`} style={{ opacity: 1 }}>
                 {getTipoLabel()}
               </div>
             </div>
@@ -261,6 +261,7 @@ export default function Navbar() {
             <button
               onClick={handleLogout}
               className="p-2.5 text-white rounded-lg border-2 border-white"
+              style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
               title="Sair"
             >
               <LogOut size={22} />
