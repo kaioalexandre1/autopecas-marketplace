@@ -1,0 +1,1252 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc,
+  doc,
+  orderBy,
+  Timestamp,
+  arrayUnion,
+  getDocs,
+  deleteDoc
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { Pedido, Oferta } from '@/types';
+import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight } from 'lucide-react';
+import { formatarPreco } from '@/lib/utils';
+import toast from 'react-hot-toast';
+import OfertasFreteModal from '@/components/OfertasFreteModal';
+
+export default function DashboardPage() {
+  const { userData } = useAuth();
+  const router = useRouter();
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalOferta, setMostrarModalOferta] = useState(false);
+  const [mostrarModalFrete, setMostrarModalFrete] = useState(false);
+  const [pedidoSelecionado, setPedidoSelecionado] = useState<Pedido | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [enderecos, setEnderecos] = useState<{[key: string]: any}>({});
+  const [cidadesSelecionadas, setCidadesSelecionadas] = useState<string[]>([]);
+
+  // Banco de emojis de peças de carro
+  const emojisAutopecas = ['🔧', '⚙️', '🔩', '⛽', '🛞', '🔋', '💡', '🪛', '🛠️', '🔌'];
+
+  // Função para obter emoji baseado no ID do pedido
+  const getEmojiParaPedido = (pedidoId: string): string => {
+    // Usar hash simples do ID para escolher emoji consistente
+    const hash = pedidoId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return emojisAutopecas[hash % emojisAutopecas.length];
+  };
+
+  // Função para calcular horas restantes
+  const calcularHorasRestantes = (createdAt: Date | Timestamp): number => {
+    const agora = new Date();
+    const criacao = createdAt instanceof Date ? createdAt : createdAt.toDate();
+    const diferencaMs = agora.getTime() - criacao.getTime();
+    const horasPassadas = diferencaMs / (1000 * 60 * 60);
+    return Math.max(0, 24 - horasPassadas);
+  };
+
+  // Função para obter cor do timer
+  const getCorTimer = (horasRestantes: number): string => {
+    if (horasRestantes > 10) return 'text-green-600 bg-green-50 border-green-200';
+    if (horasRestantes > 3) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    return 'text-red-600 bg-red-50 border-red-200';
+  };
+
+  // Função para formatar tempo restante
+  const formatarTempoRestante = (horasRestantes: number): string => {
+    const horas = Math.floor(horasRestantes);
+    const minutos = Math.floor((horasRestantes - horas) * 60);
+    return `${horas}h ${minutos}m`;
+  };
+
+  // Carregar cidades selecionadas do localStorage
+  useEffect(() => {
+    const cidadesSalvas = localStorage.getItem('cidadesSelecionadas');
+    if (cidadesSalvas) {
+      setCidadesSelecionadas(JSON.parse(cidadesSalvas));
+    } else if (userData?.cidade) {
+      setCidadesSelecionadas([userData.cidade]);
+    }
+  }, [userData]);
+
+  // Atualizar timers a cada minuto
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Forçar re-render para atualizar os timers
+      setPedidos(prev => [...prev]);
+    }, 60000); // 60 segundos
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Debug: verificar userData
+  console.log('userData no dashboard:', userData);
+  console.log('cidades selecionadas:', cidadesSelecionadas);
+
+  // Form states - Novo Pedido
+  const [nomePeca, setNomePeca] = useState('');
+  const [marcaCarro, setMarcaCarro] = useState('');
+  const [modeloCarro, setModeloCarro] = useState('');
+  const [anoCarro, setAnoCarro] = useState('');
+  const [condicaoPeca, setCondicaoPeca] = useState(''); // Nova ou Usada
+  const [especificacaoMotor, setEspecificacaoMotor] = useState('');
+  const [notaFiscal, setNotaFiscal] = useState('');
+  const [observacao, setObservacao] = useState('');
+
+  // Form state - Nova Oferta
+  const [preco, setPreco] = useState('');
+  const [observacaoOferta, setObservacaoOferta] = useState('');
+
+  // Filtro de condição da peça
+  const [filtroCondicao, setFiltroCondicao] = useState<'todas' | 'Nova' | 'Usada'>('todas');
+
+  useEffect(() => {
+    if (cidadesSelecionadas.length === 0) return;
+
+    // Buscar pedidos ativos das cidades selecionadas em tempo real
+    const q = query(
+      collection(db, 'pedidos'),
+      where('status', '==', 'ativo')
+      // Removido orderBy e where cidade temporariamente para evitar erro de índice
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const pedidosData: Pedido[] = [];
+      const pedidosExpirados: string[] = [];
+      const agora = new Date();
+
+      snapshot.forEach((docSnapshot) => {
+        const data = docSnapshot.data();
+        
+        // Verificar expiração (24 horas)
+        const criacao = data.createdAt?.toDate() || new Date();
+        const horasPassadas = (agora.getTime() - criacao.getTime()) / (1000 * 60 * 60);
+        
+        if (horasPassadas >= 24) {
+          // Marcar para exclusão
+          pedidosExpirados.push(docSnapshot.id);
+        } else if (cidadesSelecionadas.includes(data.cidade)) {
+          // Adicionar apenas pedidos válidos das cidades selecionadas
+          pedidosData.push({
+            id: docSnapshot.id,
+            ...data,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            updatedAt: data.updatedAt?.toDate() || new Date(),
+          } as Pedido);
+        }
+      });
+
+      // Exclusão automática desabilitada para evitar erros de permissão
+      // Os pedidos expirados podem ser removidos manualmente pelo admin
+      if (pedidosExpirados.length > 0) {
+        console.log(`${pedidosExpirados.length} pedido(s) expirado(s) detectado(s) - exclusão manual necessária`);
+      }
+
+      // Ordenar: primeiro por número de ofertas (maior primeiro), depois por data
+      pedidosData.sort((a, b) => {
+        const ofertasA = a.ofertas?.length || 0;
+        const ofertasB = b.ofertas?.length || 0;
+        
+        if (ofertasB !== ofertasA) {
+          return ofertasB - ofertasA; // Mais ofertas primeiro
+        }
+        return b.createdAt.getTime() - a.createdAt.getTime(); // Mais recente primeiro
+      });
+
+      setPedidos(pedidosData);
+      
+      // Buscar endereços para entregadores
+      if (userData?.tipo === 'entregador') {
+        pedidosData.forEach(pedido => {
+          if (pedido.ofertas && pedido.ofertas.length > 0) {
+            buscarEnderecos(pedido);
+          }
+        });
+      }
+      
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [cidadesSelecionadas, userData]);
+
+  const criarPedido = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!userData) return;
+
+    // Validar campos obrigatórios
+    if (!condicaoPeca) {
+      toast.error('Por favor, informe se a peça é nova ou usada');
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, 'pedidos'), {
+        oficinaId: userData.id,
+        oficinaNome: userData.nome,
+        nomePeca,
+        marcaCarro,
+        modeloCarro,
+        anoCarro,
+        condicaoPeca, // Campo obrigatório: Nova ou Usada
+        ...(especificacaoMotor && { especificacaoMotor }), // Adiciona apenas se preenchido
+        ...(notaFiscal && { notaFiscal }), // Adiciona apenas se preenchido
+        ...(observacao && { observacao }), // Adiciona apenas se preenchido
+        status: 'ativo',
+        ofertas: [],
+        cidade: cidadesSelecionadas[0] || userData.cidade, // Usar primeira cidade selecionada
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+
+      toast.success('Pedido criado com sucesso!');
+      setMostrarModal(false);
+      
+      // Limpar form
+      setNomePeca('');
+      setMarcaCarro('');
+      setModeloCarro('');
+      setAnoCarro('');
+      setCondicaoPeca('');
+      setEspecificacaoMotor('');
+      setNotaFiscal('');
+      setObservacao('');
+    } catch (error) {
+      console.error('Erro ao criar pedido:', error);
+      toast.error('Erro ao criar pedido. Tente novamente.');
+    }
+  };
+
+  const criarOferta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!userData || !pedidoSelecionado) {
+      console.log('Falta userData ou pedidoSelecionado');
+      return;
+    }
+
+    const precoNumerico = parseFloat(preco.replace(',', '.'));
+    
+    if (isNaN(precoNumerico) || precoNumerico <= 0) {
+      toast.error('Digite um preço válido');
+      return;
+    }
+
+    try {
+      console.log('Iniciando criação de oferta...');
+      
+      const novaOferta: Omit<Oferta, 'id'> = {
+        pedidoId: pedidoSelecionado.id,
+        autopecaId: userData.id,
+        autopecaNome: userData.nome,
+        preco: precoNumerico,
+        observacao: observacaoOferta.trim() || undefined,
+        createdAt: new Date(),
+      };
+
+      console.log('Nova oferta:', novaOferta);
+
+      const pedidoRef = doc(db, 'pedidos', pedidoSelecionado.id);
+      
+      // Atualizar com a nova oferta e o menor preço
+      const menorPrecoAtual = pedidoSelecionado.menorPreco || Infinity;
+      const novoMenorPreco = Math.min(menorPrecoAtual, precoNumerico);
+
+      console.log('Atualizando pedido no Firebase...');
+      
+      // Preparar dados da oferta para o Firebase (sem undefined)
+      const ofertaParaFirebase: any = {
+        id: `${Date.now()}-${userData.id}`,
+        pedidoId: pedidoSelecionado.id,
+        autopecaId: userData.id,
+        autopecaNome: userData.nome,
+        preco: precoNumerico,
+        createdAt: Timestamp.now(),
+      };
+      
+      // Adicionar observação apenas se existir
+      if (observacaoOferta.trim()) {
+        ofertaParaFirebase.observacao = observacaoOferta.trim();
+      }
+      
+      await updateDoc(pedidoRef, {
+        ofertas: arrayUnion(ofertaParaFirebase),
+        menorPreco: novoMenorPreco,
+        updatedAt: Timestamp.now(),
+      });
+
+      console.log('Pedido atualizado, criando chat...');
+      
+      // Criar chat automaticamente se não existir
+      await criarChatSeNaoExistir(pedidoSelecionado);
+
+      console.log('Sucesso! Oferta criada e chat criado.');
+      toast.success('Oferta enviada com sucesso! Chat criado.');
+      setMostrarModalOferta(false);
+      setPedidoSelecionado(null);
+      setPreco('');
+      setObservacaoOferta('');
+    } catch (error: any) {
+      console.error('Erro detalhado ao criar oferta:', error);
+      console.error('Mensagem:', error.message);
+      console.error('Code:', error.code);
+      toast.error(`Erro ao enviar oferta: ${error.message || 'Tente novamente'}`);
+    }
+  };
+
+  const criarChatSeNaoExistir = async (pedido: Pedido) => {
+    if (!userData) return;
+
+    try {
+      // Verificar se já existe um chat entre esta oficina e autopeça para este pedido
+      const q = query(
+        collection(db, 'chats'),
+        where('pedidoId', '==', pedido.id),
+        where('autopecaId', '==', userData.id)
+      );
+
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        // Criar novo chat
+        await addDoc(collection(db, 'chats'), {
+          pedidoId: pedido.id,
+          oficinaId: pedido.oficinaId,
+          autopecaId: userData.id,
+          oficinaNome: pedido.oficinaNome,
+          autopecaNome: userData.nome,
+          nomePeca: pedido.nomePeca,
+          marcaCarro: pedido.marcaCarro,
+          modeloCarro: pedido.modeloCarro,
+          anoCarro: pedido.anoCarro,
+          mensagens: [],
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao criar chat:', error);
+      // Não mostra erro ao usuário pois o chat não é crítico neste momento
+    }
+  };
+
+  const abrirModalOferta = (pedido: Pedido) => {
+    setPedidoSelecionado(pedido);
+    setMostrarModalOferta(true);
+  };
+
+  const abrirChat = (pedido: Pedido, oferta: Oferta) => {
+    console.log('🚀 Abrindo chat:', {
+      pedidoId: pedido.id,
+      autopecaId: oferta.autopecaId,
+      url: `/dashboard/chats?pedidoId=${pedido.id}&autopecaId=${oferta.autopecaId}`
+    });
+    
+    // Redirecionar para a página de chats com o chat específico
+    router.push(`/dashboard/chats?pedidoId=${pedido.id}&autopecaId=${oferta.autopecaId}`);
+  };
+
+  const abrirModalFrete = (pedido: Pedido) => {
+    setPedidoSelecionado(pedido);
+    setMostrarModalFrete(true);
+  };
+
+  const buscarEnderecos = async (pedido: Pedido) => {
+    try {
+      // Buscar endereço da oficina
+      const oficinaQuery = query(collection(db, 'users'), where('__name__', '==', pedido.oficinaId));
+      const oficinaSnapshot = await getDocs(oficinaQuery);
+      
+      // Buscar endereço da autopeça (primeira oferta)
+      let autopecaData = null;
+      if (pedido.ofertas && pedido.ofertas.length > 0) {
+        const autopecaQuery = query(collection(db, 'users'), where('__name__', '==', pedido.ofertas[0].autopecaId));
+        const autopecaSnapshot = await getDocs(autopecaQuery);
+        if (!autopecaSnapshot.empty) {
+          autopecaData = { id: autopecaSnapshot.docs[0].id, ...autopecaSnapshot.docs[0].data() };
+        }
+      }
+
+      if (!oficinaSnapshot.empty) {
+        const oficinaData = { id: oficinaSnapshot.docs[0].id, ...oficinaSnapshot.docs[0].data() };
+        
+        setEnderecos(prev => ({
+          ...prev,
+          [pedido.id]: {
+            oficina: oficinaData,
+            autopeca: autopecaData
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Erro ao buscar endereços:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400">
+      {/* Elementos decorativos de fundo - IDÊNTICOS à página de cadastro */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Círculos grandes desfocados */}
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-indigo-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        
+        {/* Raios de luz diagonais */}
+        <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent opacity-20 animate-beam"></div>
+        <div className="absolute top-0 left-1/2 w-1 h-full bg-gradient-to-b from-transparent via-blue-400 to-transparent opacity-30 animate-beam-delayed"></div>
+        <div className="absolute top-0 right-1/3 w-1 h-full bg-gradient-to-b from-transparent via-yellow-400 to-transparent opacity-20 animate-beam-slow"></div>
+        
+        {/* LEDs pulsantes */}
+        <div className="absolute top-20 left-20 w-2 h-2 bg-cyan-400 rounded-full opacity-70 animate-led-pulse shadow-lg shadow-cyan-400"></div>
+        <div className="absolute top-40 right-32 w-2 h-2 bg-yellow-400 rounded-full opacity-70 animate-led-pulse-delayed shadow-lg shadow-yellow-400"></div>
+        <div className="absolute bottom-32 left-40 w-2 h-2 bg-blue-400 rounded-full opacity-70 animate-led-pulse shadow-lg shadow-blue-400"></div>
+        <div className="absolute bottom-20 right-20 w-2 h-2 bg-green-400 rounded-full opacity-70 animate-led-pulse-delayed shadow-lg shadow-green-400"></div>
+        
+        {/* Emojis de autopeças e carros flutuantes - ESTILO BOLHAS! */}
+        <div className="absolute top-10 left-10 text-6xl opacity-40 animate-bounce1 drop-shadow-2xl">🚗</div>
+        <div className="absolute top-20 left-1/4 text-5xl opacity-35 animate-bounce2 drop-shadow-2xl">🔧</div>
+        <div className="absolute top-16 left-1/2 text-6xl opacity-45 animate-bounce3 drop-shadow-2xl">🛞</div>
+        <div className="absolute top-12 right-1/4 text-5xl opacity-40 animate-bounce4 drop-shadow-2xl">⚙️</div>
+        <div className="absolute top-24 right-10 text-7xl opacity-35 animate-bounce5 drop-shadow-2xl">🏎️</div>
+        <div className="absolute top-40 left-16 text-5xl opacity-50 animate-bounce6 drop-shadow-2xl">🔩</div>
+        <div className="absolute top-48 left-1/3 text-6xl opacity-40 animate-bounce7 drop-shadow-2xl">🚙</div>
+        <div className="absolute top-44 right-1/3 text-5xl opacity-45 animate-bounce8 drop-shadow-2xl">🔋</div>
+        <div className="absolute top-52 right-20 text-6xl opacity-38 animate-bounce9 drop-shadow-2xl">⚡</div>
+        <div className="absolute top-1/2 left-8 text-7xl opacity-30 animate-bounce10 drop-shadow-2xl">🛠️</div>
+        <div className="absolute top-1/2 left-1/4 text-5xl opacity-42 animate-bounce11 drop-shadow-2xl">🏁</div>
+        <div className="absolute top-1/2 left-1/2 text-6xl opacity-35 animate-bounce12 drop-shadow-2xl">🚘</div>
+        <div className="absolute top-1/2 right-1/4 text-5xl opacity-48 animate-bounce13 drop-shadow-2xl">🔑</div>
+        <div className="absolute top-1/2 right-12 text-6xl opacity-40 animate-bounce14 drop-shadow-2xl">🛡️</div>
+        <div className="absolute bottom-48 left-20 text-5xl opacity-45 animate-bounce15 drop-shadow-2xl">🚕</div>
+        <div className="absolute bottom-52 left-1/3 text-6xl opacity-38 animate-bounce16 drop-shadow-2xl">⛽</div>
+        <div className="absolute bottom-44 right-1/3 text-5xl opacity-42 animate-bounce17 drop-shadow-2xl">🧰</div>
+        <div className="absolute bottom-40 right-16 text-6xl opacity-36 animate-bounce18 drop-shadow-2xl">💡</div>
+        <div className="absolute bottom-24 left-12 text-6xl opacity-40 animate-bounce19 drop-shadow-2xl">🚓</div>
+        <div className="absolute bottom-20 left-1/4 text-5xl opacity-44 animate-bounce20 drop-shadow-2xl">🔌</div>
+        <div className="absolute bottom-16 left-1/2 text-7xl opacity-32 animate-bounce21 drop-shadow-2xl">🚗</div>
+        <div className="absolute bottom-20 right-1/4 text-5xl opacity-46 animate-bounce22 drop-shadow-2xl">🪛</div>
+        <div className="absolute bottom-12 right-10 text-6xl opacity-40 animate-bounce23 drop-shadow-2xl">🚙</div>
+        <div className="absolute top-1/3 left-1/6 text-5xl opacity-35 animate-bounce24 drop-shadow-2xl">🏆</div>
+        <div className="absolute top-2/3 left-1/5 text-6xl opacity-38 animate-bounce25 drop-shadow-2xl">🔩</div>
+        <div className="absolute top-1/4 right-1/6 text-5xl opacity-43 animate-bounce26 drop-shadow-2xl">⚙️</div>
+        <div className="absolute bottom-1/3 right-1/5 text-6xl opacity-37 animate-bounce27 drop-shadow-2xl">🛞</div>
+        <div className="absolute bottom-2/3 left-1/3 text-5xl opacity-41 animate-bounce28 drop-shadow-2xl">🔧</div>
+        <div className="absolute top-1/3 right-1/3 text-6xl opacity-34 animate-bounce29 drop-shadow-2xl">⚡</div>
+        <div className="absolute top-60 left-1/5 text-5xl opacity-37 animate-bounce30 drop-shadow-2xl">🚘</div>
+      </div>
+
+      {/* Conteúdo principal (com z-index para ficar acima do fundo) */}
+      <div className="relative z-10 p-6">
+        {/* Header com Banner Horizontal */}
+        <div className="flex items-stretch gap-6 mb-8">
+        {/* Título à Esquerda - Quadrado Moderno */}
+        <div className="flex-shrink-0">
+          <div className="bg-gradient-to-br from-red-50 via-pink-50 to-orange-50 rounded-2xl shadow-lg border-2 border-red-200 p-6 relative overflow-hidden h-full">
+            {/* Decoração de fundo */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-full opacity-30 -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-100 rounded-full opacity-30 -ml-12 -mb-12"></div>
+            
+            {/* Conteúdo */}
+            <div className="relative z-10 flex flex-col justify-center h-full">
+              <div className="flex items-center gap-2 mb-3">
+                {/* Badge LIVE */}
+                <div className="flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full shadow-md">
+                  <Radio className="text-white animate-pulse" size={16} strokeWidth={3} />
+                  <span className="text-white text-xs font-black uppercase tracking-wider">
+                    AO VIVO
+                  </span>
+                </div>
+              </div>
+              
+              <h1 className="text-2xl font-black text-gray-900 mb-3 leading-tight">
+                Pedidos ao Vivo
+              </h1>
+              
+              <div className="flex items-center gap-2">
+                <div className="bg-white px-3 py-1 rounded-lg shadow-sm border border-red-100">
+                  <span className="text-xl font-black text-red-600">{pedidos.length}</span>
+                </div>
+                <p className="text-xs text-gray-700 font-medium">
+                  pedido(s) ativo(s)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Banner Horizontal à Direita */}
+        {userData?.tipo === 'autopeca' && pedidos.length > 0 && (
+          <div className="flex-1">
+            <div className="bg-gradient-to-r from-green-500 via-emerald-600 to-teal-700 rounded-2xl shadow-xl p-6 text-white overflow-hidden relative h-full">
+              {/* Decoração de Fundo */}
+              <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-24 -mt-24"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white opacity-5 rounded-full -ml-16 -mb-16"></div>
+              
+              {/* Conteúdo Horizontal */}
+              <div className="relative z-10 flex items-center justify-between gap-6 h-full">
+                {/* Lado Esquerdo - Call to Action Principal */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="bg-white bg-opacity-20 w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-sm flex-shrink-0 shadow-lg">
+                      <DollarSign size={28} className="text-white" strokeWidth={3} />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black leading-tight mb-1">
+                        FAÇA SUA OFERTA AGORA!
+                      </h2>
+                      <p className="text-sm font-bold text-green-100">
+                        Conecte-se direto com oficinas da região
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Informações Adicionais */}
+                  <div className="mt-3 bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-3 border border-white border-opacity-20">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-yellow-400 rounded-full p-1">
+                          <svg className="w-3 h-3 text-green-900" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold text-green-50">Destaque garantido</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-blue-400 rounded-full p-1">
+                          <svg className="w-3 h-3 text-blue-900" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold text-green-50">Resposta em tempo real</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-purple-400 rounded-full p-1">
+                          <svg className="w-3 h-3 text-purple-900" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                            <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold text-green-50">Negociação direta</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-red-400 rounded-full p-1">
+                          <svg className="w-3 h-3 text-red-900" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold text-green-50">Zero comissão</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lado Direito - Estatística de Oportunidades */}
+                <div className="flex-shrink-0">
+                  <div className="bg-white bg-opacity-15 backdrop-blur-sm rounded-xl px-6 py-4 border-2 border-white border-opacity-30 shadow-2xl">
+                    <div className="text-center mb-3">
+                      <p className="text-5xl font-black leading-none mb-1">{pedidos.length}</p>
+                      <p className="text-xs font-bold text-green-100 uppercase tracking-wider">
+                        {pedidos.length === 1 ? 'Oportunidade' : 'Oportunidades'}
+                      </p>
+                    </div>
+                    <div className="bg-yellow-400 text-green-900 px-3 py-1.5 rounded-full text-center">
+                      <p className="text-xs font-black uppercase tracking-wide">
+                        🔥 Ativas Agora
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botão Novo Pedido (Oficina) */}
+        {userData?.tipo === 'oficina' && (
+          <button
+            onClick={() => setMostrarModal(true)}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold flex items-center shadow-lg hover:shadow-xl transition-all flex-shrink-0"
+          >
+            <Plus size={20} className="mr-2" />
+            Novo Pedido
+          </button>
+        )}
+      </div>
+
+      {/* Filtro de Condição da Peça */}
+      {pedidos.length > 0 && (
+        <div className="mb-6 flex items-center gap-3">
+          <span className="text-sm font-semibold text-gray-700">Filtrar por:</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFiltroCondicao('todas')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                filtroCondicao === 'todas'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              Todas
+            </button>
+            <button
+              onClick={() => setFiltroCondicao('Nova')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                filtroCondicao === 'Nova'
+                  ? 'bg-green-600 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              <span className="text-lg">✨</span>
+              Peças Novas
+            </button>
+            <button
+              onClick={() => setFiltroCondicao('Usada')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                filtroCondicao === 'Usada'
+                  ? 'bg-orange-600 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              <span className="text-lg">🔄</span>
+              Peças Usadas
+            </button>
+          </div>
+          <span className="text-sm text-gray-500 ml-auto">
+            {pedidos.filter(p => {
+              if (filtroCondicao === 'todas') return true;
+              if (!p.condicaoPeca) return false;
+              return p.condicaoPeca === filtroCondicao;
+            }).length} pedido(s)
+          </span>
+        </div>
+      )}
+
+      {/* Grid de Pedidos */}
+      <div className="flex-1">
+          {pedidos.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-xl shadow">
+              <Search size={64} className="mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                Nenhum pedido ativo no momento
+              </h3>
+              <p className="text-gray-500">
+                {userData?.tipo === 'oficina' 
+                  ? 'Crie o primeiro pedido clicando no botão acima'
+                  : 'Aguarde novos pedidos de oficinas'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pedidos
+                .filter(pedido => {
+                  if (filtroCondicao === 'todas') return true;
+                  if (!pedido.condicaoPeca) return filtroCondicao === 'todas'; // Pedidos antigos aparecem só em "todas"
+                  return pedido.condicaoPeca === filtroCondicao;
+                })
+                .sort((a, b) => {
+                  const dataA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+                  const dataB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                  return dataB - dataA; // Mais recente primeiro
+                })
+                .map((pedido) => {
+                const horasRestantes = calcularHorasRestantes(pedido.createdAt);
+                const corTimer = getCorTimer(horasRestantes);
+                
+                // Calcular se é hoje ou ontem
+                let diaIndicador = '';
+                if (pedido.createdAt instanceof Date) {
+                  const hoje = new Date();
+                  const ontem = new Date();
+                  ontem.setDate(hoje.getDate() - 1);
+                  
+                  const dataPedido = pedido.createdAt;
+                  if (dataPedido.getDate() === hoje.getDate() &&
+                      dataPedido.getMonth() === hoje.getMonth() &&
+                      dataPedido.getFullYear() === hoje.getFullYear()) {
+                    diaIndicador = 'Hoje';
+                  } else if (dataPedido.getDate() === ontem.getDate() &&
+                             dataPedido.getMonth() === ontem.getMonth() &&
+                             dataPedido.getFullYear() === ontem.getFullYear()) {
+                    diaIndicador = 'Ontem';
+                  }
+                }
+                
+                return (
+            <div
+              key={pedido.id}
+              className="bg-white rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] transition-all duration-300 ease-in-out p-6 border-2 border-blue-800 hover:border-blue-900 animate-slide-in"
+            >
+              {/* Nome da Loja Centralizado */}
+              <div className="text-center mb-3">
+                <p className="text-2xl font-black text-blue-600 uppercase tracking-wide">{pedido.oficinaNome}</p>
+              </div>
+
+              {/* Horário de Criação */}
+              <div className="mb-4">
+                {diaIndicador && (
+                  <p className="text-center text-xs text-gray-600 mb-2 font-semibold">
+                    {diaIndicador}
+                  </p>
+                )}
+                <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 border-blue-200 bg-blue-50 font-bold text-sm text-blue-700">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                  </svg>
+                  <span>
+                    Pedido criado às {pedido.createdAt instanceof Date 
+                      ? pedido.createdAt.toLocaleTimeString('pt-BR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })
+                      : 'Agora'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Retângulo com Nome da Peça */}
+              <div className={`rounded-xl p-5 mb-4 border-2 shadow-md hover:shadow-lg transition-shadow ${
+                pedido.condicaoPeca === 'Nova' 
+                  ? 'bg-gradient-to-br from-green-50 via-green-100 to-green-50 border-green-400'
+                  : pedido.condicaoPeca === 'Usada'
+                  ? 'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 border-orange-400'
+                  : 'bg-gradient-to-br from-blue-50 via-blue-100 to-cyan-100 border-blue-400'
+              }`}>
+                {/* Nome da Peça */}
+                <div className="mb-3">
+                  <h3 className="font-black text-3xl text-gray-900 tracking-tight uppercase leading-tight text-center">
+                    {pedido.nomePeca}
+                  </h3>
+                </div>
+                {/* Badge de Condição da Peça */}
+                {pedido.condicaoPeca && (
+                  <div className="flex items-center justify-center gap-2">
+                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-lg ${
+                      pedido.condicaoPeca === 'Nova' 
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
+                        : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
+                    }`}>
+                      PEÇA {pedido.condicaoPeca.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Primeiro Retângulo Branco - Informações do Carro */}
+              <div className="bg-white rounded-lg p-4 mb-3 shadow-md border border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-600 p-2 rounded-md shadow-sm">
+                    <Car size={20} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-black text-xl text-gray-900 uppercase leading-tight tracking-wide">
+                      {pedido.marcaCarro} {pedido.modeloCarro}
+                    </div>
+                    <div className="text-base text-blue-700 font-bold mt-0.5">
+                      ANO: {pedido.anoCarro}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Segundo Retângulo Branco - Especificações Adicionais */}
+              {(pedido.especificacaoMotor || pedido.notaFiscal || pedido.observacao) && (
+                <div className="bg-white rounded-lg p-4 mb-4 shadow-md border border-gray-200">
+                  <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                    Especificações Adicionais
+                  </div>
+                  <div className="space-y-2">
+                    {pedido.especificacaoMotor && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">⚙️</span>
+                        <div>
+                          <span className="text-sm font-semibold text-gray-700">Motor:</span>
+                          <span className="text-sm text-gray-600 ml-2">{pedido.especificacaoMotor}</span>
+                        </div>
+                      </div>
+                    )}
+                    {pedido.notaFiscal && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">📄</span>
+                        <div>
+                          <span className="text-sm font-semibold text-gray-700">Nota Fiscal:</span>
+                          <span className="text-sm text-purple-700 font-semibold ml-2 capitalize">{pedido.notaFiscal}</span>
+                        </div>
+                      </div>
+                    )}
+                    {pedido.observacao && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">💬</span>
+                        <span className="text-sm font-semibold text-gray-700">Obs:</span>
+                        <p className="flex-1 text-sm text-gray-600 bg-yellow-50 p-2 rounded border border-yellow-200">
+                          {pedido.observacao}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Ofertas */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-gray-600">Ofertas recebidas:</span>
+                  <span className="font-semibold text-gray-900">
+                    {pedido.ofertas?.length || 0}
+                  </span>
+                </div>
+                
+                {pedido.ofertas && pedido.ofertas.length > 0 && (
+                  <div className="space-y-1 max-h-24 overflow-y-auto">
+                    {pedido.ofertas
+                      .sort((a, b) => a.preco - b.preco)
+                      .map((oferta, idx) => (
+                        <div
+                          key={oferta.id}
+                          className={`text-xs p-2 rounded ${
+                            idx === 0 ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{oferta.autopecaNome}</span>
+                              {userData?.tipo === 'oficina' && userData.id === pedido.oficinaId && (
+                                <button
+                                  onClick={() => abrirChat(pedido, oferta)}
+                                  className="flex items-center gap-1 px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
+                                  title="Abrir chat"
+                                >
+                                  <MessageCircle size={14} />
+                                  <span className="text-xs font-medium">Negociar</span>
+                                </button>
+                              )}
+                            </div>
+                            <span className="text-green-700 font-semibold">
+                              {formatarPreco(oferta.preco)}
+                            </span>
+                          </div>
+                          {oferta.observacao && (
+                            <div className="text-xs text-gray-600 italic mt-1 pl-2 border-l-2 border-gray-300">
+                              💬 {oferta.observacao}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Melhor Oferta - Acima de "Seu Pedido" */}
+              {pedido.menorPreco && userData?.tipo === 'oficina' && userData.id === pedido.oficinaId && (
+                <div className="mb-3 flex justify-center">
+                  <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full flex items-center gap-2 shadow-md">
+                    <span className="text-xs font-semibold uppercase tracking-wide">Melhor Oferta:</span>
+                    <span className="text-base font-black">{formatarPreco(pedido.menorPreco)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Botão de Ação */}
+              {userData?.tipo === 'autopeca' && userData.id !== pedido.oficinaId && (
+                <button
+                  onClick={() => abrirModalOferta(pedido)}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                >
+                  <DollarSign size={20} className="mr-2" />
+                  EU TENHO
+                </button>
+              )}
+
+              {userData?.tipo === 'oficina' && userData.id === pedido.oficinaId && (
+                <div className="text-center text-sm text-blue-600 font-medium py-2 bg-blue-50 rounded-lg">
+                  Seu pedido
+                </div>
+              )}
+
+              {/* Visualização para Entregador */}
+              {userData?.tipo === 'entregador' && pedido.ofertas && pedido.ofertas.length > 0 && (
+                <div className="space-y-3">
+                  {/* Endereços */}
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
+                      <MapPin size={16} className="mr-2" />
+                      Rota de Entrega
+                    </h4>
+                    <div className="text-sm space-y-3">
+                      {/* Autopeça */}
+                      <div className="text-blue-700">
+                        <div className="flex items-center mb-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                          <span className="font-medium">Autopeça: {pedido.ofertas[0].autopecaNome}</span>
+                        </div>
+                        {enderecos[pedido.id]?.autopeca && (
+                          <div className="ml-4 text-xs text-blue-600">
+                            <p>{enderecos[pedido.id].autopeca.endereco}</p>
+                            {enderecos[pedido.id].autopeca.numero && (
+                              <p>, {enderecos[pedido.id].autopeca.numero}</p>
+                            )}
+                            {enderecos[pedido.id].autopeca.bairro && (
+                              <p> - {enderecos[pedido.id].autopeca.bairro}</p>
+                            )}
+                            <p>{enderecos[pedido.id].autopeca.cidade}</p>
+                            {enderecos[pedido.id].autopeca.cep && (
+                              <p>CEP: {enderecos[pedido.id].autopeca.cep}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Seta para baixo */}
+                      <div className="flex justify-center text-blue-600">
+                        <ArrowRight size={16} className="rotate-90" />
+                      </div>
+                      
+                      {/* Oficina */}
+                      <div className="text-blue-700">
+                        <div className="flex items-center mb-1">
+                          <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                          <span className="font-medium">Oficina: {pedido.oficinaNome}</span>
+                        </div>
+                        {enderecos[pedido.id]?.oficina && (
+                          <div className="ml-4 text-xs text-blue-600">
+                            <p>{enderecos[pedido.id].oficina.endereco}</p>
+                            {enderecos[pedido.id].oficina.numero && (
+                              <p>, {enderecos[pedido.id].oficina.numero}</p>
+                            )}
+                            {enderecos[pedido.id].oficina.bairro && (
+                              <p> - {enderecos[pedido.id].oficina.bairro}</p>
+                            )}
+                            <p>{enderecos[pedido.id].oficina.cidade}</p>
+                            {enderecos[pedido.id].oficina.cep && (
+                              <p>CEP: {enderecos[pedido.id].oficina.cep}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botão de Frete */}
+                  <button
+                    onClick={() => abrirModalFrete(pedido)}
+                    className="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700 font-semibold flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                  >
+                    <Truck size={20} className="mr-2" />
+                    OFERTAR FRETE
+                  </button>
+                </div>
+              )}
+            </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+      {/* Modal - Novo Pedido */}
+      {mostrarModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">Novo Pedido</h2>
+            
+            <form onSubmit={criarPedido} className="space-y-6">
+              {/* Campos Obrigatórios */}
+              <div className="border-2 border-red-200 pt-5 bg-red-50/50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-xl">⚠️</span>
+                  <p className="text-base font-bold text-red-900">Campos Obrigatórios</p>
+                  <span className="text-xs text-red-600 ml-2 font-semibold">* (necessários)</span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nome da Peça *
+                    </label>
+                    <input
+                      type="text"
+                      value={nomePeca}
+                      onChange={(e) => setNomePeca(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: Filtro de óleo"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Marca do Carro *
+                    </label>
+                    <input
+                      type="text"
+                      value={marcaCarro}
+                      onChange={(e) => setMarcaCarro(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: Toyota"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Modelo do Carro *
+                    </label>
+                    <input
+                      type="text"
+                      value={modeloCarro}
+                      onChange={(e) => setModeloCarro(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: Corolla"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ano do Carro *
+                    </label>
+                    <input
+                      type="text"
+                      value={anoCarro}
+                      onChange={(e) => setAnoCarro(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: 2020"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Condição da Peça *
+                    </label>
+                    <select
+                      value={condicaoPeca}
+                      onChange={(e) => setCondicaoPeca(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      required
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="Nova">Nova</option>
+                      <option value="Usada">Usada</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Campos Opcionais */}
+              <div className="border-2 border-blue-200 pt-5 bg-blue-50/50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-xl">📝</span>
+                  <p className="text-base font-bold text-blue-900">Campos Opcionais</p>
+                  <span className="text-xs text-gray-500 ml-2">(não obrigatórios)</span>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Especificação do Motor
+                    </label>
+                    <input
+                      type="text"
+                      value={especificacaoMotor}
+                      onChange={(e) => setEspecificacaoMotor(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: 1.0, 2.0, 1.6"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nota Fiscal
+                    </label>
+                    <select
+                      value={notaFiscal}
+                      onChange={(e) => setNotaFiscal(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="com nota">Com nota</option>
+                      <option value="sem nota">Sem nota</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Observação
+                    </label>
+                    <textarea
+                      value={observacao}
+                      onChange={(e) => setObservacao(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Observação extra..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setMostrarModal(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold"
+                >
+                  Criar Pedido
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Nova Oferta */}
+      {mostrarModalOferta && pedidoSelecionado && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">Fazer Oferta</h2>
+            
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <h3 className="font-bold text-gray-900">{pedidoSelecionado.nomePeca}</h3>
+              <p className="text-sm text-gray-600">
+                {pedidoSelecionado.marcaCarro} {pedidoSelecionado.modeloCarro} ({pedidoSelecionado.anoCarro})
+              </p>
+              {pedidoSelecionado.condicaoPeca && (
+                <div className="mt-3 flex justify-center">
+                  <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-md ${
+                    pedidoSelecionado.condicaoPeca === 'Nova' 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-orange-500 text-white'
+                  }`}>
+                    PEÇA {pedidoSelecionado.condicaoPeca.toUpperCase()}
+                  </span>
+                </div>
+              )}
+              {pedidoSelecionado.especificacaoMotor && (
+                <p className="text-sm text-gray-700 mt-1">
+                  <span className="font-semibold">Motor:</span> {pedidoSelecionado.especificacaoMotor}
+                </p>
+              )}
+              {pedidoSelecionado.notaFiscal && (
+                <p className="text-sm text-purple-700 mt-1 capitalize font-semibold">
+                  📄 {pedidoSelecionado.notaFiscal}
+                </p>
+              )}
+              {pedidoSelecionado.observacao && (
+                <p className="text-sm text-gray-700 mt-2 bg-yellow-100 p-2 rounded">
+                  <span className="font-semibold">Obs:</span> {pedidoSelecionado.observacao}
+                </p>
+              )}
+              {pedidoSelecionado.menorPreco && (
+                <p className="text-sm text-green-700 font-semibold mt-2">
+                  Menor oferta atual: {formatarPreco(pedidoSelecionado.menorPreco)}
+                </p>
+              )}
+            </div>
+
+            <form onSubmit={criarOferta} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Seu Preço (R$) *
+                </label>
+                <input
+                  type="text"
+                  value={preco}
+                  onChange={(e) => setPreco(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg font-semibold"
+                  placeholder="0.00"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Digite apenas números. Ex: 150 ou 150.50
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observação (Opcional)
+                </label>
+                <textarea
+                  value={observacaoOferta}
+                  onChange={(e) => setObservacaoOferta(e.target.value)}
+                  maxLength={150}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  placeholder="Ex: Produto original, entrega em 2 dias, garantia de 6 meses..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Adicione detalhes sobre a peça, prazo, garantia, etc. (máx. 150 caracteres)
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {observacaoOferta.length}/150 caracteres
+                </p>
+              </div>
+
+              <div className="flex space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrarModalOferta(false);
+                    setPedidoSelecionado(null);
+                    setPreco('');
+                    setObservacaoOferta('');
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold"
+                >
+                  Enviar Oferta
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Ofertas de Frete */}
+      {mostrarModalFrete && pedidoSelecionado && userData?.tipo === 'entregador' && (
+        <OfertasFreteModal
+          isOpen={mostrarModalFrete}
+          onClose={() => {
+            setMostrarModalFrete(false);
+            setPedidoSelecionado(null);
+          }}
+          chatId={`${pedidoSelecionado.id}-${pedidoSelecionado.ofertas?.[0]?.autopecaId || 'default'}`}
+          pedidoId={pedidoSelecionado.id}
+          entregadorId={userData.id}
+          entregadorNome={userData.nome}
+        />
+      )}
+      </div>
+    </div>
+  );
+}
+

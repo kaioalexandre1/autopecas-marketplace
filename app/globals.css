@@ -1,0 +1,735 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+/* Forçar Inter em TUDO - sobrescrevendo Tailwind */
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif !important;
+}
+
+html, body, div, span, h1, h2, h3, h4, h5, h6, p, a, button, input, textarea, select, label {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+}
+
+/* Garantir que todos os containers principais ocupem 100% */
+#__next {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Animações */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Animações para página inicial */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(-5deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Padrão de grade de fundo */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Animações tecnológicas */
+@keyframes beam {
+  0%, 100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes beam-delayed {
+  0%, 100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes beam-slow {
+  0%, 100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-beam {
+  animation: beam 3s ease-in-out infinite;
+}
+
+.animate-beam-delayed {
+  animation: beam-delayed 4s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.animate-beam-slow {
+  animation: beam-slow 5s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+/* Animação de scan horizontal */
+@keyframes scan {
+  0%, 100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-scan {
+  animation: scan 4s ease-in-out infinite;
+}
+
+.animate-scan-delayed {
+  animation: scan 6s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+/* Animação de LEDs pulsantes */
+@keyframes led-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+.animate-led-pulse {
+  animation: led-pulse 2s ease-in-out infinite;
+}
+
+.animate-led-pulse-delayed {
+  animation: led-pulse 2s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Animação de linhas de energia */
+@keyframes energy {
+  0% {
+    stroke-dasharray: 0, 1000;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 1000, 0;
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dasharray: 0, 1000;
+    stroke-dashoffset: -1000;
+  }
+}
+
+.animate-energy {
+  stroke-dasharray: 1000;
+  animation: energy 4s linear infinite;
+}
+
+.animate-energy-delayed {
+  stroke-dasharray: 1000;
+  animation: energy 5s linear infinite;
+  animation-delay: 1s;
+}
+
+/* Animações de partículas flutuantes */
+@keyframes particle-float {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.4;
+  }
+  25% {
+    transform: translate(10px, -20px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-5px, -40px);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translate(15px, -60px);
+    opacity: 0.4;
+  }
+}
+
+@keyframes particle-rise {
+  0% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+}
+
+.animate-particle-float {
+  animation: particle-float 8s ease-in-out infinite;
+}
+
+.animate-particle-float-delayed {
+  animation: particle-float 10s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.animate-particle-rise {
+  animation: particle-rise 6s ease-in-out infinite;
+}
+
+.animate-particle-rise-delayed {
+  animation: particle-rise 7s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+/* Raios diagonais */
+@keyframes diagonal-beam {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-diagonal-beam {
+  animation: diagonal-beam 5s ease-in-out infinite;
+}
+
+.animate-diagonal-beam-delayed {
+  animation: diagonal-beam 6s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+/* Ondas de energia */
+@keyframes wave {
+  0% {
+    transform: translateX(-100%) scaleX(0);
+  }
+  50% {
+    transform: translateX(0%) scaleX(1);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0);
+  }
+}
+
+.animate-wave {
+  animation: wave 5s ease-in-out infinite;
+}
+
+.animate-wave-delayed {
+  animation: wave 7s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Anéis pulsantes */
+@keyframes ring-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.4;
+  }
+}
+
+.animate-ring-pulse {
+  animation: ring-pulse 4s ease-in-out infinite;
+}
+
+.animate-ring-pulse-delayed {
+  animation: ring-pulse 5s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+/* Estrelas piscando */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.animate-twinkle-delayed {
+  animation: twinkle 4s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Rotação lenta */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-slow-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-spin-slow-reverse {
+  animation: spin-slow-reverse 25s linear infinite;
+}
+
+/* Linhas de código */
+@keyframes code-line {
+  0% {
+    width: 0;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-code-line {
+  animation: code-line 3s ease-in-out infinite;
+}
+
+.animate-code-line-delayed {
+  animation: code-line 4s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Radar */
+@keyframes radar {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+.animate-radar {
+  animation: radar 4s ease-out infinite;
+}
+
+.animate-radar-delayed {
+  animation: radar 5s ease-out infinite;
+  animation-delay: 1s;
+}
+
+/* ANIMAÇÕES ESTILO BOLHAS (BOUNCING) - 30 VARIAÇÕES! */
+
+/* Grupo 1 - Diagonal Direita */
+@keyframes bounce1 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(80vw, 20vh); }
+  50% { transform: translate(70vw, 80vh); }
+  75% { transform: translate(30vw, 60vh); }
+}
+@keyframes bounce2 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(60vw, 40vh); }
+  50% { transform: translate(20vw, 70vh); }
+  75% { transform: translate(50vw, 30vh); }
+}
+@keyframes bounce3 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(40vw, 60vh); }
+  50% { transform: translate(75vw, 50vh); }
+  75% { transform: translate(20vw, 20vh); }
+}
+@keyframes bounce4 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(70vw, 35vh); }
+  50% { transform: translate(40vw, 75vh); }
+  75% { transform: translate(60vw, 45vh); }
+}
+@keyframes bounce5 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(50vw, 55vh); }
+  50% { transform: translate(80vw, 25vh); }
+  75% { transform: translate(35vw, 65vh); }
+}
+
+/* Grupo 2 - Diagonal Esquerda */
+@keyframes bounce6 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-40vw, 30vh); }
+  50% { transform: translate(-70vw, 60vh); }
+  75% { transform: translate(-20vw, 40vh); }
+}
+@keyframes bounce7 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-60vw, 50vh); }
+  50% { transform: translate(-30vw, 80vh); }
+  75% { transform: translate(-50vw, 20vh); }
+}
+@keyframes bounce8 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-50vw, 40vh); }
+  50% { transform: translate(-75vw, 70vh); }
+  75% { transform: translate(-35vw, 30vh); }
+}
+@keyframes bounce9 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-65vw, 25vh); }
+  50% { transform: translate(-45vw, 65vh); }
+  75% { transform: translate(-70vw, 45vh); }
+}
+@keyframes bounce10 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-55vw, 45vh); }
+  50% { transform: translate(-80vw, 35vh); }
+  75% { transform: translate(-40vw, 55vh); }
+}
+
+/* Grupo 3 - Zig-Zag Horizontal */
+@keyframes bounce11 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(70vw, 10vh); }
+  50% { transform: translate(35vw, 20vh); }
+  75% { transform: translate(80vw, 15vh); }
+}
+@keyframes bounce12 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-60vw, 15vh); }
+  50% { transform: translate(-30vw, 25vh); }
+  75% { transform: translate(-70vw, 5vh); }
+}
+@keyframes bounce13 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(65vw, 35vh); }
+  50% { transform: translate(25vw, 45vh); }
+  75% { transform: translate(75vw, 40vh); }
+}
+@keyframes bounce14 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-55vw, 30vh); }
+  50% { transform: translate(-25vw, 40vh); }
+  75% { transform: translate(-65vw, 35vh); }
+}
+@keyframes bounce15 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(55vw, 50vh); }
+  50% { transform: translate(30vw, 60vh); }
+  75% { transform: translate(70vw, 55vh); }
+}
+
+/* Grupo 4 - Zig-Zag Vertical */
+@keyframes bounce16 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(15vw, 70vh); }
+  50% { transform: translate(25vw, 35vh); }
+  75% { transform: translate(10vw, 80vh); }
+}
+@keyframes bounce17 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(20vw, 60vh); }
+  50% { transform: translate(30vw, 30vh); }
+  75% { transform: translate(15vw, 75vh); }
+}
+@keyframes bounce18 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-20vw, 65vh); }
+  50% { transform: translate(-30vw, 25vh); }
+  75% { transform: translate(-15vw, 70vh); }
+}
+@keyframes bounce19 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-25vw, 55vh); }
+  50% { transform: translate(-35vw, 20vh); }
+  75% { transform: translate(-20vw, 65vh); }
+}
+@keyframes bounce20 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(35vw, 70vh); }
+  50% { transform: translate(45vw, 30vh); }
+  75% { transform: translate(30vw, 75vh); }
+}
+
+/* Grupo 5 - Circular */
+@keyframes bounce21 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(60vw, 30vh); }
+  50% { transform: translate(45vw, 65vh); }
+  75% { transform: translate(15vw, 45vh); }
+}
+@keyframes bounce22 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-50vw, 40vh); }
+  50% { transform: translate(-35vw, 70vh); }
+  75% { transform: translate(-15vw, 50vh); }
+}
+@keyframes bounce23 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(55vw, 45vh); }
+  50% { transform: translate(40vw, 75vh); }
+  75% { transform: translate(20vw, 55vh); }
+}
+@keyframes bounce24 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-45vw, 35vh); }
+  50% { transform: translate(-30vw, 65vh); }
+  75% { transform: translate(-10vw, 45vh); }
+}
+@keyframes bounce25 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(65vw, 50vh); }
+  50% { transform: translate(50vw, 80vh); }
+  75% { transform: translate(25vw, 60vh); }
+}
+
+/* Grupo 6 - Amplo */
+@keyframes bounce26 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(85vw, 40vh); }
+  50% { transform: translate(50vw, 85vh); }
+  75% { transform: translate(20vw, 50vh); }
+}
+@keyframes bounce27 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-80vw, 45vh); }
+  50% { transform: translate(-45vw, 80vh); }
+  75% { transform: translate(-25vw, 55vh); }
+}
+@keyframes bounce28 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(75vw, 60vh); }
+  50% { transform: translate(40vw, 90vh); }
+  75% { transform: translate(30vw, 65vh); }
+}
+@keyframes bounce29 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-70vw, 55vh); }
+  50% { transform: translate(-40vw, 85vh); }
+  75% { transform: translate(-30vw, 60vh); }
+}
+@keyframes bounce30 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(90vw, 50vh); }
+  50% { transform: translate(60vw, 80vh); }
+  75% { transform: translate(35vw, 70vh); }
+}
+
+/* Classes de animação */
+.animate-bounce1 { animation: bounce1 25s ease-in-out infinite; }
+.animate-bounce2 { animation: bounce2 28s ease-in-out infinite; }
+.animate-bounce3 { animation: bounce3 22s ease-in-out infinite; }
+.animate-bounce4 { animation: bounce4 30s ease-in-out infinite; }
+.animate-bounce5 { animation: bounce5 26s ease-in-out infinite; }
+.animate-bounce6 { animation: bounce6 24s ease-in-out infinite; }
+.animate-bounce7 { animation: bounce7 27s ease-in-out infinite; }
+.animate-bounce8 { animation: bounce8 23s ease-in-out infinite; }
+.animate-bounce9 { animation: bounce9 29s ease-in-out infinite; }
+.animate-bounce10 { animation: bounce10 25s ease-in-out infinite; }
+.animate-bounce11 { animation: bounce11 21s ease-in-out infinite; }
+.animate-bounce12 { animation: bounce12 26s ease-in-out infinite; }
+.animate-bounce13 { animation: bounce13 24s ease-in-out infinite; }
+.animate-bounce14 { animation: bounce14 28s ease-in-out infinite; }
+.animate-bounce15 { animation: bounce15 22s ease-in-out infinite; }
+.animate-bounce16 { animation: bounce16 27s ease-in-out infinite; }
+.animate-bounce17 { animation: bounce17 25s ease-in-out infinite; }
+.animate-bounce18 { animation: bounce18 23s ease-in-out infinite; }
+.animate-bounce19 { animation: bounce19 29s ease-in-out infinite; }
+.animate-bounce20 { animation: bounce20 26s ease-in-out infinite; }
+.animate-bounce21 { animation: bounce21 24s ease-in-out infinite; }
+.animate-bounce22 { animation: bounce22 28s ease-in-out infinite; }
+.animate-bounce23 { animation: bounce23 22s ease-in-out infinite; }
+.animate-bounce24 { animation: bounce24 30s ease-in-out infinite; }
+.animate-bounce25 { animation: bounce25 25s ease-in-out infinite; }
+.animate-bounce26 { animation: bounce26 27s ease-in-out infinite; }
+.animate-bounce27 { animation: bounce27 23s ease-in-out infinite; }
+.animate-bounce28 { animation: bounce28 29s ease-in-out infinite; }
+.animate-bounce29 { animation: bounce29 26s ease-in-out infinite; }
+.animate-bounce30 { animation: bounce30 24s ease-in-out infinite; }
+
+/* EFEITO CINTILANTE - Variação Amarelo/Azul com Brilho */
+@keyframes shimmer-color {
+  0% {
+    filter: brightness(1) drop-shadow(0 0 8px rgba(234, 179, 8, 0.8));
+    color: #fbbf24;
+  }
+  15% {
+    filter: brightness(1.5) drop-shadow(0 0 20px rgba(234, 179, 8, 1));
+    color: #fcd34d;
+  }
+  30% {
+    filter: brightness(1.2) drop-shadow(0 0 15px rgba(234, 179, 8, 0.9));
+    color: #fbbf24;
+  }
+  45% {
+    filter: brightness(1) drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+    color: #60a5fa;
+  }
+  60% {
+    filter: brightness(1.5) drop-shadow(0 0 20px rgba(59, 130, 246, 1));
+    color: #93c5fd;
+  }
+  75% {
+    filter: brightness(1.2) drop-shadow(0 0 15px rgba(59, 130, 246, 0.9));
+    color: #60a5fa;
+  }
+  85% {
+    filter: brightness(1.3) drop-shadow(0 0 18px rgba(234, 179, 8, 0.95));
+    color: #fbbf24;
+  }
+  100% {
+    filter: brightness(1) drop-shadow(0 0 8px rgba(234, 179, 8, 0.8));
+    color: #fbbf24;
+  }
+}
+
+.animate-shimmer-color {
+  animation: shimmer-color 15s ease-in-out infinite;
+}
+
+/* Efeito de piscada rápida */
+@keyframes blink-fast {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-blink-fast {
+  animation: blink-fast 0.5s ease-in-out infinite;
+}
+
