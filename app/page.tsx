@@ -23,9 +23,9 @@ export default function Home() {
       {/* Elementos decorativos de fundo */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Círculos grandes desfocados */}
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-indigo-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-indigo-400 rounded-full opacity-20 blur-3xl"></div>
         
         {/* Raios de luz diagonais */}
         <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent opacity-20 animate-beam"></div>
@@ -37,12 +37,12 @@ export default function Home() {
         <div className="absolute top-2/3 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-30 animate-scan-delayed"></div>
         
         {/* LEDs pulsantes */}
-        <div className="absolute top-20 left-20 w-2 h-2 bg-cyan-400 rounded-full opacity-70 animate-led-pulse shadow-lg shadow-cyan-400"></div>
-        <div className="absolute top-40 right-32 w-2 h-2 bg-yellow-400 rounded-full opacity-70 animate-led-pulse-delayed shadow-lg shadow-yellow-400"></div>
-        <div className="absolute bottom-32 left-40 w-2 h-2 bg-blue-400 rounded-full opacity-70 animate-led-pulse shadow-lg shadow-blue-400"></div>
-        <div className="absolute bottom-20 right-20 w-2 h-2 bg-green-400 rounded-full opacity-70 animate-led-pulse-delayed shadow-lg shadow-green-400"></div>
-        <div className="absolute top-60 left-1/3 w-2 h-2 bg-purple-400 rounded-full opacity-70 animate-led-pulse shadow-lg shadow-purple-400"></div>
-        <div className="absolute bottom-60 right-1/4 w-2 h-2 bg-pink-400 rounded-full opacity-70 animate-led-pulse-delayed shadow-lg shadow-pink-400"></div>
+        <div className="absolute top-20 left-20 w-2 h-2 bg-cyan-400 rounded-full opacity-70 shadow-lg shadow-cyan-400"></div>
+        <div className="absolute top-40 right-32 w-2 h-2 bg-yellow-400 rounded-full opacity-70 shadow-lg shadow-yellow-400"></div>
+        <div className="absolute bottom-32 left-40 w-2 h-2 bg-blue-400 rounded-full opacity-70 shadow-lg shadow-blue-400"></div>
+        <div className="absolute bottom-20 right-20 w-2 h-2 bg-green-400 rounded-full opacity-70 shadow-lg shadow-green-400"></div>
+        <div className="absolute top-60 left-1/3 w-2 h-2 bg-purple-400 rounded-full opacity-70 shadow-lg shadow-purple-400"></div>
+        <div className="absolute bottom-60 right-1/4 w-2 h-2 bg-pink-400 rounded-full opacity-70 shadow-lg shadow-pink-400"></div>
         
         {/* Linhas de energia conectando */}
         <svg className="absolute inset-0 w-full h-full opacity-20" style={{ mixBlendMode: 'screen' }}>

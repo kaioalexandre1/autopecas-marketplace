@@ -92,32 +92,67 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 shadow-2xl">
+    <nav className="bg-blue-700">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex items-center space-x-6">
             <Link href="/" className="flex items-center space-x-4 group">
-              <div className="relative">
-                {/* Carro Amarelo e Azul Customizado */}
-                <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Corpo do carro - Amarelo */}
-                  <path d="M12 32 L18 22 L28 18 L45 18 L52 24 L56 32 L56 42 L52 46 L12 46 L8 42 L8 32 Z" fill="#FCD34D" stroke="#FBBF24" strokeWidth="2"/>
-                  {/* Janelas - Azul */}
-                  <path d="M20 24 L28 20 L42 20 L48 26 L48 32 L20 32 Z" fill="#3B82F6" stroke="#2563EB" strokeWidth="1.5"/>
-                  {/* Rodas - Azul escuro */}
-                  <circle cx="20" cy="46" r="6" fill="#1E40AF" stroke="#1E3A8A" strokeWidth="2"/>
-                  <circle cx="48" cy="46" r="6" fill="#1E40AF" stroke="#1E3A8A" strokeWidth="2"/>
-                  {/* Centros das rodas - Amarelo */}
-                  <circle cx="20" cy="46" r="2.5" fill="#FCD34D"/>
-                  <circle cx="48" cy="46" r="2.5" fill="#FCD34D"/>
-                  {/* Farol - Amarelo claro */}
-                  <circle cx="54" cy="36" r="3" fill="#FEF08A" stroke="#FCD34D" strokeWidth="1.5"/>
-                  {/* Detalhe lateral - Azul */}
-                  <rect x="12" y="34" width="40" height="6" fill="#3B82F6" stroke="#2563EB" strokeWidth="1"/>
-                </svg>
-              </div>
-              <div className="text-3xl font-black text-white group-hover:text-yellow-400 transition-colors uppercase tracking-wide">
+              {/* Logo Marketplace de Autopeças - Design Moderno */}
+              <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Hexágono externo (como uma porca) - Gradiente azul para laranja */}
+                  <defs>
+                    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{stopColor: '#3B82F6', stopOpacity: 1}} />
+                      <stop offset="50%" style={{stopColor: '#8B5CF6', stopOpacity: 1}} />
+                      <stop offset="100%" style={{stopColor: '#F59E0B', stopOpacity: 1}} />
+                    </linearGradient>
+                    <linearGradient id="centerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{stopColor: '#FBBF24', stopOpacity: 1}} />
+                      <stop offset="100%" style={{stopColor: '#F59E0B', stopOpacity: 1}} />
+                    </linearGradient>
+                  </defs>
+                  
+                  {/* Hexágono principal (porca) */}
+                  <path d="M50 5 L80 22.5 L80 57.5 L50 75 L20 57.5 L20 22.5 Z" 
+                        fill="url(#hexGrad)" 
+                        stroke="#1E40AF" 
+                        strokeWidth="2.5"/>
+                  
+                  {/* Círculo interno branco para contraste */}
+                  <circle cx="50" cy="50" r="28" fill="#FFFFFF"/>
+                  
+                  {/* Engrenagem central */}
+                  <g>
+                    {/* 6 dentes da engrenagem */}
+                    <path d="M50 20 L53 24 L47 24 Z" fill="#F59E0B"/>
+                    <path d="M73 35 L69 38 L71 32 Z" fill="#F59E0B"/>
+                    <path d="M73 65 L71 68 L69 62 Z" fill="#F59E0B"/>
+                    <path d="M50 80 L47 76 L53 76 Z" fill="#F59E0B"/>
+                    <path d="M27 65 L31 62 L29 68 Z" fill="#F59E0B"/>
+                    <path d="M27 35 L29 32 L31 38 Z" fill="#F59E0B"/>
+                    
+                    {/* Círculo da engrenagem */}
+                    <circle cx="50" cy="50" r="15" fill="url(#centerGrad)" stroke="#D97706" strokeWidth="2"/>
+                  </g>
+                  
+                  {/* Chave inglesa estilizada em destaque */}
+                  <g transform="translate(50, 50) rotate(-45)">
+                    <rect x="-3" y="-18" width="6" height="24" rx="2" fill="#1E40AF"/>
+                    <path d="M-6 -18 L-8 -22 L-4 -24 L0 -20 L4 -24 L8 -22 L6 -18 Z" 
+                          fill="#1E40AF" stroke="#FFFFFF" strokeWidth="1"/>
+                    <circle cx="0" cy="8" r="5" fill="none" stroke="#1E40AF" strokeWidth="2.5"/>
+                  </g>
+                  
+                  {/* Detalhes decorativos - parafusos nos cantos */}
+                  <circle cx="50" cy="15" r="2.5" fill="#1E40AF"/>
+                  <circle cx="73" cy="30" r="2.5" fill="#1E40AF"/>
+                  <circle cx="73" cy="70" r="2.5" fill="#1E40AF"/>
+                  <circle cx="50" cy="85" r="2.5" fill="#1E40AF"/>
+                  <circle cx="27" cy="70" r="2.5" fill="#1E40AF"/>
+                  <circle cx="27" cy="30" r="2.5" fill="#1E40AF"/>
+              </svg>
+              <div className="text-3xl font-black text-white uppercase tracking-wide">
                 Grupão das Autopeças
               </div>
             </Link>
@@ -127,7 +162,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setMostrarDropdown(!mostrarDropdown)}
-                  className="bg-white bg-opacity-10 backdrop-blur-sm text-white font-semibold px-4 py-2.5 pr-10 rounded-lg border-2 border-white border-opacity-20 hover:bg-opacity-20 hover:border-opacity-40 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent cursor-pointer transition-all flex items-center gap-2 shadow-lg"
+                  className="bg-blue-800 text-white font-semibold px-4 py-2.5 pr-10 rounded-lg border-2 border-white focus:outline-none cursor-pointer flex items-center gap-2"
                 >
                   <MapPin size={18} className="text-yellow-400" />
                   <span>
@@ -136,7 +171,7 @@ export default function Navbar() {
                       : `${cidadesSelecionadas.length} cidades`
                     }
                   </span>
-                  <ChevronDown size={18} className={`text-yellow-400 transition-transform ${mostrarDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={18} className={`text-yellow-400 ${mostrarDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown com checkboxes */}
@@ -159,9 +194,9 @@ export default function Navbar() {
                             e.stopPropagation();
                             toggleCidade(cidade);
                           }}
-                          className="w-full px-3 py-2 hover:bg-blue-50 flex items-center gap-2 transition-colors text-left"
+                          className="w-full px-3 py-2 flex items-center gap-2 text-left"
                         >
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                             cidadesSelecionadas.includes(cidade)
                               ? 'bg-blue-600 border-blue-600'
                               : 'border-gray-300'
@@ -201,10 +236,10 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center px-4 py-2.5 rounded-lg transition-all font-medium ${
+                  className={`flex items-center px-4 py-2.5 rounded-lg font-medium ${
                     isActive
                       ? 'bg-yellow-400 text-blue-900 font-bold shadow-lg'
-                      : 'text-white hover:bg-white hover:bg-opacity-10 hover:text-yellow-400'
+                      : 'text-white'
                   }`}
                 >
                   <Icon size={20} className="mr-2" />
@@ -225,7 +260,7 @@ export default function Navbar() {
             
             <button
               onClick={handleLogout}
-              className="p-2.5 text-white hover:text-red-400 hover:bg-white hover:bg-opacity-10 rounded-lg transition-all shadow-lg border-2 border-white border-opacity-20"
+              className="p-2.5 text-white rounded-lg border-2 border-white"
               title="Sair"
             >
               <LogOut size={22} />

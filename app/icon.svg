@@ -1,0 +1,53 @@
+<svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hexágono externo (como uma porca) - Gradiente azul para laranja -->
+  <defs>
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="centerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FBBF24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Hexágono principal (porca) -->
+  <path d="M50 5 L80 22.5 L80 57.5 L50 75 L20 57.5 L20 22.5 Z" 
+        fill="url(#hexGrad)" 
+        stroke="#1E40AF" 
+        stroke-width="3"/>
+  
+  <!-- Círculo interno branco para contraste -->
+  <circle cx="50" cy="50" r="28" fill="#FFFFFF" opacity="0.95"/>
+  
+  <!-- Engrenagem central -->
+  <g>
+    {/* 6 dentes da engrenagem */}
+    <path d="M50 20 L53 24 L47 24 Z" fill="#F59E0B"/>
+    <path d="M73 35 L69 38 L71 32 Z" fill="#F59E0B"/>
+    <path d="M73 65 L71 68 L69 62 Z" fill="#F59E0B"/>
+    <path d="M50 80 L47 76 L53 76 Z" fill="#F59E0B"/>
+    <path d="M27 65 L31 62 L29 68 Z" fill="#F59E0B"/>
+    <path d="M27 35 L29 32 L31 38 Z" fill="#F59E0B"/>
+    
+    <!-- Círculo da engrenagem -->
+    <circle cx="50" cy="50" r="15" fill="url(#centerGrad)" stroke="#D97706" stroke-width="2"/>
+  </g>
+  
+  <!-- Chave inglesa estilizada em destaque -->
+  <g transform="translate(50, 50) rotate(-45)">
+    <rect x="-3" y="-18" width="6" height="24" rx="2" fill="#1E40AF"/>
+    <path d="M-6 -18 L-8 -22 L-4 -24 L0 -20 L4 -24 L8 -22 L6 -18 Z" 
+          fill="#1E40AF" stroke="#FFFFFF" stroke-width="1.2"/>
+    <circle cx="0" cy="8" r="5" fill="none" stroke="#1E40AF" stroke-width="2.5"/>
+  </g>
+  
+  <!-- Detalhes decorativos - parafusos nos cantos -->
+  <circle cx="50" cy="15" r="2.5" fill="#1E40AF" opacity="0.7"/>
+  <circle cx="73" cy="30" r="2.5" fill="#1E40AF" opacity="0.7"/>
+  <circle cx="73" cy="70" r="2.5" fill="#1E40AF" opacity="0.7"/>
+  <circle cx="50" cy="85" r="2.5" fill="#1E40AF" opacity="0.7"/>
+  <circle cx="27" cy="70" r="2.5" fill="#1E40AF" opacity="0.7"/>
+  <circle cx="27" cy="30" r="2.5" fill="#1E40AF" opacity="0.7"/>
+</svg>
