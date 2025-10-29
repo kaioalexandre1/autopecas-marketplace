@@ -98,42 +98,35 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center space-x-6" style={{ opacity: 1 }}>
             <Link href="/" className="flex items-center space-x-4" style={{ opacity: 1 }}>
-              {/* Logo Marketplace - Carro + Carrinho (Versão Melhorada) */}
-              <svg width="70" height="70" viewBox="0 0 140 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 1 }}>
-                  {/* Fundo azul */}
-                  <rect width="140" height="100" fill="#1E40AF"/>
+              {/* Logo Simples - Carro Amarelo */}
+              <svg width="70" height="70" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 1 }}>
+                  <defs>
+                    <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{stopColor: '#FBBF24', stopOpacity: 1}} />
+                      <stop offset="100%" style={{stopColor: '#F59E0B', stopOpacity: 1}} />
+                    </linearGradient>
+                  </defs>
                   
-                  {/* Carro + Carrinho - Amarelo */}
-                  <g fill="#FCD34D">
-                    {/* Corpo principal do carro - frente */}
-                    <path d="M15 55 L20 45 L30 40 L45 40 L55 45 L60 55 L60 65 L15 65 Z"/>
+                  {/* Círculo de fundo azul */}
+                  <circle cx="50" cy="50" r="48" fill="#1E40AF" stroke="#FBBF24" strokeWidth="3"/>
+                  
+                  {/* Carro amarelo - vista lateral */}
+                  <g transform="translate(50, 50)">
+                    {/* Corpo do carro */}
+                    <path d="M-20 5 L-15 -5 L-5 -8 L5 -8 L15 -5 L20 5 L20 10 L-20 10 Z" 
+                          fill="url(#carGradient)" stroke="#FFFFFF" strokeWidth="1.5"/>
                     
-                    {/* Para-brisa/Capô */}
-                    <path d="M25 45 L30 38 L42 38 L48 43 Z" fill="#FCD34D"/>
+                    {/* Janelas */}
+                    <rect x="-12" y="-6" width="8" height="6" rx="1" fill="#1E40AF"/>
+                    <rect x="0" y="-6" width="10" height="6" rx="1" fill="#1E40AF"/>
                     
-                    {/* Parte traseira integrada ao carrinho */}
-                    <path d="M60 45 L80 45 L85 55 L85 65 L60 65 Z"/>
+                    {/* Rodas */}
+                    <circle cx="-12" cy="10" r="5" fill="#FFFFFF" stroke="#1E40AF" strokeWidth="2"/>
+                    <circle cx="12" cy="10" r="5" fill="#FFFFFF" stroke="#1E40AF" strokeWidth="2"/>
                     
-                    {/* Grade do carrinho (linhas horizontais) */}
-                    <rect x="63" y="48" width="19" height="2" fill="#1E40AF"/>
-                    <rect x="63" y="53" width="19" height="2" fill="#1E40AF"/>
-                    <rect x="63" y="58" width="19" height="2" fill="#1E40AF"/>
-                    
-                    {/* Grade do carrinho (linhas verticais) */}
-                    <rect x="66" y="47" width="1.5" height="15" fill="#1E40AF"/>
-                    <rect x="72" y="47" width="1.5" height="15" fill="#1E40AF"/>
-                    <rect x="78" y="47" width="1.5" height="15" fill="#1E40AF"/>
-                    
-                    {/* Alça do carrinho */}
-                    <path d="M85 45 L90 28 L95 28 L100 45" stroke="#FCD34D" strokeWidth="3" fill="none"/>
-                    
-                    {/* Rodas grandes (carro) */}
-                    <circle cx="28" cy="67" r="9"/>
-                    <circle cx="72" cy="67" r="9"/>
-                    
-                    {/* Rodas pequenas (carrinho) */}
-                    <circle cx="55" cy="70" r="5"/>
-                    <circle cx="85" cy="70" r="5"/>
+                    {/* Centro das rodas */}
+                    <circle cx="-12" cy="10" r="2" fill="#1E40AF"/>
+                    <circle cx="12" cy="10" r="2" fill="#1E40AF"/>
                   </g>
               </svg>
               <div className="text-3xl font-black text-white uppercase tracking-wide" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>
