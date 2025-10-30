@@ -892,7 +892,7 @@ export default function DashboardPage() {
               key={pedido.id}
               className={`bg-white rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] transition-all duration-300 ease-in-out p-4 border-2 border-blue-800 hover:border-blue-900 ${
                 !modoResumido && 'animate-slide-in'
-              }`}
+              } ${modoResumido && isExpandido ? 'col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-2' : ''}`}
             >
               {/* Botões no canto superior direito */}
               <div className="float-right flex gap-2">
