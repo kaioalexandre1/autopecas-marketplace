@@ -5,6 +5,10 @@ import { doc, updateDoc, Timestamp, collection, query, where, getDocs } from 'fi
 // Webhook do Mercado Pago (versão simplificada para testes)
 // URL sugerida na MP: https://SEU_DOMINIO/api/mercadopago/webhook?secret=SEU_TOKEN
 
+// Evita cache e garante execução em runtime Node
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(_request: Request) {
   // Permite validação manual/automática da URL (evita 404/405 em testes)
   return NextResponse.json({ ok: true, message: 'Webhook OK' });
@@ -22,7 +26,22 @@ export async function POST(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const secret = searchParams.get('secret');
-    const body = await request.json().catch(() => ({}));
+    // A MP pode enviar JSON (application/json) ou x-www-form-urlencoded
+    let body: any = {};
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      body = await request.json().catch(() => ({}));
+    } else {
+      const raw = await request.text().catch(() => '');
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        // tenta extrair id simples: id=123 ou data.id=123
+        const params = new URLSearchParams(raw);
+        const id = params.get('id') || params.get('data.id');
+        if (id) body = { type: 'payment', data: { id } };
+      }
+    }
 
     // 1) Proteção simples com secret (configure na URL do webhook na MP)
     const expected = process.env.MP_WEBHOOK_SECRET || 'dev-secret';
@@ -50,7 +69,7 @@ export async function POST(request: Request) {
 
     // 3) Fluxo real: buscar pagamento na API MP e ativar se aprovado
     // A MP pode enviar { type: 'payment', data: { id } } ou { action: 'payment.updated', data: { id } }
-    const isPaymentType = body?.type === 'payment' || body?.action?.startsWith?.('payment');
+    const isPaymentType = body?.type === 'payment' || (typeof body?.action === 'string' && body.action.startsWith('payment'));
     if (isPaymentType && body?.data?.id) {
       // Usar somente variável de ambiente
       const accessToken = process.env.MP_ACCESS_TOKEN || '';
