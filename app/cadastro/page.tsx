@@ -122,7 +122,7 @@ export default function CadastroPage() {
   };
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 overflow-auto py-8 px-4">
+    <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 overflow-auto py-4 sm:py-8 px-3 sm:px-4">
       {/* Elementos decorativos de fundo - IDÊNTICOS à página inicial */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Círculos grandes desfocados */}
@@ -176,32 +176,32 @@ export default function CadastroPage() {
 
       <div className="max-w-2xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           {/* Logo e Título - Horizontal */}
-          <div className="flex items-center justify-center gap-4 mb-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-3">
             {/* Logo */}
             <div className="relative flex-shrink-0">
-              <div className="bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 p-3 rounded-2xl shadow-xl shadow-yellow-500/50 ring-4 ring-white/30">
-                <Car className="text-blue-900" size={36} strokeWidth={3} />
+              <div className="bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shadow-xl shadow-yellow-500/50 ring-4 ring-white/30">
+                <Car className="text-blue-900" size={30} strokeWidth={3} />
                 <Wrench 
                   className="absolute -bottom-1 -right-1 text-white bg-gradient-to-br from-blue-600 to-blue-800 rounded-full p-1.5 shadow-lg ring-2 ring-yellow-300" 
-                  size={18} 
+                  size={16} 
                   strokeWidth={3.5}
                 />
               </div>
             </div>
             
             {/* Título Cintilante - Em uma linha só */}
-            <h1 className="text-4xl font-black drop-shadow-2xl animate-shimmer-color whitespace-nowrap">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black drop-shadow-2xl animate-shimmer-color text-center sm:whitespace-nowrap leading-tight">
               GRUPÃO DAS AUTOPEÇAS
             </h1>
           </div>
           
-          <p className="text-xl text-cyan-100 font-semibold">✨ Crie sua conta gratuitamente</p>
+          <p className="text-lg sm:text-xl text-cyan-100 font-semibold">✨ Crie sua conta gratuitamente</p>
         </div>
 
         {/* Card */}
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl shadow-2xl p-8 border-2 border-white/30 hover:bg-white/15 transition-all">
+        <div className="backdrop-blur-xl bg-white/10 rounded-2xl sm:rounded-3xl shadow-2xl p-5 sm:p-8 border-2 border-white/30 hover:bg-white/15 transition-all">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Tipo de Usuário */}
             <div>
@@ -398,14 +398,14 @@ export default function CadastroPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group/btn relative w-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 text-blue-900 py-4 rounded-xl font-black text-lg shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden flex items-center justify-center"
+              className="group/btn relative w-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 text-blue-900 py-3.5 sm:py-4 rounded-xl font-black text-base sm:text-lg shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden flex items-center justify-center"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
               {loading ? (
-                <div className="relative animate-spin rounded-full h-6 w-6 border-b-3 border-blue-900"></div>
+                <div className="relative animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-3 border-blue-900"></div>
               ) : (
                 <span className="relative flex items-center gap-2">
-                  <UserPlus size={24} strokeWidth={2.5} />
+                  <UserPlus size={22} strokeWidth={2.5} />
                   Criar Conta Grátis
                 </span>
               )}
@@ -413,18 +413,18 @@ export default function CadastroPage() {
           </form>
 
           {/* Divider */}
-          <div className="mt-8 text-center">
-            <div className="relative mb-4">
+          <div className="mt-6 sm:mt-8 text-center">
+            <div className="relative mb-3 sm:mb-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t-2 border-white/20"></div>
               </div>
               <div className="relative flex justify-center">
-                <span className="px-4 text-sm font-bold text-white bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/30 shadow-lg">
+                <span className="px-3 sm:px-4 text-xs sm:text-sm font-bold text-white bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/30 shadow-lg">
                   ou
                 </span>
               </div>
             </div>
-            <p className="text-white font-semibold text-lg drop-shadow-lg">
+            <p className="text-white font-semibold text-base sm:text-lg drop-shadow-lg">
               Já tem uma conta?{' '}
               <Link href="/login" className="text-yellow-300 hover:text-yellow-200 font-black underline decoration-2 underline-offset-4 hover:underline-offset-2 transition-all">
                 Faça login aqui →
@@ -434,8 +434,8 @@ export default function CadastroPage() {
         </div>
 
         {/* Back to Home */}
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-cyan-200 hover:text-white font-bold text-lg backdrop-blur-sm bg-white/10 px-6 py-3 rounded-xl border-2 border-white/30 inline-flex items-center gap-2 hover:bg-white/20 transition-all transform hover:scale-105 shadow-lg">
+        <div className="mt-4 sm:mt-6 text-center">
+          <Link href="/" className="text-cyan-200 hover:text-white font-bold text-sm sm:text-base md:text-lg backdrop-blur-sm bg-white/10 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl border-2 border-white/30 inline-flex items-center gap-2 hover:bg-white/20 transition-all transform hover:scale-105 shadow-lg">
             ← Voltar para página inicial
           </Link>
         </div>

@@ -425,37 +425,38 @@ export default function ChatsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8 flex items-center">
-          <MessageSquare className="mr-3 text-blue-600" size={40} />
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-8 flex items-center">
+          <MessageSquare className="mr-2 sm:mr-3 text-blue-600" size={32} />
           Conversas
         </h1>
 
-        <div className="grid lg:grid-cols-3 gap-6" style={{ height: 'calc(100vh - 200px)' }}>
+        <div className="grid lg:grid-cols-3 gap-3 sm:gap-6" style={{ height: 'calc(100vh - 140px)' }}>
           {/* Lista de Chats */}
-          <div className="lg:col-span-1 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
-            <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
-              <div className="flex justify-between items-center">
+          <div className="lg:col-span-1 bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+            <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <div>
-                  <h2 className="font-semibold text-white text-lg">Suas Conversas</h2>
-                  <p className="text-blue-100 text-sm mt-1">{chats.length} conversa{chats.length !== 1 ? 's' : ''}</p>
+                  <h2 className="font-semibold text-white text-base sm:text-lg">Suas Conversas</h2>
+                  <p className="text-blue-100 text-xs sm:text-sm mt-0.5 sm:mt-1">{chats.length} conversa{chats.length !== 1 ? 's' : ''}</p>
                 </div>
                 {chats.filter(c => c.encerrado).length > 0 && (
                   <button
                     onClick={excluirChatsEncerrados}
                     disabled={excluindo}
-                    className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                    className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
                     title="Excluir chats encerrados"
                   >
-                    <Trash2 size={16} className="mr-1" />
-                    Excluir Encerrados
+                    <Trash2 size={14} className="mr-1" />
+                    <span className="hidden sm:inline">Excluir Encerrados</span>
+                    <span className="sm:hidden">Excluir</span>
                   </button>
                 )}
               </div>
             </div>
             
-            <div className="overflow-y-auto" style={{ height: 'calc(100% - 80px)' }}>
+            <div className="overflow-y-auto" style={{ height: 'calc(100% - 72px)' }}>
               {chats.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <MessageSquare size={56} className="mx-auto mb-4 text-gray-300" />
@@ -530,60 +531,63 @@ export default function ChatsPage() {
           </div>
 
           {/* Área do Chat */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl flex flex-col border border-gray-200">
+          <div className="lg:col-span-2 bg-white rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200">
             {chatSelecionado ? (
               <>
                 {/* Header do Chat */}
-                <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h2 className="font-bold text-white text-lg">
+                <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="font-bold text-white text-base sm:text-lg truncate">
                         {userData?.tipo === 'oficina' 
                           ? chatSelecionado.autopecaNome 
                           : chatSelecionado.oficinaNome}
                       </h2>
-                      <p className="text-blue-100 text-sm mt-1">{chatSelecionado.nomePeca}</p>
-                      <p className="text-blue-200 text-xs">
+                      <p className="text-blue-100 text-xs sm:text-sm mt-0.5 sm:mt-1 truncate">{chatSelecionado.nomePeca}</p>
+                      <p className="text-blue-200 text-[10px] sm:text-xs truncate">
                         {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
                       </p>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
                       <button
                         onClick={() => setMostrarEntregadores(true)}
-                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl"
+                        className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
                         title="Solicitar entregador"
                       >
-                        <Truck size={18} className="mr-2" />
-                        Entregador
+                        <Truck size={16} className="mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Entregador</span>
+                        <span className="sm:hidden">Entreg.</span>
                       </button>
                       
                       {!chatSelecionado.encerrado && (
                         <button
                           onClick={finalizarNegociacao}
-                          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl"
+                          className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
                           title="Marcar como negócio fechado"
                         >
-                          <CheckCircle size={18} className="mr-2" />
-                          Negócio Fechado
+                          <CheckCircle size={16} className="mr-1 sm:mr-2" />
+                          <span className="hidden lg:inline">Negócio Fechado</span>
+                          <span className="lg:hidden">Fechado</span>
                         </button>
                       )}
                       
                       <button
                         onClick={excluirChat}
                         disabled={excluindo}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                        className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
                         title="Cancelar pedido"
                       >
-                        <XCircle size={18} className="mr-2" />
-                        Cancelar Pedido
+                        <XCircle size={16} className="mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Cancelar</span>
+                        <span className="sm:hidden">X</span>
                       </button>
                     </div>
                   </div>
                 </div>
 
                 {/* Mensagens */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white">
                   {chatSelecionado.encerrado && (
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r-lg">
                       <div className="flex items-center">
@@ -647,19 +651,19 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Input de Mensagem */}
-                <div className="p-5 border-t border-gray-200 bg-gray-50">
+                <div className="p-3 sm:p-5 border-t border-gray-200 bg-gray-50">
                   {chatSelecionado.encerrado ? (
-                    <div className="text-center py-6 text-gray-500 bg-gray-100 rounded-xl">
-                      <XCircle size={32} className="mx-auto mb-3 text-gray-400" />
-                      <p className="font-semibold text-gray-700 text-lg">Chat Encerrado</p>
-                      <p className="text-sm mt-1">Este chat foi finalizado e não aceita mais mensagens.</p>
+                    <div className="text-center py-4 sm:py-6 text-gray-500 bg-gray-100 rounded-xl">
+                      <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-400" />
+                      <p className="font-semibold text-gray-700 text-base sm:text-lg">Chat Encerrado</p>
+                      <p className="text-xs sm:text-sm mt-1">Este chat foi finalizado e não aceita mais mensagens.</p>
                     </div>
                   ) : (
                     <>
                       {imagemUpload && (
-                        <div className="mb-3 flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-200">
-                          <span className="text-sm text-gray-700 truncate flex items-center">
-                            <ImageIcon size={18} className="mr-2 text-blue-600" />
+                        <div className="mb-2 sm:mb-3 flex items-center justify-between bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">
+                          <span className="text-xs sm:text-sm text-gray-700 truncate flex items-center">
+                            <ImageIcon size={16} className="mr-2 text-blue-600" />
                             <span className="font-medium">{imagemUpload.name}</span>
                           </span>
                           <button
@@ -671,12 +675,12 @@ export default function ChatsPage() {
                             }}
                             className="text-red-600 hover:text-red-800 transition-colors"
                           >
-                            <X size={20} />
+                            <X size={18} />
                           </button>
                         </div>
                       )}
                       
-                      <form onSubmit={enviarMensagem} className="flex items-center space-x-3">
+                      <form onSubmit={enviarMensagem} className="flex items-center space-x-2 sm:space-x-3">
                         <input
                           type="file"
                           ref={fileInputRef}
@@ -688,10 +692,10 @@ export default function ChatsPage() {
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="p-3 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-gray-300"
+                          className="p-2 sm:p-3 text-blue-600 hover:bg-blue-50 rounded-lg sm:rounded-xl transition-colors border border-gray-300 flex-shrink-0"
                           title="Enviar imagem"
                         >
-                          <ImageIcon size={22} />
+                          <ImageIcon size={20} />
                         </button>
 
                         <input
@@ -699,18 +703,18 @@ export default function ChatsPage() {
                           value={mensagem}
                           onChange={(e) => setMensagem(e.target.value)}
                           placeholder="Digite sua mensagem..."
-                          className="flex-1 px-5 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="flex-1 px-3 sm:px-5 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
                         />
 
                         <button
                           type="submit"
                           disabled={enviando || (!mensagem.trim() && !imagemUpload)}
-                          className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                          className="p-2 sm:p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex-shrink-0"
                         >
                           {enviando ? (
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                           ) : (
-                            <Send size={22} />
+                            <Send size={20} />
                           )}
                         </button>
                       </form>

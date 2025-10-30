@@ -174,70 +174,70 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 relative z-10">
         {/* Header */}
-        <header className="flex justify-between items-center mb-16 backdrop-blur-xl bg-gradient-to-r from-white/15 via-white/10 to-white/15 rounded-3xl p-8 border-2 border-white/30 shadow-2xl hover:shadow-yellow-400/20 transition-all group">
-          <div className="flex items-center space-x-5 items-center">
+        <header className="flex flex-col lg:flex-row justify-between items-center gap-4 sm:gap-6 lg:gap-4 mb-8 sm:mb-16 backdrop-blur-xl bg-gradient-to-r from-white/15 via-white/10 to-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-8 border-2 border-white/30 shadow-2xl hover:shadow-yellow-400/20 transition-all group">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 w-full lg:w-auto">
             {/* Logo com Animação */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               {/* Círculo de fundo brilhante */}
               <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-all"></div>
               
               {/* Container da logo */}
-              <div className="relative bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 p-4 rounded-2xl shadow-xl shadow-yellow-500/50 transform group-hover:scale-110 group-hover:rotate-3 transition-all ring-4 ring-white/30">
-                <Car className="text-blue-900" size={48} strokeWidth={3} />
+              <div className="relative bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-xl shadow-yellow-500/50 transform group-hover:scale-110 group-hover:rotate-3 transition-all ring-4 ring-white/30">
+                <Car className="text-blue-900" size={36} strokeWidth={3} />
                 <Wrench 
-                  className="absolute -bottom-2 -right-2 text-white bg-gradient-to-br from-blue-600 to-blue-800 rounded-full p-2 shadow-lg transform group-hover:rotate-12 transition-all ring-2 ring-yellow-300" 
-                  size={24} 
+                  className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 text-white bg-gradient-to-br from-blue-600 to-blue-800 rounded-full p-1.5 sm:p-2 shadow-lg transform group-hover:rotate-12 transition-all ring-2 ring-yellow-300" 
+                  size={18} 
                   strokeWidth={3.5}
                 />
               </div>
             </div>
 
             {/* Nome do Site */}
-            <div className="relative flex flex-col justify-center self-center mt-2">
+            <div className="relative flex flex-col justify-center items-center sm:items-start text-center sm:text-left">
               {/* Efeito de brilho atrás do texto */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-xl"></div>
               
               <div className="relative">
-                <h1 className="text-6xl font-black bg-gradient-to-r from-white via-yellow-200 to-yellow-400 bg-clip-text text-transparent drop-shadow-2xl tracking-wide leading-none whitespace-nowrap">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-white via-yellow-200 to-yellow-400 bg-clip-text text-transparent drop-shadow-2xl tracking-wide leading-tight">
                   GRUPÃO DAS AUTOPEÇAS
                 </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="h-px w-8 bg-gradient-to-r from-transparent to-cyan-400/50"></div>
-                  <div className="text-xs text-cyan-200 font-semibold uppercase tracking-wider px-2 py-0.5 bg-cyan-500/10 rounded-full border border-cyan-400/20 backdrop-blur-sm">
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 sm:mt-2">
+                  <div className="h-px w-4 sm:w-8 bg-gradient-to-r from-transparent to-cyan-400/50"></div>
+                  <div className="text-[10px] sm:text-xs text-cyan-200 font-semibold uppercase tracking-wider px-2 py-0.5 bg-cyan-500/10 rounded-full border border-cyan-400/20 backdrop-blur-sm whitespace-nowrap">
                     📍 Maringá-PR
                   </div>
-                  <div className="h-px w-8 bg-gradient-to-l from-transparent to-cyan-400/50"></div>
+                  <div className="h-px w-4 sm:w-8 bg-gradient-to-l from-transparent to-cyan-400/50"></div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Botões */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto lg:w-auto">
             {currentUser ? (
               <Link 
                 href="/dashboard"
-                className="group/btn relative px-8 py-4 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 text-blue-900 rounded-xl font-black text-lg shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105 overflow-hidden"
+                className="group/btn relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 text-blue-900 rounded-xl font-black text-base sm:text-lg shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105 overflow-hidden text-center"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
-                <span className="relative flex items-center gap-2">
+                <span className="relative flex items-center justify-center gap-2">
                   Ir para o Dashboard
-                  <span className="text-2xl">→</span>
+                  <span className="text-xl sm:text-2xl">→</span>
                 </span>
               </Link>
             ) : (
               <>
                 <Link 
                   href="/login"
-                  className="px-6 py-3 text-white hover:text-yellow-300 font-bold border-2 border-white/40 rounded-xl hover:border-yellow-300 hover:bg-white/10 transition-all backdrop-blur-sm transform hover:scale-105"
+                  className="px-5 sm:px-6 py-3 text-white hover:text-yellow-300 font-bold border-2 border-white/40 rounded-xl hover:border-yellow-300 hover:bg-white/10 transition-all backdrop-blur-sm transform hover:scale-105 text-center"
                 >
                   Entrar
                 </Link>
                 <Link 
                   href="/cadastro"
-                  className="group/btn relative px-8 py-4 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 text-blue-900 rounded-xl font-black text-lg shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105 overflow-hidden"
+                  className="group/btn relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 text-blue-900 rounded-xl font-black text-base sm:text-lg shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105 overflow-hidden text-center"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
                   <span className="relative">Cadastrar Grátis</span>
@@ -248,23 +248,23 @@ export default function Home() {
         </header>
 
         {/* Hero Section */}
-        <div className="text-center mb-20">
-          <div className="inline-block mb-6 px-6 py-3 bg-yellow-400/20 backdrop-blur-sm rounded-full border border-yellow-400/30">
-            <span className="text-yellow-200 font-bold text-base">✨ Plataforma #1 em Maringá-PR</span>
+        <div className="text-center mb-12 sm:mb-20 px-3">
+          <div className="inline-block mb-4 sm:mb-6 px-4 sm:px-6 py-2 sm:py-3 bg-yellow-400/20 backdrop-blur-sm rounded-full border border-yellow-400/30">
+            <span className="text-yellow-200 font-bold text-sm sm:text-base">✨ Plataforma #1 em Maringá-PR</span>
           </div>
-          <h2 className="text-7xl font-black text-white mb-8 leading-tight drop-shadow-2xl">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 sm:mb-8 leading-tight drop-shadow-2xl px-2">
             Marketplace de Autopeças<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-cyan-200 to-blue-200">
               em Tempo Real
             </span>
           </h2>
-          <p className="text-2xl text-white mb-10 max-w-3xl mx-auto leading-relaxed font-medium drop-shadow-lg">
+          <p className="text-base sm:text-xl md:text-2xl text-white mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed font-medium drop-shadow-lg px-4">
             Conectando oficinas, lojas de autopeças e entregadores em Maringá-PR. 
             Encontre peças rápido, compare preços e feche negócios em minutos!
           </p>
           <Link 
             href="/cadastro"
-            className="inline-flex items-center px-8 py-4 bg-yellow-400 text-blue-900 rounded-xl hover:bg-yellow-300 font-black text-lg shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105"
+            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-yellow-400 text-blue-900 rounded-xl hover:bg-yellow-300 font-black text-base sm:text-lg shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105 w-full sm:w-auto max-w-sm mx-4"
           >
             Começar Agora
             <ArrowRight className="ml-2" size={20} />
@@ -272,17 +272,17 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="grid md:grid-cols-3 gap-8 mb-20">
-          <div className="backdrop-blur-md bg-white/10 p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20">
-            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-blue-400/30">
-              <Wrench className="text-yellow-300" size={32} />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-12 sm:mb-20 px-3">
+          <div className="backdrop-blur-md bg-white/10 p-5 sm:p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4 sm:mb-6 backdrop-blur-sm border border-blue-400/30">
+              <Wrench className="text-yellow-300" size={28} />
             </div>
-            <h3 className="text-3xl font-black text-white mb-4">Oficinas</h3>
-            <p className="text-white text-base mb-4 font-medium">
+            <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 sm:mb-4">Oficinas</h3>
+            <p className="text-white text-sm sm:text-base mb-3 sm:mb-4 font-medium">
               Publique pedidos de peças e receba ofertas em tempo real de várias autopeças. 
               Compare preços e escolha a melhor oferta!
             </p>
-            <ul className="text-base text-cyan-100 space-y-2 font-medium">
+            <ul className="text-sm sm:text-base text-cyan-100 space-y-1.5 sm:space-y-2 font-medium">
               <li>✓ Pedidos ao vivo</li>
               <li>✓ Múltiplas ofertas</li>
               <li>✓ Chat direto com vendedores</li>
@@ -290,16 +290,16 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="backdrop-blur-md bg-white/10 p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-green-400/30">
-              <Package className="text-green-300" size={32} />
+          <div className="backdrop-blur-md bg-white/10 p-5 sm:p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4 sm:mb-6 backdrop-blur-sm border border-green-400/30">
+              <Package className="text-green-300" size={28} />
             </div>
-            <h3 className="text-3xl font-black text-white mb-4">Autopeças</h3>
-            <p className="text-white text-base mb-4 font-medium">
+            <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 sm:mb-4">Autopeças</h3>
+            <p className="text-white text-sm sm:text-base mb-3 sm:mb-4 font-medium">
               Veja pedidos de oficinas em tempo real e faça ofertas competitivas. 
               Ganhe mais clientes e aumente suas vendas!
             </p>
-            <ul className="text-base text-cyan-100 space-y-2 font-medium">
+            <ul className="text-sm sm:text-base text-cyan-100 space-y-1.5 sm:space-y-2 font-medium">
               <li>✓ Notificações instantâneas</li>
               <li>✓ Sistema de leilão reverso</li>
               <li>✓ Chat com fotos</li>
@@ -307,16 +307,16 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="backdrop-blur-md bg-white/10 p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20">
-            <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-yellow-400/30">
-              <Truck className="text-yellow-300" size={32} />
+          <div className="backdrop-blur-md bg-white/10 p-5 sm:p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20 sm:col-span-2 lg:col-span-1">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4 sm:mb-6 backdrop-blur-sm border border-yellow-400/30">
+              <Truck className="text-yellow-300" size={28} />
             </div>
-            <h3 className="text-3xl font-black text-white mb-4">Entregadores</h3>
-            <p className="text-white text-base mb-4 font-medium">
+            <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 sm:mb-4">Entregadores</h3>
+            <p className="text-white text-sm sm:text-base mb-3 sm:mb-4 font-medium">
               Cadastre-se e receba solicitações de entrega direto no seu WhatsApp. 
               Mais trabalho, mais renda!
             </p>
-            <ul className="text-base text-cyan-100 space-y-2 font-medium">
+            <ul className="text-sm sm:text-base text-cyan-100 space-y-1.5 sm:space-y-2 font-medium">
               <li>✓ Cadastro simples</li>
               <li>✓ Integração WhatsApp</li>
               <li>✓ Defina seus valores</li>
@@ -326,44 +326,44 @@ export default function Home() {
         </div>
 
         {/* How it Works */}
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl shadow-2xl p-12 mb-20 border border-white/20 hover:bg-white/15 transition-all">
-          <h3 className="text-4xl font-black text-center mb-16 text-white drop-shadow-lg">
+        <div className="backdrop-blur-xl bg-white/10 rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-12 mb-12 sm:mb-20 border border-white/20 hover:bg-white/15 transition-all mx-3">
+          <h3 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-16 text-white drop-shadow-lg">
             Como Funciona
           </h3>
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="text-center backdrop-blur-md bg-white/10 p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
-              <div className="w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-black shadow-lg shadow-cyan-500/50 ring-4 ring-white/20">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+            <div className="text-center backdrop-blur-md bg-white/10 p-4 sm:p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-cyan-400 to-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-xl sm:text-2xl font-black shadow-lg shadow-cyan-500/50 ring-4 ring-white/20">
                 1
               </div>
-              <h4 className="font-black mb-3 text-white text-xl">Cadastre-se</h4>
-              <p className="text-base text-cyan-100 font-medium leading-relaxed">
+              <h4 className="font-black mb-2 sm:mb-3 text-white text-lg sm:text-xl">Cadastre-se</h4>
+              <p className="text-sm sm:text-base text-cyan-100 font-medium leading-relaxed">
                 Escolha seu tipo de conta: Oficina, Autopeça ou Entregador
               </p>
             </div>
-            <div className="text-center backdrop-blur-md bg-white/10 p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-black shadow-lg shadow-green-500/50 ring-4 ring-white/20">
+            <div className="text-center backdrop-blur-md bg-white/10 p-4 sm:p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-xl sm:text-2xl font-black shadow-lg shadow-green-500/50 ring-4 ring-white/20">
                 2
               </div>
-              <h4 className="font-black mb-3 text-white text-xl">Publique ou Oferte</h4>
-              <p className="text-base text-cyan-100 font-medium leading-relaxed">
+              <h4 className="font-black mb-2 sm:mb-3 text-white text-lg sm:text-xl">Publique ou Oferte</h4>
+              <p className="text-sm sm:text-base text-cyan-100 font-medium leading-relaxed">
                 Oficinas publicam pedidos, Autopeças fazem ofertas
               </p>
             </div>
-            <div className="text-center backdrop-blur-md bg-white/10 p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
-              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-black shadow-lg shadow-yellow-500/50 ring-4 ring-white/20">
+            <div className="text-center backdrop-blur-md bg-white/10 p-4 sm:p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-xl sm:text-2xl font-black shadow-lg shadow-yellow-500/50 ring-4 ring-white/20">
                 3
               </div>
-              <h4 className="font-black mb-3 text-white text-xl">Negocie</h4>
-              <p className="text-base text-cyan-100 font-medium leading-relaxed">
+              <h4 className="font-black mb-2 sm:mb-3 text-white text-lg sm:text-xl">Negocie</h4>
+              <p className="text-sm sm:text-base text-cyan-100 font-medium leading-relaxed">
                 Use o chat para negociar detalhes e enviar fotos
               </p>
             </div>
-            <div className="text-center backdrop-blur-md bg-white/10 p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-black shadow-lg shadow-purple-500/50 ring-4 ring-white/20">
+            <div className="text-center backdrop-blur-md bg-white/10 p-4 sm:p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-pink-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-xl sm:text-2xl font-black shadow-lg shadow-purple-500/50 ring-4 ring-white/20">
                 4
               </div>
-              <h4 className="font-black mb-3 text-white text-xl">Feche o Negócio</h4>
-              <p className="text-base text-cyan-100 font-medium leading-relaxed">
+              <h4 className="font-black mb-2 sm:mb-3 text-white text-lg sm:text-xl">Feche o Negócio</h4>
+              <p className="text-sm sm:text-base text-cyan-100 font-medium leading-relaxed">
                 Confirme a venda e solicite um entregador
               </p>
             </div>
@@ -371,16 +371,16 @@ export default function Home() {
         </div>
 
         {/* CTA Final */}
-        <div className="text-center">
-          <h3 className="text-5xl font-black text-white mb-6 drop-shadow-2xl">
+        <div className="text-center px-4">
+          <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-6 drop-shadow-2xl">
             Pronto para começar?
           </h3>
-          <p className="text-2xl text-white mb-10 font-medium drop-shadow-lg">
+          <p className="text-lg sm:text-xl md:text-2xl text-white mb-8 sm:mb-10 font-medium drop-shadow-lg">
             Junte-se ao maior marketplace de autopeças de Maringá!
           </p>
           <Link 
             href="/cadastro"
-            className="inline-flex items-center px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all w-full sm:w-auto max-w-sm"
           >
             Criar Conta Grátis
             <ArrowRight className="ml-2" size={20} />
@@ -389,10 +389,10 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-20 py-8 border-t border-white/20 backdrop-blur-sm bg-white/5">
+      <footer className="mt-12 sm:mt-20 py-6 sm:py-8 border-t border-white/20 backdrop-blur-sm bg-white/5">
         <div className="container mx-auto px-4 text-center text-white">
-          <p className="font-semibold text-lg">&copy; 2025 Grupão das autopeças - Marketplace em Tempo Real</p>
-          <p className="text-base mt-2 text-cyan-100">Maringá-PR • Conectando o mercado automotivo local</p>
+          <p className="font-semibold text-base sm:text-lg">&copy; 2025 Grupão das autopeças - Marketplace em Tempo Real</p>
+          <p className="text-sm sm:text-base mt-2 text-cyan-100">Maringá-PR • Conectando o mercado automotivo local</p>
         </div>
       </footer>
     </div>
