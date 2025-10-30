@@ -18,7 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pedido, Oferta } from '@/types';
+import { Pedido, Oferta, RamoVeiculo } from '@/types';
 import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { formatarPreco } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [enderecos, setEnderecos] = useState<{[key: string]: any}>({});
   const [cidadesSelecionadas, setCidadesSelecionadas] = useState<string[]>([]);
+  const [ramoSelecionado, setRamoSelecionado] = useState<RamoVeiculo | 'TODOS'>('TODOS');
 
   // Banco de emojis de peças de carro
   const emojisAutopecas = ['🔧', '⚙️', '🔩', '⛽', '🛞', '🔋', '💡', '🪛', '🛠️', '🔌'];
@@ -85,6 +86,14 @@ export default function DashboardPage() {
       setCidadesSelecionadas(JSON.parse(cidadesSalvas));
     } else if (userData?.cidade) {
       setCidadesSelecionadas([userData.cidade]);
+    }
+
+    // Carregar ramo selecionado do localStorage ou usar padrão do usuário
+    const ramoSalvo = localStorage.getItem('ramoSelecionado') as RamoVeiculo | 'TODOS' | null;
+    if (ramoSalvo) {
+      setRamoSelecionado(ramoSalvo);
+    } else if (userData?.ramo) {
+      setRamoSelecionado(userData.ramo);
     }
   }, [userData]);
 
@@ -212,6 +221,7 @@ export default function DashboardPage() {
       await addDoc(collection(db, 'pedidos'), {
         oficinaId: userData.id,
         oficinaNome: userData.nome,
+        ramo: userData.ramo || 'CARRO', // Usar ramo padrão do usuário
         nomePeca,
         marcaCarro,
         modeloCarro,
@@ -791,6 +801,11 @@ export default function DashboardPage() {
                   if (filtroCondicao === 'todas') return true;
                   if (!pedido.condicaoPeca) return false; // Pedidos antigos só aparecem em "todas"
                   return pedido.condicaoPeca === filtroCondicao;
+                })
+                .filter((pedido) => {
+                  // Filtrar por ramo
+                  if (ramoSelecionado === 'TODOS') return true;
+                  return pedido.ramo === ramoSelecionado;
                 })
                 .sort((a, b) => {
                   const dataA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;

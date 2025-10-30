@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserType } from '@/types';
+import { UserType, RamoVeiculo } from '@/types';
 import { validarCPF, validarCNPJ, formatarCPF, formatarCNPJ, formatarTelefone } from '@/lib/utils';
 import { UserPlus, Wrench, Package, Truck, MapPin, Car } from 'lucide-react';
 
 export default function CadastroPage() {
   const [tipo, setTipo] = useState<UserType>('oficina');
+  const [ramo, setRamo] = useState<RamoVeiculo>('CARRO');
   const [nome, setNome] = useState('');
   const [documento, setDocumento] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -90,6 +91,7 @@ export default function CadastroPage() {
     try {
       await signUp(email, senha, {
         tipo,
+        ramo,
         documento: documento.replace(/[^\d]/g, ''),
         nome,
         telefone: telefone.replace(/[^\d]/g, ''),
@@ -249,6 +251,71 @@ export default function CadastroPage() {
                 </button>
               </div>
             </div>
+
+            {/* Ramo Principal */}
+            {(tipo === 'oficina' || tipo === 'autopeca') && (
+              <div>
+                <label className="block text-base font-bold text-white mb-4 drop-shadow-lg">
+                  🚗 Ramo Principal de Atuação
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRamo('CARRO')}
+                    className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all backdrop-blur-md transform hover:scale-105 ${
+                      ramo === 'CARRO'
+                        ? 'border-blue-400 bg-blue-500/30 shadow-lg shadow-blue-500/50'
+                        : 'border-white/30 bg-white/10 hover:border-white/50 hover:bg-white/20'
+                    }`}
+                  >
+                    <span className={`text-3xl mb-2`}>🚗</span>
+                    <span className={`font-bold text-sm ${ramo === 'CARRO' ? 'text-white' : 'text-white/70'}`}>Carro</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRamo('MOTO')}
+                    className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all backdrop-blur-md transform hover:scale-105 ${
+                      ramo === 'MOTO'
+                        ? 'border-purple-400 bg-purple-500/30 shadow-lg shadow-purple-500/50'
+                        : 'border-white/30 bg-white/10 hover:border-white/50 hover:bg-white/20'
+                    }`}
+                  >
+                    <span className={`text-3xl mb-2`}>🏍️</span>
+                    <span className={`font-bold text-sm ${ramo === 'MOTO' ? 'text-white' : 'text-white/70'}`}>Moto</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRamo('CAMINHÃO')}
+                    className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all backdrop-blur-md transform hover:scale-105 ${
+                      ramo === 'CAMINHÃO'
+                        ? 'border-orange-400 bg-orange-500/30 shadow-lg shadow-orange-500/50'
+                        : 'border-white/30 bg-white/10 hover:border-white/50 hover:bg-white/20'
+                    }`}
+                  >
+                    <span className={`text-3xl mb-2`}>🚚</span>
+                    <span className={`font-bold text-sm ${ramo === 'CAMINHÃO' ? 'text-white' : 'text-white/70'}`}>Caminhão</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRamo('ÔNIBUS')}
+                    className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center transition-all backdrop-blur-md transform hover:scale-105 ${
+                      ramo === 'ÔNIBUS'
+                        ? 'border-teal-400 bg-teal-500/30 shadow-lg shadow-teal-500/50'
+                        : 'border-white/30 bg-white/10 hover:border-white/50 hover:bg-white/20'
+                    }`}
+                  >
+                    <span className={`text-3xl mb-2`}>🚌</span>
+                    <span className={`font-bold text-sm ${ramo === 'ÔNIBUS' ? 'text-white' : 'text-white/70'}`}>Ônibus</span>
+                  </button>
+                </div>
+                <p className="mt-3 text-xs text-cyan-200 font-medium bg-cyan-500/20 rounded-lg px-3 py-2 backdrop-blur-sm border border-cyan-400/30">
+                  ℹ️ Este será seu ramo principal, mas você poderá ver e fazer negócios em todos os ramos pelo painel
+                </p>
+              </div>
+            )}
 
             {/* Nome */}
             <div>

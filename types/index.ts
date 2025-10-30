@@ -1,4 +1,5 @@
 export type UserType = 'oficina' | 'autopeca' | 'entregador' | 'sistema';
+export type RamoVeiculo = 'CARRO' | 'MOTO' | 'CAMINHÃO' | 'ÔNIBUS';
 
 export interface User {
   id: string;
@@ -8,6 +9,7 @@ export interface User {
   telefone: string;
   endereco: string;
   cidade: string; // Cidade principal do usuário
+  ramo: RamoVeiculo; // Ramo principal de atuação
   cep?: string;
   bairro?: string;
   numero?: string;
@@ -21,6 +23,7 @@ export interface Pedido {
   oficinaId: string;
   oficinaNome: string;
   cidade: string; // Cidade onde o pedido foi criado
+  ramo: RamoVeiculo; // Tipo de veículo (CARRO, MOTO, CAMINHÃO, ÔNIBUS)
   nomePeca: string;
   marcaCarro: string;
   modeloCarro: string;

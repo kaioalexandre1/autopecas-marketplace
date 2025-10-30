@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { RamoVeiculo } from '@/types';
 import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight } from 'lucide-react';
 
 // Estrutura hierárquica: Brasil > Estados > Cidades (TODOS OS 27 ESTADOS)
@@ -126,6 +127,8 @@ export default function Navbar() {
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
   const [estadosExpandidos, setEstadosExpandidos] = useState<string[]>([]);
   const [brasilSelecionado, setBrasilSelecionado] = useState(false);
+  const [ramoSelecionado, setRamoSelecionado] = useState<RamoVeiculo | 'TODOS'>('TODOS');
+  const [mostrarDropdownRamo, setMostrarDropdownRamo] = useState(false);
 
   // Função auxiliar para obter todas as cidades do Brasil
   const obterTodasCidades = (): string[] => {
@@ -160,6 +163,28 @@ export default function Navbar() {
       }
     }
   }, [userData, cidadesSelecionadas.length]);
+
+  // Inicializar ramo selecionado (padrão do usuário ou localStorage)
+  useEffect(() => {
+    if (userData && (userData.tipo === 'oficina' || userData.tipo === 'autopeca')) {
+      const ramoSalvo = localStorage.getItem('ramoSelecionado') as RamoVeiculo | 'TODOS' | null;
+      if (ramoSalvo) {
+        setRamoSelecionado(ramoSalvo);
+      } else if (userData.ramo) {
+        // Usar o ramo padrão do usuário
+        setRamoSelecionado(userData.ramo);
+        localStorage.setItem('ramoSelecionado', userData.ramo);
+      }
+    }
+  }, [userData]);
+
+  // Função para mudar o ramo selecionado
+  const handleMudarRamo = (novoRamo: RamoVeiculo | 'TODOS') => {
+    setRamoSelecionado(novoRamo);
+    localStorage.setItem('ramoSelecionado', novoRamo);
+    setMostrarDropdownRamo(false);
+    setTimeout(() => window.location.reload(), 100);
+  };
 
   // Verificar se um estado está totalmente selecionado
   const estadoTotalmenteSelecionado = (estado: string): boolean => {
@@ -341,18 +366,10 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setMostrarDropdown(!mostrarDropdown)}
-                  className="bg-blue-800 text-white font-semibold px-4 py-2.5 pr-10 rounded-lg border-2 border-white focus:outline-none cursor-pointer flex items-center gap-2"
+                  className="bg-blue-800 text-white font-semibold px-2.5 py-2.5 rounded-lg border-2 border-white focus:outline-none cursor-pointer flex items-center gap-1.5"
                 >
                   <MapPin size={18} className="text-yellow-400" />
-                  <span>
-                    {brasilSelecionado 
-                      ? 'Brasil' 
-                      : cidadesSelecionadas.length === 1
-                      ? cidadesSelecionadas[0]
-                      : `${cidadesSelecionadas.length} locais`
-                    }
-                  </span>
-                  <ChevronDown size={18} className={`text-yellow-400 ${mostrarDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={16} className={`text-yellow-400 ${mostrarDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown hierárquico */}
@@ -438,32 +455,32 @@ export default function Navbar() {
                           {estadosExpandidos.includes(estado) && (
                             <div className="ml-8 border-l-2 border-gray-200">
                               {cidades.map((cidade) => (
-                                <button
-                                  key={cidade}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleCidade(cidade);
-                                  }}
+                        <button
+                          key={cidade}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCidade(cidade);
+                          }}
                                   className="w-full px-3 py-1.5 flex items-center gap-2 text-left hover:bg-blue-50"
-                                >
+                        >
                                   <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                                    cidadesSelecionadas.includes(cidade)
+                            cidadesSelecionadas.includes(cidade)
                                       ? 'bg-green-500 border-green-500'
-                                      : 'border-gray-300'
-                                  }`}>
-                                    {cidadesSelecionadas.includes(cidade) && (
+                              : 'border-gray-300'
+                          }`}>
+                            {cidadesSelecionadas.includes(cidade) && (
                                       <CheckCircle size={10} className="text-white" />
-                                    )}
-                                  </div>
+                            )}
+                          </div>
                                   <span className={`text-xs ${
-                                    cidadesSelecionadas.includes(cidade)
+                            cidadesSelecionadas.includes(cidade)
                                       ? 'font-semibold text-green-700'
                                       : 'text-gray-600'
-                                  }`}>
-                                    {cidade}
-                                  </span>
-                                </button>
-                              ))}
+                          }`}>
+                            {cidade}
+                          </span>
+                        </button>
+                      ))}
                             </div>
                           )}
                         </div>
@@ -472,6 +489,167 @@ export default function Navbar() {
                       <div className="px-3 py-2 border-t border-gray-200 mt-2 bg-gray-50">
                         <p className="text-xs text-gray-600 font-semibold">
                           ✓ {brasilSelecionado ? 'Brasil inteiro' : `${cidadesSelecionadas.length} ${cidadesSelecionadas.length === 1 ? 'cidade' : 'cidades'}`} selecionada{cidadesSelecionadas.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Seletor de Ramo (CARRO, MOTO, CAMINHÃO, ÔNIBUS, TODOS) */}
+            {userData && (userData.tipo === 'oficina' || userData.tipo === 'autopeca') && (
+              <div className="relative">
+                <button
+                  onClick={() => setMostrarDropdownRamo(!mostrarDropdownRamo)}
+                  className="bg-blue-800 text-white font-semibold px-2.5 py-2.5 rounded-lg border-2 border-white focus:outline-none cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="text-base leading-none">
+                    {ramoSelecionado === 'TODOS' && '🚗'}
+                    {ramoSelecionado === 'CARRO' && '🚗'}
+                    {ramoSelecionado === 'MOTO' && '🏍️'}
+                    {ramoSelecionado === 'CAMINHÃO' && '🚚'}
+                    {ramoSelecionado === 'ÔNIBUS' && '🚌'}
+                  </span>
+                  <ChevronDown size={16} className={`text-yellow-400 ${mostrarDropdownRamo ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown de Ramo */}
+                {mostrarDropdownRamo && (
+                  <>
+                    {/* Overlay para fechar ao clicar fora */}
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setMostrarDropdownRamo(false)}
+                    />
+                    
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border-2 border-blue-200 py-2 min-w-[220px] z-20">
+                      <div className="px-3 py-2 border-b border-gray-200">
+                        <p className="text-xs font-semibold text-gray-600">Selecione o tipo de veículo</p>
+                      </div>
+                      
+                      {/* TODOS */}
+                      <button
+                        onClick={() => handleMudarRamo('TODOS')}
+                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          ramoSelecionado === 'TODOS'
+                            ? 'bg-blue-500 border-blue-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {ramoSelecionado === 'TODOS' && (
+                            <CheckCircle size={14} className="text-white" />
+                          )}
+                        </div>
+                        <span className={`text-sm ${
+                          ramoSelecionado === 'TODOS'
+                            ? 'font-bold text-blue-800'
+                            : 'text-gray-700'
+                        }`}>
+                          TODOS
+                        </span>
+                      </button>
+
+                      {/* CARRO */}
+                      <button
+                        onClick={() => handleMudarRamo('CARRO')}
+                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          ramoSelecionado === 'CARRO'
+                            ? 'bg-blue-500 border-blue-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {ramoSelecionado === 'CARRO' && (
+                            <CheckCircle size={14} className="text-white" />
+                          )}
+                        </div>
+                        <span className="text-xl">🚗</span>
+                        <span className={`text-sm ${
+                          ramoSelecionado === 'CARRO'
+                            ? 'font-bold text-blue-800'
+                            : 'text-gray-700'
+                        }`}>
+                          CARRO
+                        </span>
+                      </button>
+
+                      {/* MOTO */}
+                      <button
+                        onClick={() => handleMudarRamo('MOTO')}
+                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          ramoSelecionado === 'MOTO'
+                            ? 'bg-purple-500 border-purple-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {ramoSelecionado === 'MOTO' && (
+                            <CheckCircle size={14} className="text-white" />
+                          )}
+                        </div>
+                        <span className="text-xl">🏍️</span>
+                        <span className={`text-sm ${
+                          ramoSelecionado === 'MOTO'
+                            ? 'font-bold text-purple-800'
+                            : 'text-gray-700'
+                        }`}>
+                          MOTO
+                        </span>
+                      </button>
+
+                      {/* CAMINHÃO */}
+                      <button
+                        onClick={() => handleMudarRamo('CAMINHÃO')}
+                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-orange-50 transition-colors"
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          ramoSelecionado === 'CAMINHÃO'
+                            ? 'bg-orange-500 border-orange-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {ramoSelecionado === 'CAMINHÃO' && (
+                            <CheckCircle size={14} className="text-white" />
+                          )}
+                        </div>
+                        <span className="text-xl">🚚</span>
+                        <span className={`text-sm ${
+                          ramoSelecionado === 'CAMINHÃO'
+                            ? 'font-bold text-orange-800'
+                            : 'text-gray-700'
+                        }`}>
+                          CAMINHÃO
+                        </span>
+                      </button>
+
+                      {/* ÔNIBUS */}
+                      <button
+                        onClick={() => handleMudarRamo('ÔNIBUS')}
+                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-teal-50 transition-colors"
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          ramoSelecionado === 'ÔNIBUS'
+                            ? 'bg-teal-500 border-teal-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {ramoSelecionado === 'ÔNIBUS' && (
+                            <CheckCircle size={14} className="text-white" />
+                          )}
+                        </div>
+                        <span className="text-xl">🚌</span>
+                        <span className={`text-sm ${
+                          ramoSelecionado === 'ÔNIBUS'
+                            ? 'font-bold text-teal-800'
+                            : 'text-gray-700'
+                        }`}>
+                          ÔNIBUS
+                        </span>
+                      </button>
+
+                      <div className="px-3 py-2 border-t border-gray-200 mt-2 bg-gray-50">
+                        <p className="text-xs text-gray-600">
+                          💡 Filtra pedidos por tipo de veículo
                         </p>
                       </div>
                     </div>
