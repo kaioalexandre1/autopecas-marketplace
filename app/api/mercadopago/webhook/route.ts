@@ -5,6 +5,19 @@ import { doc, updateDoc, Timestamp, collection, query, where, getDocs } from 'fi
 // Webhook do Mercado Pago (versão simplificada para testes)
 // URL sugerida na MP: https://SEU_DOMINIO/api/mercadopago/webhook?secret=SEU_TOKEN
 
+export async function GET(_request: Request) {
+  // Permite validação manual/automática da URL (evita 404/405 em testes)
+  return NextResponse.json({ ok: true, message: 'Webhook OK' });
+}
+
+export async function HEAD(_request: Request) {
+  return new Response(null, { status: 200 });
+}
+
+export async function OPTIONS(_request: Request) {
+  return new Response(null, { status: 200 });
+}
+
 export async function POST(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -35,10 +48,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, mode: 'test', message: 'Plano ativado (teste)' });
     }
 
-    // 3) Fluxo real (esqueleto): buscar pagamento na API MP e ativar se aprovado
-    //    Requer accessToken salvo em Firestore: configuracoes/mercadopago { accessToken }
-    //    body esperado da MP: { type: 'payment', data: { id: '123' } }
-    if (body?.type === 'payment' && body?.data?.id) {
+    // 3) Fluxo real: buscar pagamento na API MP e ativar se aprovado
+    // A MP pode enviar { type: 'payment', data: { id } } ou { action: 'payment.updated', data: { id } }
+    const isPaymentType = body?.type === 'payment' || body?.action?.startsWith?.('payment');
+    if (isPaymentType && body?.data?.id) {
       // Usar somente variável de ambiente
       const accessToken = process.env.MP_ACCESS_TOKEN || '';
       if (!accessToken) {

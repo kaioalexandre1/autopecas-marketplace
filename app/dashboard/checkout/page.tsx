@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlanoAssinatura, PRECOS_PLANOS } from '@/types';
 import { CreditCard, ArrowLeft, Loader, CheckCircle, QrCode } from 'lucide-react';
-import { doc, updateDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, Timestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 
@@ -20,6 +20,7 @@ export default function CheckoutPage() {
   const [linkPagamento, setLinkPagamento] = useState('');
   const [pixCopiaECola, setPixCopiaECola] = useState('');
   const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [escutandoAtivacao, setEscutandoAtivacao] = useState(false);
 
   const planoParam = searchParams?.get('plano') as PlanoAssinatura | null;
   const plano = planoParam || 'premium';
@@ -131,6 +132,24 @@ export default function CheckoutPage() {
       setLoading(false);
     }
   };
+
+  // Ouvir ativação automática via webhook e atualizar a tela em tempo real
+  useEffect(() => {
+    if (!userData) return;
+    // Começa a escutar quando existir um pagamento em andamento
+    if ((pixCopiaECola || linkPagamento) && !escutandoAtivacao) {
+      setEscutandoAtivacao(true);
+      const unsub = onSnapshot(doc(db, 'users', userData.id), (snap) => {
+        const data: any = snap.data();
+        if (data?.assinaturaAtiva && data?.plano) {
+          setPagamentoAprovado(true);
+          toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
+          setTimeout(() => router.push('/dashboard'), 2000);
+        }
+      });
+      return () => unsub();
+    }
+  }, [userData, pixCopiaECola, linkPagamento, escutandoAtivacao, router]);
 
   if (!userData || userData.tipo !== 'autopeca') {
     return null;
