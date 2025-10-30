@@ -251,6 +251,13 @@ export default function DashboardPage() {
       return;
     }
 
+    // Verificar se o pedido pertence à oficina
+    const pedido = pedidos.find(p => p.id === pedidoId);
+    if (pedido && pedido.oficinaId !== userData.id) {
+      toast.error('Você só pode cancelar seus próprios pedidos');
+      return;
+    }
+
     const confirmacao = window.confirm(
       'Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita.'
     );
@@ -258,11 +265,22 @@ export default function DashboardPage() {
     if (!confirmacao) return;
 
     try {
+      console.log('Tentando cancelar pedido:', pedidoId);
+      console.log('User ID:', userData.id);
+      console.log('Pedido:', pedido);
+      
       await deleteDoc(doc(db, 'pedidos', pedidoId));
       toast.success('Pedido cancelado com sucesso!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao cancelar pedido:', error);
-      toast.error('Erro ao cancelar pedido. Tente novamente.');
+      console.error('Código do erro:', error.code);
+      console.error('Mensagem do erro:', error.message);
+      
+      if (error.code === 'permission-denied') {
+        toast.error('Permissão negada. Verifique as regras do Firebase.');
+      } else {
+        toast.error('Erro ao cancelar pedido. Tente novamente.');
+      }
     }
   };
 
@@ -633,7 +651,7 @@ export default function DashboardPage() {
 
       {/* Dropdown de Filtros */}
       {pedidos.length > 0 && (
-        <div className="mb-6 flex justify-end px-3 sm:px-0">
+        <div className="mb-6 flex justify-start px-3 sm:px-0">
           <div className="relative w-full sm:w-auto">
             <button
               onClick={() => setMostrarDropdownFiltros(!mostrarDropdownFiltros)}
@@ -652,7 +670,7 @@ export default function DashboardPage() {
                   onClick={() => setMostrarDropdownFiltros(false)}
                 />
                 
-                <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 bg-white rounded-lg shadow-2xl border-2 border-blue-200 py-2 w-full sm:min-w-[280px] sm:w-auto z-20">
+                <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-2xl border-2 border-blue-200 py-2 w-full sm:min-w-[280px] sm:w-auto z-20">
                   <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
                     <p className="text-xs font-bold text-gray-600 uppercase">Opções de Filtro</p>
                   </div>
