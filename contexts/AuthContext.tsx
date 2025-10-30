@@ -72,6 +72,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date(),
       };
 
+      // Se for autopeça, inicializar com plano básico
+      if (dadosUsuario.tipo === 'autopeca') {
+        const mesAtual = new Date().toISOString().slice(0, 7);
+        userData.plano = 'basico';
+        userData.assinaturaAtiva = true;
+        userData.ofertasUsadas = 0;
+        userData.mesReferenciaOfertas = mesAtual;
+        userData.contaBloqueada = false;
+      }
+
       await setDoc(doc(db, 'users', userCredential.user.uid), userData);
       setUserData(userData);
       

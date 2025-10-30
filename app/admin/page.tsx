@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { User, NegocioFechado, Pedido } from '@/types';
+import { User, NegocioFechado, Pedido, PlanoAssinatura, PRECOS_PLANOS } from '@/types';
 import { 
   Users, 
   Store, 
@@ -17,7 +17,11 @@ import {
   CheckCircle,
   Calendar,
   ArrowLeft,
-  Shield
+  Shield,
+  Lock,
+  Unlock,
+  Crown,
+  Ban
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -37,6 +41,12 @@ export default function AdminPage() {
   // Estados para filtros
   const [periodoSelecionado, setPeriodoSelecionado] = useState<'hoje' | 'semana' | 'mes'>('hoje');
   const [tipoUsuarioFiltro, setTipoUsuarioFiltro] = useState<'todos' | 'oficina' | 'autopeca' | 'entregador'>('todos');
+  
+  // Estados para configuração do Mercado Pago
+  const [mostrarConfigMP, setMostrarConfigMP] = useState(false);
+  const [mpAccessToken, setMpAccessToken] = useState('');
+  const [mpPublicKey, setMpPublicKey] = useState('');
+  const [salvandoMP, setSalvandoMP] = useState(false);
 
   // Verificar se é admin
   useEffect(() => {
@@ -54,8 +64,49 @@ export default function AdminPage() {
   useEffect(() => {
     if (userData?.role === 'admin') {
       carregarDados();
+      carregarConfigMP();
     }
   }, [userData]);
+
+  // Carregar configuração do Mercado Pago
+  const carregarConfigMP = async () => {
+    try {
+      const configDoc = await getDoc(doc(db, 'configuracoes', 'mercadopago'));
+      if (configDoc.exists()) {
+        const data = configDoc.data();
+        setMpAccessToken(data.accessToken || '');
+        setMpPublicKey(data.publicKey || '');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar config MP:', error);
+    }
+  };
+
+  // Salvar configuração do Mercado Pago
+  const salvarConfigMP = async () => {
+    if (!mpAccessToken.trim() || !mpPublicKey.trim()) {
+      toast.error('Preencha todos os campos do Mercado Pago');
+      return;
+    }
+
+    setSalvandoMP(true);
+    try {
+      await setDoc(doc(db, 'configuracoes', 'mercadopago'), {
+        accessToken: mpAccessToken.trim(),
+        publicKey: mpPublicKey.trim(),
+        updatedAt: Timestamp.now(),
+        updatedBy: userData?.id,
+      });
+      
+      toast.success('Configuração do Mercado Pago salva com sucesso!');
+      setMostrarConfigMP(false);
+    } catch (error) {
+      console.error('Erro ao salvar config MP:', error);
+      toast.error('Erro ao salvar configuração');
+    } finally {
+      setSalvandoMP(false);
+    }
+  };
 
   const carregarDados = async () => {
     console.log('🔄 Iniciando carregamento de dados...');
@@ -199,9 +250,18 @@ export default function AdminPage() {
               <ArrowLeft size={20} />
               Voltar ao Dashboard
             </Link>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 px-4 py-2 rounded-full shadow-lg">
-              <Shield size={20} />
-              <span className="font-black uppercase text-sm">Administrador</span>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setMostrarConfigMP(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full shadow-lg hover:shadow-xl transition-all font-bold"
+              >
+                <DollarSign size={20} />
+                Configurar Mercado Pago
+              </button>
+              <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 px-4 py-2 rounded-full shadow-lg">
+                <Shield size={20} />
+                <span className="font-black uppercase text-sm">Administrador</span>
+              </div>
             </div>
           </div>
           <h1 className="text-4xl font-black text-blue-900 mb-2">
@@ -420,7 +480,208 @@ export default function AdminPage() {
             </table>
           </div>
         </div>
+
+        {/* Gerenciamento de Assinaturas (Autopeças) */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mt-8">
+          <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2 mb-6">
+            <Crown className="text-yellow-600" size={28} />
+            Gerenciamento de Assinaturas
+          </h2>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-yellow-50 border-b-2 border-yellow-200">
+                  <th className="text-left p-4 font-black text-gray-900">Autopeça</th>
+                  <th className="text-left p-4 font-black text-gray-900">Plano</th>
+                  <th className="text-left p-4 font-black text-gray-900">Ofertas</th>
+                  <th className="text-left p-4 font-black text-gray-900">Status</th>
+                  <th className="text-center p-4 font-black text-gray-900">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usuarios.filter(u => u.tipo === 'autopeca').map((autopeca) => {
+                  const planoNome = {
+                    basico: 'Básico (Grátis)',
+                    premium: 'Premium',
+                    gold: 'Gold',
+                    platinum: 'Platinum'
+                  }[autopeca.plano || 'basico'];
+
+                  return (
+                    <tr key={autopeca.id} className="border-b border-gray-100 hover:bg-yellow-50 transition-colors">
+                      <td className="p-4">
+                        <div>
+                          <p className="font-semibold text-gray-900">{autopeca.nome}</p>
+                          <p className="text-xs text-gray-500">{autopeca.cidade}</p>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          autopeca.plano === 'platinum' ? 'bg-purple-100 text-purple-800' :
+                          autopeca.plano === 'gold' ? 'bg-yellow-100 text-yellow-800' :
+                          autopeca.plano === 'premium' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {planoNome}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm">
+                          <span className="font-bold">{autopeca.ofertasUsadas || 0}</span>
+                          <span className="text-gray-500"> / </span>
+                          <span>{autopeca.plano === 'platinum' ? '∞' : 
+                            autopeca.plano === 'gold' ? '200' :
+                            autopeca.plano === 'premium' ? '100' : '20'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        {autopeca.contaBloqueada ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 flex items-center gap-1 w-fit">
+                            <Ban size={14} />
+                            BLOQUEADA
+                          </span>
+                        ) : autopeca.assinaturaAtiva ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 flex items-center gap-1 w-fit">
+                            <CheckCircle size={14} />
+                            ATIVA
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-800">
+                            INATIVA
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={async () => {
+                              const confirmar = window.confirm(
+                                `Deseja ${autopeca.contaBloqueada ? 'desbloquear' : 'bloquear'} a conta de ${autopeca.nome}?`
+                              );
+                              if (confirmar) {
+                                try {
+                                  await updateDoc(doc(db, 'users', autopeca.id), {
+                                    contaBloqueada: !autopeca.contaBloqueada
+                                  });
+                                  toast.success(`Conta ${autopeca.contaBloqueada ? 'desbloqueada' : 'bloqueada'} com sucesso!`);
+                                  carregarDados();
+                                } catch (error) {
+                                  toast.error('Erro ao atualizar conta');
+                                }
+                              }
+                            }}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold text-white ${
+                              autopeca.contaBloqueada ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+                            }`}
+                          >
+                            {autopeca.contaBloqueada ? <Unlock size={14} /> : <Lock size={14} />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
+      {/* Modal de Configuração do Mercado Pago */}
+      {mostrarConfigMP && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-t-3xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <DollarSign size={32} className="text-white" />
+                  <h2 className="text-2xl font-black text-white">
+                    Configurar Mercado Pago
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setMostrarConfigMP(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2"
+                >
+                  <Ban size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Informações */}
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <h3 className="font-bold text-blue-900 mb-2">ℹ️ Como obter suas credenciais:</h3>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Acesse: <a href="https://www.mercadopago.com.br/developers" target="_blank" className="font-bold underline">www.mercadopago.com.br/developers</a></li>
+                  <li>Faça login com sua conta do Mercado Pago</li>
+                  <li>Vá em "Suas integrações" → "Credenciais"</li>
+                  <li>Escolha "Produção" para receber pagamentos reais</li>
+                  <li>Copie o "Access Token" e a "Public Key"</li>
+                </ol>
+              </div>
+
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
+                <h3 className="font-bold text-yellow-900 mb-2">⚠️ Importante:</h3>
+                <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
+                  <li>Use credenciais de <strong>PRODUÇÃO</strong> para receber pagamentos reais</li>
+                  <li>Use credenciais de <strong>TESTE</strong> apenas para testar</li>
+                  <li>Mantenha suas credenciais em segredo</li>
+                  <li>Os pagamentos cairão na conta vinculada ao Mercado Pago</li>
+                </ul>
+              </div>
+
+              {/* Formulário */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Public Key (pk_live_... ou pk_test_...)
+                  </label>
+                  <input
+                    type="text"
+                    value={mpPublicKey}
+                    onChange={(e) => setMpPublicKey(e.target.value)}
+                    placeholder="pk_live_xxxxxxxxxxxxxxxx"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-green-500 font-mono text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Access Token (APP_USR-... ou TEST-...)
+                  </label>
+                  <textarea
+                    value={mpAccessToken}
+                    onChange={(e) => setMpAccessToken(e.target.value)}
+                    placeholder="APP_USR-xxxxxxxx-xxxxxxxx-xxxxxxxx-xxxxxxxx"
+                    rows={3}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-green-500 font-mono text-sm resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setMostrarConfigMP(false)}
+                  className="flex-1 py-3 px-6 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={salvarConfigMP}
+                  disabled={salvandoMP}
+                  className="flex-1 py-3 px-6 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold hover:shadow-xl transition-all disabled:opacity-50"
+                >
+                  {salvandoMP ? 'Salvando...' : 'Salvar Configuração'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

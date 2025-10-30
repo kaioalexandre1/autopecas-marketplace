@@ -302,6 +302,42 @@ export default function DashboardPage() {
       return;
     }
 
+    // Verificar se é autopeça e se há limite de ofertas
+    if (userData.tipo === 'autopeca') {
+      // Verificar se a conta está bloqueada
+      if (userData.contaBloqueada) {
+        toast.error('Sua conta está bloqueada. Entre em contato com o administrador.');
+        return;
+      }
+
+      // Verificar limite de ofertas
+      const mesAtual = new Date().toISOString().slice(0, 7); // "2025-01"
+      const ofertasUsadas = userData.mesReferenciaOfertas === mesAtual ? (userData.ofertasUsadas || 0) : 0;
+      
+      // Determinar limite do plano
+      const limites: Record<string, number> = {
+        basico: 20,
+        premium: 100,
+        gold: 200,
+        platinum: -1, // ilimitado
+      };
+      
+      const plano = userData.plano || 'basico';
+      const limite = limites[plano];
+      
+      // Se não for ilimitado, verificar o limite
+      if (limite !== -1 && ofertasUsadas >= limite) {
+        toast.error(
+          `Você atingiu o limite de ${limite} ofertas do plano ${plano}. Faça upgrade para continuar fazendo ofertas!`,
+          { duration: 5000 }
+        );
+        setTimeout(() => {
+          router.push('/dashboard/planos');
+        }, 2000);
+        return;
+      }
+    }
+
     const precoNumerico = parseFloat(preco.replace(',', '.'));
     
     if (isNaN(precoNumerico) || precoNumerico <= 0) {
@@ -358,6 +394,18 @@ export default function DashboardPage() {
       await criarChatSeNaoExistir(pedidoSelecionado);
 
       console.log('Sucesso! Oferta criada e chat criado.');
+      
+      // Atualizar contador de ofertas para autopeças
+      if (userData.tipo === 'autopeca') {
+        const mesAtual = new Date().toISOString().slice(0, 7);
+        const ofertasUsadas = userData.mesReferenciaOfertas === mesAtual ? (userData.ofertasUsadas || 0) : 0;
+        
+        await updateDoc(doc(db, 'users', userData.id), {
+          ofertasUsadas: ofertasUsadas + 1,
+          mesReferenciaOfertas: mesAtual,
+        });
+      }
+      
       toast.success('Oferta enviada com sucesso! Chat criado.');
       setMostrarModalOferta(false);
       setPedidoSelecionado(null);
@@ -547,6 +595,10 @@ export default function DashboardPage() {
               <h1 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 sm:mb-3 leading-tight">
                 Pedidos ao Vivo
               </h1>
+              
+              <p className="text-sm text-gray-700 font-medium mb-3 leading-relaxed">
+                Seu pedido já está sendo divulgado ao vivo e você logo receberá ofertas!
+              </p>
               
               <div className="flex items-center gap-2">
                 <div className="bg-white px-3 py-1 rounded-lg shadow-sm border border-red-100">

@@ -1,5 +1,6 @@
 export type UserType = 'oficina' | 'autopeca' | 'entregador' | 'sistema';
 export type RamoVeiculo = 'CARRO' | 'MOTO' | 'CAMINHÃO' | 'ÔNIBUS';
+export type PlanoAssinatura = 'basico' | 'premium' | 'gold' | 'platinum';
 
 export interface User {
   id: string;
@@ -15,6 +16,15 @@ export interface User {
   numero?: string;
   complemento?: string;
   role?: 'admin' | 'user'; // Permissão de administrador
+  
+  // Campos de Assinatura (apenas para autopeças)
+  plano?: PlanoAssinatura; // Plano de assinatura
+  ofertasUsadas?: number; // Ofertas usadas no mês atual
+  mesReferenciaOfertas?: string; // Mês de referência (formato: "2025-01")
+  assinaturaAtiva?: boolean; // Se a assinatura está ativa
+  dataProximoPagamento?: Date; // Data do próximo pagamento
+  contaBloqueada?: boolean; // Se a conta foi bloqueada pelo admin
+  
   createdAt: Date;
 }
 
@@ -119,4 +129,52 @@ export interface OfertaFrete {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface Assinatura {
+  id: string;
+  autopecaId: string;
+  autopecaNome: string;
+  plano: PlanoAssinatura;
+  valor: number;
+  status: 'ativa' | 'cancelada' | 'pendente' | 'vencida';
+  dataInicio: Date;
+  dataFim: Date;
+  renovacaoAutomatica: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Pagamento {
+  id: string;
+  autopecaId: string;
+  autopecaNome: string;
+  assinaturaId: string;
+  plano: PlanoAssinatura;
+  valor: number;
+  metodoPagamento: 'mercadopago' | 'pix' | 'boleto' | 'cartao';
+  statusPagamento: 'pendente' | 'aprovado' | 'recusado' | 'cancelado';
+  mercadoPagoId?: string; // ID do pagamento no Mercado Pago
+  pixCopiaECola?: string; // Código PIX
+  linkPagamento?: string; // Link para pagamento
+  dataVencimento?: Date;
+  dataPagamento?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Limites de ofertas por plano
+export const LIMITES_PLANOS = {
+  basico: 20,
+  premium: 100,
+  gold: 200,
+  platinum: -1, // -1 = ilimitado
+};
+
+// Preços dos planos
+export const PRECOS_PLANOS = {
+  basico: 0,
+  premium: 199.90,
+  gold: 390.00,
+  platinum: 490.00,
+};
 
