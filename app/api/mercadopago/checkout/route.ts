@@ -31,12 +31,14 @@ export async function POST(request: Request) {
     const external_reference = `${autopecaId}|${plano}`; // Para correlacionar no webhook
 
     if (metodo === 'pix') {
+      const idemKey = `${autopecaId}-${plano}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       // Criar pagamento PIX
       const resp = await fetch('https://api.mercadopago.com/v1/payments', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
+          'X-Idempotency-Key': idemKey,
         },
         body: JSON.stringify({
           transaction_amount: amount,
@@ -86,12 +88,15 @@ export async function POST(request: Request) {
         auto_return: 'approved',
         statement_descriptor: 'WRX PARTS',
         // Personalização conforme método solicitado
-        payment_methods: metodo === 'boleto' 
+        payment_methods: metodo === 'boleto'
           ? {
-              default_payment_method_id: 'bolbradesco',
-              excluded_payment_types: [{ id: 'credit_card' }],
+              default_payment_type_id: 'ticket',
+              excluded_payment_types: [{ id: 'atm' }],
             }
+          : metodo === 'cartao'
+          ? { default_payment_type_id: 'credit_card' }
           : undefined,
+        binary_mode: true,
       }),
     });
 
