@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 
 // Webhook do Mercado Pago (versão simplificada para testes)
 // URL sugerida na MP: https://SEU_DOMINIO/api/mercadopago/webhook?secret=SEU_TOKEN
@@ -61,11 +61,36 @@ export async function POST(request: Request) {
       }
 
       const payment = await resp.json();
-      // Aqui você precisa correlacionar o pagamento ao usuário/plano.
-      // Ex.: salvar o paymentId ao criar o documento em `pagamentos` e buscá-lo aqui.
-      // Para fins de esqueleto, apenas retornamos o status do pagamento.
+      const status: string = payment?.status;
+      const external_reference: string | undefined = payment?.external_reference;
 
-      return NextResponse.json({ ok: true, status: payment.status });
+      if (status === 'approved' && external_reference) {
+        const [autopecaId, plano] = external_reference.split('|');
+        const mesAtual = new Date().toISOString().slice(0, 7);
+        const dataFim = new Date();
+        dataFim.setMonth(dataFim.getMonth() + 1);
+
+        await updateDoc(doc(db, 'users', autopecaId), {
+          plano,
+          assinaturaAtiva: true,
+          ofertasUsadas: 0,
+          mesReferenciaOfertas: mesAtual,
+          dataProximoPagamento: Timestamp.fromDate(dataFim),
+        });
+
+        // Atualizar documento em pagamentos, se existir
+        const pagamentosRef = collection(db, 'pagamentos');
+        const snap = await getDocs(query(pagamentosRef, where('external_reference', '==', external_reference)));
+        for (const d of snap.docs) {
+          await updateDoc(doc(db, 'pagamentos', d.id), {
+            statusPagamento: 'aprovado',
+            updatedAt: Timestamp.now(),
+            mercadoPagoId: String(payment.id),
+          });
+        }
+      }
+
+      return NextResponse.json({ ok: true, status });
     }
 
     return NextResponse.json({ ok: true });

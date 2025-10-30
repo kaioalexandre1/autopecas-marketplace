@@ -19,6 +19,7 @@ export default function CheckoutPage() {
   const [metodoPagamento, setMetodoPagamento] = useState<'pix' | 'cartao' | 'boleto'>('pix');
   const [linkPagamento, setLinkPagamento] = useState('');
   const [pixCopiaECola, setPixCopiaECola] = useState('');
+  const [paymentId, setPaymentId] = useState<string | null>(null);
 
   const planoParam = searchParams?.get('plano') as PlanoAssinatura | null;
   const plano = planoParam || 'premium';
@@ -58,17 +59,28 @@ export default function CheckoutPage() {
     setLoading(true);
     
     try {
-      let pixCode = '';
-      // Simulação separada por método (sem aprovação automática)
-      if (metodoPagamento === 'pix') {
-        pixCode = await simularPagamentoPix();
+      // Chamar API real
+      const resp = await fetch('/api/mercadopago/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          metodo: metodoPagamento,
+          plano,
+          autopecaId: userData.id,
+          autopecaNome: userData.nome,
+          email: userData?.email || `${userData.id}@example.com`,
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) {
+        throw new Error(data?.error || 'Falha ao iniciar pagamento');
+      }
+
+      if (data.method === 'pix') {
+        setPixCopiaECola(data.qr);
+        setPaymentId(String(data.paymentId));
       } else {
-        // Simular criação de preferência/link de pagamento para cartão/boleto
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        const fakeLink = `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${Date.now()}`;
-        setLinkPagamento(fakeLink);
-        // opcional: abrir o link em nova aba
-        try { window.open(fakeLink, '_blank'); } catch {}
+        setLinkPagamento(data.init_point || data.sandbox_init_point);
       }
       
       // Criar registro de pagamento
@@ -79,8 +91,10 @@ export default function CheckoutPage() {
         valor,
         metodoPagamento: metodoPagamento === 'pix' ? 'mercadopago' : 'cartao',
         statusPagamento: 'pendente',
-        ...(metodoPagamento === 'pix' ? { pixCopiaECola: pixCode } : {}),
+        ...(pixCopiaECola ? { pixCopiaECola } : {}),
+        ...(paymentId ? { mercadoPagoId: paymentId } : {}),
         ...(linkPagamento ? { linkPagamento } : {}),
+        external_reference: `${userData.id}|${plano}`,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
@@ -261,6 +275,25 @@ export default function CheckoutPage() {
                     `Pagar R$ ${valor.toFixed(2).replace('.', ',')}`
                   )}
                 </button>
+
+                {/* Área para cartão/boleto quando um link (simulado) é gerado */}
+                {metodoPagamento !== 'pix' && linkPagamento && (
+                  <div className="mt-6 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
+                    <h4 className="font-bold text-yellow-900 mb-1">Checkout (simulado)</h4>
+                    <p className="text-sm text-yellow-800 mb-3">
+                      Este ambiente está em modo de testes. Clique abaixo para abrir o checkout em uma nova aba.
+                      Em produção real, este link será do Mercado Pago.
+                    </p>
+                    <button
+                      onClick={() => {
+                        try { window.open(linkPagamento, '_blank'); } catch {}
+                      }}
+                      className="w-full py-3 bg-yellow-500 text-yellow-900 rounded-lg font-bold hover:bg-yellow-400 transition-all"
+                    >
+                      Abrir checkout
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <div className="space-y-6">
