@@ -37,7 +37,7 @@ export default function CheckoutPage() {
     }
   }, [userData, router]);
 
-  const simularPagamentoMercadoPago = async () => {
+  const simularPagamentoPix = async () => {
     setProcessando(true);
     
     // Simular chamada à API do Mercado Pago
@@ -58,8 +58,18 @@ export default function CheckoutPage() {
     setLoading(true);
     
     try {
-      // Simular processamento de pagamento
-      const pixCode = await simularPagamentoMercadoPago();
+      let pixCode = '';
+      // Simulação separada por método (sem aprovação automática)
+      if (metodoPagamento === 'pix') {
+        pixCode = await simularPagamentoPix();
+      } else {
+        // Simular criação de preferência/link de pagamento para cartão/boleto
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        const fakeLink = `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${Date.now()}`;
+        setLinkPagamento(fakeLink);
+        // opcional: abrir o link em nova aba
+        try { window.open(fakeLink, '_blank'); } catch {}
+      }
       
       // Criar registro de pagamento
       const pagamentoRef = await addDoc(collection(db, 'pagamentos'), {
@@ -67,10 +77,10 @@ export default function CheckoutPage() {
         autopecaNome: userData.nome,
         plano,
         valor,
-        metodoPagamento: 'mercadopago',
+        metodoPagamento: metodoPagamento === 'pix' ? 'mercadopago' : 'cartao',
         statusPagamento: 'pendente',
-        pixCopiaECola: pixCode,
-        linkPagamento,
+        ...(metodoPagamento === 'pix' ? { pixCopiaECola: pixCode } : {}),
+        ...(linkPagamento ? { linkPagamento } : {}),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
@@ -94,26 +104,8 @@ export default function CheckoutPage() {
       });
 
       toast.success('Aguardando confirmação do pagamento...');
-      
-      // Após alguns segundos, simular aprovação automática
-      setTimeout(async () => {
-        const mesAtual = new Date().toISOString().slice(0, 7);
-        
-        await updateDoc(doc(db, 'users', userData.id), {
-          plano,
-          assinaturaAtiva: true,
-          ofertasUsadas: 0,
-          mesReferenciaOfertas: mesAtual,
-          dataProximoPagamento: Timestamp.fromDate(dataFim),
-        });
-
-        setPagamentoAprovado(true);
-        toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
-        
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 3000);
-      }, 5000);
+      // Importante: a ativação do plano acontecerá somente após a confirmação real
+      // do pagamento (via webhook do Mercado Pago atualizando o status no Firestore).
       
     } catch (error) {
       console.error('Erro ao processar pagamento:', error);

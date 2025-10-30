@@ -108,6 +108,33 @@ export default function AdminPage() {
     }
   };
 
+  // Alterar plano de uma autopeça (força/benefício dado pelo admin)
+  const alterarPlanoAutopeca = async (autopecaId: string, novoPlano: PlanoAssinatura) => {
+    try {
+      const confirmar = window.confirm(`Confirmar alteração do plano para "${novoPlano.toUpperCase()}"?`);
+      if (!confirmar) return;
+
+      const agora = new Date();
+      const dataFim = new Date(agora);
+      dataFim.setMonth(dataFim.getMonth() + 1);
+      const mesAtual = new Date().toISOString().slice(0, 7);
+
+      await updateDoc(doc(db, 'users', autopecaId), {
+        plano: novoPlano,
+        assinaturaAtiva: true,
+        ofertasUsadas: 0,
+        mesReferenciaOfertas: mesAtual,
+        dataProximoPagamento: novoPlano === 'basico' ? null : Timestamp.fromDate(dataFim),
+      });
+
+      toast.success('Plano atualizado com sucesso!');
+      carregarDados();
+    } catch (error) {
+      console.error('Erro ao alterar plano:', error);
+      toast.error('Não foi possível alterar o plano');
+    }
+  };
+
   const carregarDados = async () => {
     console.log('🔄 Iniciando carregamento de dados...');
     try {
@@ -494,6 +521,7 @@ export default function AdminPage() {
                 <tr className="bg-yellow-50 border-b-2 border-yellow-200">
                   <th className="text-left p-4 font-black text-gray-900">Autopeça</th>
                   <th className="text-left p-4 font-black text-gray-900">Plano</th>
+                  <th className="text-left p-4 font-black text-gray-900">Trocar Plano</th>
                   <th className="text-left p-4 font-black text-gray-900">Ofertas</th>
                   <th className="text-left p-4 font-black text-gray-900">Status</th>
                   <th className="text-center p-4 font-black text-gray-900">Ações</th>
@@ -525,6 +553,18 @@ export default function AdminPage() {
                         }`}>
                           {planoNome}
                         </span>
+                      </td>
+                      <td className="p-4">
+                        <select
+                          className="px-3 py-2 border-2 border-gray-200 rounded-lg text-sm"
+                          value={autopeca.plano || 'basico'}
+                          onChange={(e) => alterarPlanoAutopeca(autopeca.id, e.target.value as PlanoAssinatura)}
+                        >
+                          <option value="basico">Básico (Grátis)</option>
+                          <option value="premium">Premium</option>
+                          <option value="gold">Gold</option>
+                          <option value="platinum">Platinum</option>
+                        </select>
                       </td>
                       <td className="p-4">
                         <div className="text-sm">
