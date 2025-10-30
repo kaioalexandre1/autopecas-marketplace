@@ -253,10 +253,10 @@ export default function AdminPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setMostrarConfigMP(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full shadow-lg hover:shadow-xl transition-all font-bold"
+                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-2xl transition-all font-black text-sm animate-pulse hover:animate-none"
               >
-                <DollarSign size={20} />
-                Configurar Mercado Pago
+                <DollarSign size={24} />
+                💳 CONFIGURAR MERCADO PAGO
               </button>
               <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 px-4 py-2 rounded-full shadow-lg">
                 <Shield size={20} />
@@ -618,17 +618,17 @@ export default function AdminPage() {
                   <li>Acesse: <a href="https://www.mercadopago.com.br/developers" target="_blank" className="font-bold underline">www.mercadopago.com.br/developers</a></li>
                   <li>Faça login com sua conta do Mercado Pago</li>
                   <li>Vá em "Suas integrações" → "Credenciais"</li>
-                  <li>Escolha "Produção" para receber pagamentos reais</li>
-                  <li>Copie o "Access Token" e a "Public Key"</li>
+                  <li>Escolha "Credenciais de produção" para receber pagamentos reais</li>
+                  <li>Copie EXATAMENTE como aparecem na tela do Mercado Pago</li>
                 </ol>
               </div>
 
               <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
-                <h3 className="font-bold text-yellow-900 mb-2">⚠️ Importante:</h3>
+                <h3 className="font-bold text-yellow-900 mb-2">⚠️ Atenção - Cole EXATAMENTE como aparece:</h3>
                 <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
-                  <li>Use credenciais de <strong>PRODUÇÃO</strong> para receber pagamentos reais</li>
-                  <li>Use credenciais de <strong>TESTE</strong> apenas para testar</li>
-                  <li>Mantenha suas credenciais em segredo</li>
+                  <li>A <strong>Public Key</strong> pode começar com <code className="bg-yellow-200 px-1 rounded">APP_USR-</code> ou <code className="bg-yellow-200 px-1 rounded">pk_live_</code></li>
+                  <li>O <strong>Access Token</strong> (oculto com pontinhos) comece com <code className="bg-yellow-200 px-1 rounded">APP_USR-</code></li>
+                  <li>Use credenciais de <strong>PRODUÇÃO</strong> (não teste)</li>
                   <li>Os pagamentos cairão na conta vinculada ao Mercado Pago</li>
                 </ul>
               </div>
@@ -637,25 +637,31 @@ export default function AdminPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Public Key (pk_live_... ou pk_test_...)
+                    🔑 Public Key (cole EXATAMENTE como aparece no Mercado Pago)
                   </label>
+                  <div className="text-xs text-gray-600 mb-2">
+                    Pode começar com: <code className="bg-gray-100 px-2 py-1 rounded">APP_USR-</code> ou <code className="bg-gray-100 px-2 py-1 rounded">pk_live_</code>
+                  </div>
                   <input
                     type="text"
                     value={mpPublicKey}
                     onChange={(e) => setMpPublicKey(e.target.value)}
-                    placeholder="pk_live_xxxxxxxxxxxxxxxx"
+                    placeholder="APP_USR-xxxx-xxxx-xxxx-xxxx ou pk_live_xxxxxxxx"
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-green-500 font-mono text-sm"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Access Token (APP_USR-... ou TEST-...)
+                    🔐 Access Token (clique no "olhinho" 👁️ no Mercado Pago para revelar)
                   </label>
+                  <div className="text-xs text-gray-600 mb-2">
+                    Normalmente começa com: <code className="bg-gray-100 px-2 py-1 rounded">APP_USR-</code> seguido de números e letras
+                  </div>
                   <textarea
                     value={mpAccessToken}
                     onChange={(e) => setMpAccessToken(e.target.value)}
-                    placeholder="APP_USR-xxxxxxxx-xxxxxxxx-xxxxxxxx-xxxxxxxx"
+                    placeholder="APP_USR-1234567890-012345-xxxxxxxxxx-xxxxxxxx"
                     rows={3}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-green-500 font-mono text-sm resize-none"
                   />
