@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight } from 'lucide-react';
+import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X } from 'lucide-react';
 
 // Estrutura hierárquica: Brasil > Estados > Cidades (TODOS OS 27 ESTADOS)
 const estruturaBrasil = {
@@ -129,6 +129,7 @@ export default function Navbar() {
   const [brasilSelecionado, setBrasilSelecionado] = useState(false);
   const [ramoSelecionado, setRamoSelecionado] = useState<RamoVeiculo | 'TODOS'>('TODOS');
   const [mostrarDropdownRamo, setMostrarDropdownRamo] = useState(false);
+  const [menuMobileAberto, setMenuMobileAberto] = useState(false);
 
   // Função auxiliar para obter todas as cidades do Brasil
   const obterTodasCidades = (): string[] => {
@@ -320,13 +321,13 @@ export default function Navbar() {
 
   return (
     <nav className="navbar-custom bg-blue-700 relative z-50" style={{ backgroundColor: '#1d4ed8', opacity: 1, position: 'relative', zIndex: 9999 }}>
-      <div className="container mx-auto px-4" style={{ opacity: 1 }}>
-        <div className="flex items-center justify-between h-20" style={{ opacity: 1 }}>
+      <div className="container mx-auto px-3 sm:px-4" style={{ opacity: 1 }}>
+        <div className="flex items-center justify-between h-16 sm:h-20" style={{ opacity: 1 }}>
           {/* Logo */}
-          <div className="flex items-center space-x-6" style={{ opacity: 1 }}>
-            <Link href="/" className="flex items-center space-x-4" style={{ opacity: 1 }}>
+          <div className="flex items-center space-x-2 sm:space-x-6" style={{ opacity: 1 }}>
+            <Link href="/" className="flex items-center space-x-2 sm:space-x-4" style={{ opacity: 1 }}>
               {/* Logo Simples - Carro Amarelo */}
-              <svg width="70" height="70" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 1 }}>
+              <svg width="50" height="50" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="sm:w-[70px] sm:h-[70px]" style={{ opacity: 1 }}>
                   <defs>
                     <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" style={{stopColor: '#FBBF24', stopOpacity: 1}} />
@@ -356,7 +357,7 @@ export default function Navbar() {
                     <circle cx="12" cy="10" r="2" fill="#1E40AF"/>
                   </g>
               </svg>
-              <div className="text-3xl font-black text-white uppercase tracking-wide" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>
+              <div className="hidden md:block text-xl lg:text-3xl font-black text-white uppercase tracking-wide" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>
                 Grupão das Autopeças
               </div>
             </Link>
@@ -366,10 +367,10 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setMostrarDropdown(!mostrarDropdown)}
-                  className="bg-blue-800 text-white font-semibold px-2.5 py-2.5 rounded-lg border-2 border-white focus:outline-none cursor-pointer flex items-center gap-1.5"
+                  className="bg-blue-800 text-white font-semibold px-3 py-3 sm:px-2.5 sm:py-2.5 rounded-lg border-2 border-white focus:outline-none cursor-pointer flex items-center gap-1.5 min-w-[50px] min-h-[50px] sm:min-w-0 sm:min-h-0 justify-center"
                 >
-                  <MapPin size={18} className="text-yellow-400" />
-                  <ChevronDown size={16} className={`text-yellow-400 ${mostrarDropdown ? 'rotate-180' : ''}`} />
+                  <MapPin size={22} className="text-yellow-400 sm:w-[18px] sm:h-[18px]" />
+                  <ChevronDown size={18} className={`text-yellow-400 sm:w-4 sm:h-4 ${mostrarDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown hierárquico */}
@@ -381,9 +382,9 @@ export default function Navbar() {
                       onClick={() => setMostrarDropdown(false)}
                     />
                     
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border-2 border-blue-200 py-2 min-w-[300px] max-w-[400px] max-h-[500px] overflow-y-auto z-20">
-                      <div className="px-3 py-2 border-b border-gray-200">
-                        <p className="text-xs font-semibold text-gray-600">Selecione Brasil, Estados ou Cidades</p>
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border-2 border-blue-200 py-2 min-w-[280px] sm:min-w-[300px] max-w-[90vw] sm:max-w-[400px] max-h-[70vh] sm:max-h-[500px] overflow-y-auto z-20">
+                      <div className="px-3 py-3 sm:py-2 border-b border-gray-200">
+                        <p className="text-sm sm:text-xs font-semibold text-gray-600">Selecione Brasil, Estados ou Cidades</p>
                       </div>
                       
                       {/* BRASIL */}
@@ -392,18 +393,18 @@ export default function Navbar() {
                           e.stopPropagation();
                           toggleBrasil();
                         }}
-                        className="w-full px-3 py-2.5 flex items-center gap-2 text-left hover:bg-blue-50 font-bold"
+                        className="w-full px-4 py-3.5 sm:px-3 sm:py-2.5 flex items-center gap-3 sm:gap-2 text-left hover:bg-blue-50 font-bold"
                       >
-                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                        <div className={`w-7 h-7 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center ${
                           brasilSelecionado
                             ? 'bg-blue-600 border-blue-600'
                             : 'border-gray-400'
                         }`}>
                           {brasilSelecionado && (
-                            <CheckCircle size={16} className="text-white" />
+                            <CheckCircle size={18} className="text-white sm:w-4 sm:h-4" />
                           )}
                         </div>
-                        <span className="text-base text-blue-900">🇧🇷 BRASIL</span>
+                        <span className="text-lg sm:text-base text-blue-900">🇧🇷 BRASIL</span>
                       </button>
                       
                       <div className="border-t border-gray-200 my-1"></div>
@@ -418,11 +419,11 @@ export default function Navbar() {
                                 e.stopPropagation();
                                 toggleEstadoExpansao(estado);
                               }}
-                              className="px-2 py-2 hover:bg-gray-100"
+                              className="px-3 py-3 sm:px-2 sm:py-2 hover:bg-gray-100"
                             >
                               <ChevronRight 
-                                size={16} 
-                                className={`text-gray-600 transition-transform ${estadosExpandidos.includes(estado) ? 'rotate-90' : ''}`}
+                                size={20} 
+                                className={`sm:w-4 sm:h-4 text-gray-600 transition-transform ${estadosExpandidos.includes(estado) ? 'rotate-90' : ''}`}
                               />
                             </button>
                             <button
@@ -430,18 +431,18 @@ export default function Navbar() {
                                 e.stopPropagation();
                                 toggleEstado(estado);
                               }}
-                              className="flex-1 px-2 py-2 flex items-center gap-2 text-left hover:bg-blue-50"
+                              className="flex-1 px-3 py-3 sm:px-2 sm:py-2 flex items-center gap-3 sm:gap-2 text-left hover:bg-blue-50"
                             >
-                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                              <div className={`w-6 h-6 sm:w-5 sm:h-5 rounded border-2 flex items-center justify-center ${
                                 estadoTotalmenteSelecionado(estado)
                                   ? 'bg-blue-600 border-blue-600'
                                   : 'border-gray-300'
                               }`}>
                                 {estadoTotalmenteSelecionado(estado) && (
-                                  <CheckCircle size={14} className="text-white" />
+                                  <CheckCircle size={16} className="text-white sm:w-3.5 sm:h-3.5" />
                                 )}
                               </div>
-                              <span className={`text-sm ${
+                              <span className={`text-base sm:text-sm ${
                                 estadoTotalmenteSelecionado(estado)
                                   ? 'font-bold text-blue-800'
                                   : 'font-semibold text-gray-700'
@@ -453,7 +454,7 @@ export default function Navbar() {
                           
                           {/* Cidades do Estado (expansível) */}
                           {estadosExpandidos.includes(estado) && (
-                            <div className="ml-8 border-l-2 border-gray-200">
+                            <div className="ml-6 sm:ml-8 border-l-2 border-gray-200">
                               {cidades.map((cidade) => (
                         <button
                           key={cidade}
@@ -461,18 +462,18 @@ export default function Navbar() {
                             e.stopPropagation();
                             toggleCidade(cidade);
                           }}
-                                  className="w-full px-3 py-1.5 flex items-center gap-2 text-left hover:bg-blue-50"
+                                  className="w-full px-4 py-2.5 sm:px-3 sm:py-1.5 flex items-center gap-3 sm:gap-2 text-left hover:bg-blue-50"
                         >
-                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                  <div className={`w-5 h-5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center ${
                             cidadesSelecionadas.includes(cidade)
                                       ? 'bg-green-500 border-green-500'
                               : 'border-gray-300'
                           }`}>
                             {cidadesSelecionadas.includes(cidade) && (
-                                      <CheckCircle size={10} className="text-white" />
+                                      <CheckCircle size={14} className="text-white sm:w-2.5 sm:h-2.5" />
                             )}
                           </div>
-                                  <span className={`text-xs ${
+                                  <span className={`text-sm sm:text-xs ${
                             cidadesSelecionadas.includes(cidade)
                                       ? 'font-semibold text-green-700'
                                       : 'text-gray-600'
@@ -502,16 +503,16 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setMostrarDropdownRamo(!mostrarDropdownRamo)}
-                  className="bg-blue-800 text-white font-semibold px-2.5 py-2.5 rounded-lg border-2 border-white focus:outline-none cursor-pointer flex items-center gap-1.5"
+                  className="bg-blue-800 text-white font-semibold px-3 py-3 sm:px-2.5 sm:py-2.5 rounded-lg border-2 border-white focus:outline-none cursor-pointer flex items-center gap-1.5 min-w-[50px] min-h-[50px] sm:min-w-0 sm:min-h-0 justify-center"
                 >
-                  <span className="text-base leading-none">
+                  <span className="text-xl sm:text-base leading-none">
                     {ramoSelecionado === 'TODOS' && '🚗'}
                     {ramoSelecionado === 'CARRO' && '🚗'}
                     {ramoSelecionado === 'MOTO' && '🏍️'}
                     {ramoSelecionado === 'CAMINHÃO' && '🚚'}
                     {ramoSelecionado === 'ÔNIBUS' && '🚌'}
                   </span>
-                  <ChevronDown size={16} className={`text-yellow-400 ${mostrarDropdownRamo ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={18} className={`text-yellow-400 sm:w-4 sm:h-4 ${mostrarDropdownRamo ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown de Ramo */}
@@ -523,26 +524,26 @@ export default function Navbar() {
                       onClick={() => setMostrarDropdownRamo(false)}
                     />
                     
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border-2 border-blue-200 py-2 min-w-[220px] z-20">
-                      <div className="px-3 py-2 border-b border-gray-200">
-                        <p className="text-xs font-semibold text-gray-600">Selecione o tipo de veículo</p>
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border-2 border-blue-200 py-2 min-w-[250px] sm:min-w-[220px] max-w-[90vw] z-20">
+                      <div className="px-4 py-3 sm:px-3 sm:py-2 border-b border-gray-200">
+                        <p className="text-sm sm:text-xs font-semibold text-gray-600">Selecione o tipo de veículo</p>
                       </div>
                       
                       {/* TODOS */}
                       <button
                         onClick={() => handleMudarRamo('TODOS')}
-                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
+                        className="w-full px-5 py-3.5 sm:px-4 sm:py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        <div className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ${
                           ramoSelecionado === 'TODOS'
                             ? 'bg-blue-500 border-blue-500'
                             : 'border-gray-300'
                         }`}>
                           {ramoSelecionado === 'TODOS' && (
-                            <CheckCircle size={14} className="text-white" />
+                            <CheckCircle size={16} className="text-white sm:w-3.5 sm:h-3.5" />
                           )}
                         </div>
-                        <span className={`text-sm ${
+                        <span className={`text-base sm:text-sm ${
                           ramoSelecionado === 'TODOS'
                             ? 'font-bold text-blue-800'
                             : 'text-gray-700'
@@ -554,19 +555,19 @@ export default function Navbar() {
                       {/* CARRO */}
                       <button
                         onClick={() => handleMudarRamo('CARRO')}
-                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
+                        className="w-full px-5 py-3.5 sm:px-4 sm:py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        <div className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ${
                           ramoSelecionado === 'CARRO'
                             ? 'bg-blue-500 border-blue-500'
                             : 'border-gray-300'
                         }`}>
                           {ramoSelecionado === 'CARRO' && (
-                            <CheckCircle size={14} className="text-white" />
+                            <CheckCircle size={16} className="text-white sm:w-3.5 sm:h-3.5" />
                           )}
                         </div>
-                        <span className="text-xl">🚗</span>
-                        <span className={`text-sm ${
+                        <span className="text-2xl sm:text-xl">🚗</span>
+                        <span className={`text-base sm:text-sm ${
                           ramoSelecionado === 'CARRO'
                             ? 'font-bold text-blue-800'
                             : 'text-gray-700'
@@ -578,19 +579,19 @@ export default function Navbar() {
                       {/* MOTO */}
                       <button
                         onClick={() => handleMudarRamo('MOTO')}
-                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
+                        className="w-full px-5 py-3.5 sm:px-4 sm:py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        <div className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ${
                           ramoSelecionado === 'MOTO'
                             ? 'bg-purple-500 border-purple-500'
                             : 'border-gray-300'
                         }`}>
                           {ramoSelecionado === 'MOTO' && (
-                            <CheckCircle size={14} className="text-white" />
+                            <CheckCircle size={16} className="text-white sm:w-3.5 sm:h-3.5" />
                           )}
                         </div>
-                        <span className="text-xl">🏍️</span>
-                        <span className={`text-sm ${
+                        <span className="text-2xl sm:text-xl">🏍️</span>
+                        <span className={`text-base sm:text-sm ${
                           ramoSelecionado === 'MOTO'
                             ? 'font-bold text-purple-800'
                             : 'text-gray-700'
@@ -602,19 +603,19 @@ export default function Navbar() {
                       {/* CAMINHÃO */}
                       <button
                         onClick={() => handleMudarRamo('CAMINHÃO')}
-                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-orange-50 transition-colors"
+                        className="w-full px-5 py-3.5 sm:px-4 sm:py-2.5 flex items-center gap-3 text-left hover:bg-orange-50 transition-colors"
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        <div className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ${
                           ramoSelecionado === 'CAMINHÃO'
                             ? 'bg-orange-500 border-orange-500'
                             : 'border-gray-300'
                         }`}>
                           {ramoSelecionado === 'CAMINHÃO' && (
-                            <CheckCircle size={14} className="text-white" />
+                            <CheckCircle size={16} className="text-white sm:w-3.5 sm:h-3.5" />
                           )}
                         </div>
-                        <span className="text-xl">🚚</span>
-                        <span className={`text-sm ${
+                        <span className="text-2xl sm:text-xl">🚚</span>
+                        <span className={`text-base sm:text-sm ${
                           ramoSelecionado === 'CAMINHÃO'
                             ? 'font-bold text-orange-800'
                             : 'text-gray-700'
@@ -626,19 +627,19 @@ export default function Navbar() {
                       {/* ÔNIBUS */}
                       <button
                         onClick={() => handleMudarRamo('ÔNIBUS')}
-                        className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-teal-50 transition-colors"
+                        className="w-full px-5 py-3.5 sm:px-4 sm:py-2.5 flex items-center gap-3 text-left hover:bg-teal-50 transition-colors"
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        <div className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ${
                           ramoSelecionado === 'ÔNIBUS'
                             ? 'bg-teal-500 border-teal-500'
                             : 'border-gray-300'
                         }`}>
                           {ramoSelecionado === 'ÔNIBUS' && (
-                            <CheckCircle size={14} className="text-white" />
+                            <CheckCircle size={16} className="text-white sm:w-3.5 sm:h-3.5" />
                           )}
                         </div>
-                        <span className="text-xl">🚌</span>
-                        <span className={`text-sm ${
+                        <span className="text-2xl sm:text-xl">🚌</span>
+                        <span className={`text-base sm:text-sm ${
                           ramoSelecionado === 'ÔNIBUS'
                             ? 'font-bold text-teal-800'
                             : 'text-gray-700'
@@ -659,8 +660,8 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-1" style={{ opacity: 1 }}>
+          {/* Navigation Links - Desktop */}
+          <div className="hidden lg:flex items-center space-x-1" style={{ opacity: 1 }}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -682,8 +683,8 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* User Info */}
-          <div className="flex items-center space-x-4" style={{ opacity: 1 }}>
+          {/* User Info - Desktop */}
+          <div className="hidden lg:flex items-center space-x-4" style={{ opacity: 1 }}>
             <div className="text-right" style={{ opacity: 1 }}>
               <div className="text-sm font-bold text-white" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>{userData?.nome}</div>
               <div className={`text-xs px-3 py-1 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`} style={{ opacity: 1 }}>
@@ -700,7 +701,64 @@ export default function Navbar() {
               <LogOut size={22} />
             </button>
           </div>
+
+          {/* Menu Hamburger - Mobile */}
+          <button
+            onClick={() => setMenuMobileAberto(!menuMobileAberto)}
+            className="lg:hidden p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center"
+            style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
+          >
+            {menuMobileAberto ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
+
+        {/* Menu Mobile Dropdown */}
+        {menuMobileAberto && (
+          <div className="lg:hidden border-t-2 border-blue-600 bg-blue-800" style={{ opacity: 1 }}>
+            <div className="py-4 px-3 space-y-2">
+              {/* User Info Mobile */}
+              <div className="pb-4 mb-4 border-b-2 border-blue-600">
+                <div className="text-base font-bold text-white mb-2">{userData?.nome}</div>
+                <div className={`text-sm px-3 py-1.5 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`}>
+                  {getTipoLabel()}
+                </div>
+              </div>
+
+              {/* Navigation Links Mobile */}
+              <div className="space-y-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMenuMobileAberto(false)}
+                      className={`flex items-center px-4 py-3.5 rounded-lg font-semibold text-base ${
+                        isActive
+                          ? 'bg-yellow-400 text-blue-900 shadow-lg'
+                          : 'bg-blue-700 text-white'
+                      }`}
+                    >
+                      <Icon size={24} className="mr-3" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Logout Button Mobile */}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center px-4 py-3.5 mt-4 text-white bg-red-600 rounded-lg font-semibold text-base"
+              >
+                <LogOut size={24} className="mr-3" />
+                Sair da Conta
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
