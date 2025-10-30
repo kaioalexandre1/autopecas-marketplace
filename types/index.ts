@@ -110,7 +110,7 @@ export interface Entregador {
   nome: string;
   telefone: string;
   whatsapp: string;
-  valorDentroC idade: number;
+  valorDentroCidade: number;
   cidade: string;
   ativo: boolean;
   createdAt: Date;
