@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X } from 'lucide-react';
+import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown } from 'lucide-react';
 
 // Estrutura hierárquica: Brasil > Estados > Cidades (TODOS OS 27 ESTADOS)
 const estruturaBrasil = {
@@ -290,6 +290,7 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Pedidos ao Vivo', icon: Radio },
     { href: '/dashboard/chats', label: 'Chats', icon: MessageSquare },
     { href: '/dashboard/negocios-fechados', label: 'Negócios Fechados', icon: CheckCircle },
+    ...(userData?.tipo === 'autopeca' ? [{ href: '/dashboard/planos', label: 'Planos', icon: Crown }] : []),
     ...(userData?.role === 'admin' ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
@@ -318,6 +319,37 @@ export default function Navbar() {
         return '';
     }
   };
+
+  // Função para calcular ofertas restantes (apenas para autopeças)
+  const getOfertasInfo = () => {
+    if (userData?.tipo !== 'autopeca') return null;
+    
+    const mesAtual = new Date().toISOString().slice(0, 7);
+    const ofertasUsadas = userData.mesReferenciaOfertas === mesAtual ? (userData.ofertasUsadas || 0) : 0;
+    
+    const limites: Record<string, number> = {
+      basico: 20,
+      premium: 100,
+      gold: 200,
+      platinum: -1, // ilimitado
+    };
+    
+    const plano = userData.plano || 'basico';
+    const limite = limites[plano];
+    const restantes = limite === -1 ? -1 : Math.max(0, limite - ofertasUsadas);
+    const porcentagem = limite === -1 ? 100 : (ofertasUsadas / limite) * 100;
+    
+    return {
+      usadas: ofertasUsadas,
+      limite,
+      restantes,
+      porcentagem,
+      plano,
+      precisaUpgrade: limite !== -1 && porcentagem >= 80
+    };
+  };
+
+  const ofertasInfo = getOfertasInfo();
 
   return (
     <nav className="navbar-custom bg-blue-700 relative z-50" style={{ backgroundColor: '#1d4ed8', opacity: 1, position: 'relative', zIndex: 9999 }}>
@@ -685,6 +717,33 @@ export default function Navbar() {
 
           {/* User Info - Desktop */}
           <div className="hidden lg:flex items-center space-x-4" style={{ opacity: 1 }}>
+            {/* Contador de Ofertas (apenas para autopeças) */}
+            {ofertasInfo && (
+              <Link
+                href="/dashboard/planos"
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                  ofertasInfo.precisaUpgrade
+                    ? 'bg-yellow-400 border-yellow-500 text-yellow-900 hover:bg-yellow-300 animate-pulse'
+                    : 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                }`}
+                title="Ver planos"
+              >
+                {ofertasInfo.limite === -1 ? (
+                  <>
+                    <Crown size={18} />
+                    <span className="text-sm font-bold">∞ Ilimitado</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap size={18} />
+                    <span className="text-sm font-bold">
+                      {ofertasInfo.restantes}/{ofertasInfo.limite} ofertas
+                    </span>
+                  </>
+                )}
+              </Link>
+            )}
+            
             <div className="text-right" style={{ opacity: 1 }}>
               <div className="text-sm font-bold text-white" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>{userData?.nome}</div>
               <div className={`text-xs px-3 py-1 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`} style={{ opacity: 1 }}>
@@ -722,6 +781,38 @@ export default function Navbar() {
                 <div className={`text-sm px-3 py-1.5 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`}>
                   {getTipoLabel()}
                 </div>
+                
+                {/* Contador de Ofertas Mobile (apenas para autopeças) */}
+                {ofertasInfo && (
+                  <Link
+                    href="/dashboard/planos"
+                    onClick={() => setMenuMobileAberto(false)}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 mt-3 transition-all ${
+                      ofertasInfo.precisaUpgrade
+                        ? 'bg-yellow-400 border-yellow-500 text-yellow-900 hover:bg-yellow-300 animate-pulse'
+                        : 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    {ofertasInfo.limite === -1 ? (
+                      <>
+                        <Crown size={20} />
+                        <span className="text-sm font-bold">∞ Ofertas Ilimitadas</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap size={20} />
+                        <div>
+                          <div className="text-sm font-bold">
+                            {ofertasInfo.restantes} de {ofertasInfo.limite} ofertas restantes
+                          </div>
+                          {ofertasInfo.precisaUpgrade && (
+                            <div className="text-xs">Toque para fazer upgrade!</div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </Link>
+                )}
               </div>
 
               {/* Navigation Links Mobile */}
