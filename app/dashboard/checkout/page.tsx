@@ -73,7 +73,8 @@ export default function CheckoutPage() {
       });
       const data = await resp.json();
       if (!resp.ok || !data.ok) {
-        throw new Error(data?.error || 'Falha ao iniciar pagamento');
+        console.error('Erro checkout MP:', data);
+        throw new Error(data?.details?.message || data?.error || 'Falha ao iniciar pagamento');
       }
 
       if (data.method === 'pix') {

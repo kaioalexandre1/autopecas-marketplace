@@ -73,6 +73,7 @@ export async function POST(request: Request) {
             title: `Assinatura ${plano}`,
             quantity: 1,
             unit_price: amount,
+            currency_id: 'BRL',
           },
         ],
         payer: { email: email || `${autopecaId}@example.com` },
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
           pending: `${fullBase}/dashboard?checkout=pending`,
         },
         auto_return: 'approved',
+        statement_descriptor: 'WRX PARTS',
       }),
     });
 
