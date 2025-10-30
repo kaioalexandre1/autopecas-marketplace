@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+// Não usamos Firestore aqui para evitar erros de permissão no server
 import { PRECOS_PLANOS, PlanoAssinatura } from '@/types';
 
 export async function POST(request: Request) {
@@ -18,9 +17,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'params_missing' }, { status: 400 });
     }
 
-    // Buscar Access Token salvo no Firestore (configurado no admin)
-    const cfgSnap = await getDoc(doc(db, 'configuracoes', 'mercadopago'));
-    const accessToken = cfgSnap.exists() ? (cfgSnap.data() as any).accessToken : '';
+    // Usar somente variável de ambiente (seguro e sem dependência de regras)
+    const accessToken = process.env.MP_ACCESS_TOKEN || '';
     if (!accessToken) {
       return NextResponse.json({ ok: false, error: 'missing_access_token' }, { status: 500 });
     }

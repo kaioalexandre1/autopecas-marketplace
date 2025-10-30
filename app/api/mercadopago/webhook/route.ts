@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 
 // Webhook do Mercado Pago (versão simplificada para testes)
 // URL sugerida na MP: https://SEU_DOMINIO/api/mercadopago/webhook?secret=SEU_TOKEN
@@ -39,9 +39,8 @@ export async function POST(request: Request) {
     //    Requer accessToken salvo em Firestore: configuracoes/mercadopago { accessToken }
     //    body esperado da MP: { type: 'payment', data: { id: '123' } }
     if (body?.type === 'payment' && body?.data?.id) {
-      // Buscar accessToken salvo pelo admin
-      const cfgSnap = await getDoc(doc(db, 'configuracoes', 'mercadopago'));
-      const accessToken = cfgSnap.exists() ? (cfgSnap.data() as any).accessToken : '';
+      // Usar somente variável de ambiente
+      const accessToken = process.env.MP_ACCESS_TOKEN || '';
       if (!accessToken) {
         return NextResponse.json({ ok: false, error: 'missing_access_token' }, { status: 500 });
       }
