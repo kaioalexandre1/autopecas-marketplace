@@ -45,6 +45,7 @@ export async function POST(request: Request) {
           payer: { email: email || `${autopecaId}@example.com` },
           notification_url,
           external_reference,
+          binary_mode: true,
         }),
       });
 
@@ -84,6 +85,13 @@ export async function POST(request: Request) {
         },
         auto_return: 'approved',
         statement_descriptor: 'WRX PARTS',
+        // Personalização conforme método solicitado
+        payment_methods: metodo === 'boleto' 
+          ? {
+              default_payment_method_id: 'bolbradesco',
+              excluded_payment_types: [{ id: 'credit_card' }],
+            }
+          : undefined,
       }),
     });
 

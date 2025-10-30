@@ -173,8 +173,9 @@ export const LIMITES_PLANOS = {
 // Preços dos planos
 export const PRECOS_PLANOS = {
   basico: 0,
-  premium: 199.90,
-  gold: 390.00,
-  platinum: 490.00,
+  // Valores temporariamente reduzidos para testes (R$ 1,00)
+  premium: 1.00,
+  gold: 1.00,
+  platinum: 1.00,
 };
 

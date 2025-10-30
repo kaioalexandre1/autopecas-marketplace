@@ -82,6 +82,8 @@ export default function CheckoutPage() {
         setPaymentId(String(data.paymentId));
       } else {
         setLinkPagamento(data.init_point || data.sandbox_init_point);
+        // Abrir automaticamente o checkout em nova aba
+        try { window.open(data.init_point || data.sandbox_init_point, '_blank'); } catch {}
       }
       
       // Criar registro de pagamento
@@ -277,22 +279,17 @@ export default function CheckoutPage() {
                   )}
                 </button>
 
-                {/* Área para cartão/boleto quando um link (simulado) é gerado */}
+                {/* Link do checkout (fallback para reabrir) */}
                 {metodoPagamento !== 'pix' && linkPagamento && (
-                  <div className="mt-6 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
-                    <h4 className="font-bold text-yellow-900 mb-1">Checkout (simulado)</h4>
-                    <p className="text-sm text-yellow-800 mb-3">
-                      Este ambiente está em modo de testes. Clique abaixo para abrir o checkout em uma nova aba.
-                      Em produção real, este link será do Mercado Pago.
-                    </p>
-                    <button
-                      onClick={() => {
-                        try { window.open(linkPagamento, '_blank'); } catch {}
-                      }}
-                      className="w-full py-3 bg-yellow-500 text-yellow-900 rounded-lg font-bold hover:bg-yellow-400 transition-all"
+                  <div className="mt-6">
+                    <a
+                      href={linkPagamento}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-blue-700 underline"
                     >
-                      Abrir checkout
-                    </button>
+                      Reabrir checkout do Mercado Pago
+                    </a>
                   </div>
                 )}
               </>
