@@ -250,3 +250,4 @@ MERCADO_PAGO_ACCESS_TOKEN=APP_USR-xxx...
 **Próximo passo:** Configure suas credenciais do Mercado Pago no painel admin e comece a receber! 💰
 
 
+

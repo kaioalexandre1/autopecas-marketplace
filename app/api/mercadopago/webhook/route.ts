@@ -77,7 +77,61 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
     }
 
-    // 2) Modo de teste manual (permite ativar plano sem chamar a API MP)
+    // 2) Modo de ativação forçada (quando o frontend detecta pagamento aprovado mas plano não foi ativado)
+    const forceApprove = searchParams.get('forceApprove') === '1';
+    if (forceApprove && body?.paymentId && body?.autopecaId && body?.plano) {
+      // Verificar status do pagamento antes de ativar
+      const accessToken = process.env.MP_ACCESS_TOKEN || '';
+      if (accessToken) {
+        try {
+          const resp = await fetch(`https://api.mercadopago.com/v1/payments/${body.paymentId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            cache: 'no-store',
+          });
+
+          if (resp.ok) {
+            const payment = await resp.json();
+            if (payment?.status === 'approved') {
+              const mesAtual = new Date().toISOString().slice(0, 7);
+              const dataFim = new Date();
+              dataFim.setMonth(dataFim.getMonth() + 1);
+
+              await adminDb.collection('users').doc(body.autopecaId).update({
+                plano: body.plano,
+                assinaturaAtiva: true,
+                ofertasUsadas: 0,
+                mesReferenciaOfertas: mesAtual,
+                dataProximoPagamento: Timestamp.fromDate(dataFim),
+              });
+
+              // Atualizar registro de pagamento
+              const pagamentosSnap = await adminDb
+                .collection('pagamentos')
+                .where('mercadoPagoId', '==', String(body.paymentId))
+                .limit(1)
+                .get();
+
+              if (!pagamentosSnap.empty) {
+                await adminDb.collection('pagamentos').doc(pagamentosSnap.docs[0].id).update({
+                  statusPagamento: 'aprovado',
+                  updatedAt: Timestamp.now(),
+                });
+              }
+
+              return NextResponse.json({ ok: true, message: 'Plano ativado com sucesso' });
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao verificar pagamento no forceApprove:', error);
+        }
+      }
+      return NextResponse.json({ ok: false, error: 'payment_not_approved' }, { status: 400 });
+    }
+
+    // 3) Modo de teste manual (permite ativar plano sem chamar a API MP)
     //    Útil enquanto a criação real do pagamento não está 100% integrada.
     if (body?.testApprove && body?.autopecaId && body?.plano) {
       const mesAtual = new Date().toISOString().slice(0, 7);
@@ -95,60 +149,98 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, mode: 'test', message: 'Plano ativado (teste)' });
     }
 
-    // 3) Fluxo real: buscar pagamento na API MP e ativar se aprovado
-    // A MP pode enviar { type: 'payment', data: { id } } ou { action: 'payment.updated', data: { id } }
-    const isPaymentType = body?.type === 'payment' || (typeof body?.action === 'string' && body.action.startsWith('payment'));
-    if (isPaymentType && body?.data?.id) {
-      // Usar somente variável de ambiente
+    // 4) Fluxo real: buscar pagamento na API MP e ativar se aprovado
+    // A MP pode enviar diferentes formatos:
+    // - { type: 'payment', data: { id: '123' } }
+    // - { action: 'payment.updated', data: { id: '123' } }
+    // - { id: '123' } (direto)
+    let paymentId: string | null = null;
+    
+    if (body?.data?.id) {
+      paymentId = String(body.data.id);
+    } else if (body?.id) {
+      paymentId = String(body.id);
+    } else if (typeof body === 'string') {
+      // Às vezes vem como string direta
+      try {
+        const parsed = JSON.parse(body);
+        paymentId = parsed?.data?.id || parsed?.id || null;
+      } catch {
+        // Não é JSON, tentar como ID direto
+        paymentId = body;
+      }
+    }
+
+    if (paymentId) {
       const accessToken = process.env.MP_ACCESS_TOKEN || '';
       if (!accessToken) {
         return NextResponse.json({ ok: false, error: 'missing_access_token' }, { status: 500 });
       }
 
-      // Consultar status do pagamento na API MP
-      const paymentId = body.data.id;
-      const resp = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-      });
-
-      if (!resp.ok) {
-        return NextResponse.json({ ok: false, error: 'mp_fetch_failed' }, { status: resp.status });
-      }
-
-      const payment = await resp.json();
-      const status: string = payment?.status;
-      const external_reference: string | undefined = payment?.external_reference;
-
-      if (status === 'approved' && external_reference) {
-        const [autopecaId, plano] = external_reference.split('|');
-        const mesAtual = new Date().toISOString().slice(0, 7);
-        const dataFim = new Date();
-        dataFim.setMonth(dataFim.getMonth() + 1);
-
-        await adminDb.collection('users').doc(autopecaId).update({
-          plano,
-          assinaturaAtiva: true,
-          ofertasUsadas: 0,
-          mesReferenciaOfertas: mesAtual,
-          dataProximoPagamento: Timestamp.fromDate(dataFim),
+      try {
+        // Consultar status do pagamento na API MP
+        const resp = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
         });
 
-        // Atualizar documento em pagamentos, se existir
-        const snap = await adminDb.collection('pagamentos').where('external_reference', '==', external_reference).get();
-        for (const d of snap.docs) {
-          await adminDb.collection('pagamentos').doc(d.id).update({
-            statusPagamento: 'aprovado',
-            updatedAt: Timestamp.now(),
-            mercadoPagoId: String(payment.id),
-          });
+        if (!resp.ok) {
+          console.error('Erro ao buscar pagamento:', resp.status, await resp.text());
+          return NextResponse.json({ ok: false, error: 'mp_fetch_failed' }, { status: resp.status });
         }
-      }
 
-      return NextResponse.json({ ok: true, status });
+        const payment = await resp.json();
+        const status: string = payment?.status;
+        const external_reference: string | undefined = payment?.external_reference;
+
+        console.log(`Webhook recebido - Payment ID: ${paymentId}, Status: ${status}, External Ref: ${external_reference}`);
+
+        if (status === 'approved' && external_reference) {
+          const parts = external_reference.split('|');
+          if (parts.length >= 2) {
+            const [autopecaId, plano] = parts;
+            const mesAtual = new Date().toISOString().slice(0, 7);
+            const dataFim = new Date();
+            dataFim.setMonth(dataFim.getMonth() + 1);
+
+            // Verificar se o plano já está ativo para evitar atualizações desnecessárias
+            const userDoc = await adminDb.collection('users').doc(autopecaId).get();
+            const userData = userDoc.data();
+            
+            if (!userData?.assinaturaAtiva || userData?.plano !== plano) {
+              await adminDb.collection('users').doc(autopecaId).update({
+                plano,
+                assinaturaAtiva: true,
+                ofertasUsadas: 0,
+                mesReferenciaOfertas: mesAtual,
+                dataProximoPagamento: Timestamp.fromDate(dataFim),
+              });
+
+              console.log(`Plano ${plano} ativado para usuário ${autopecaId}`);
+            }
+
+            // Atualizar documento em pagamentos, se existir
+            const snap = await adminDb.collection('pagamentos').where('external_reference', '==', external_reference).get();
+            for (const d of snap.docs) {
+              await adminDb.collection('pagamentos').doc(d.id).update({
+                statusPagamento: 'aprovado',
+                updatedAt: Timestamp.now(),
+                mercadoPagoId: String(payment.id),
+              });
+            }
+          } else {
+            console.error('External reference inválida:', external_reference);
+          }
+        }
+
+        return NextResponse.json({ ok: true, status, paymentId });
+      } catch (error: any) {
+        console.error('Erro ao processar webhook:', error);
+        return NextResponse.json({ ok: false, error: error?.message || 'unknown' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ ok: true });

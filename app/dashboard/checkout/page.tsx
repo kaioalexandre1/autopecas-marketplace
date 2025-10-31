@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlanoAssinatura, PRECOS_PLANOS } from '@/types';
 import { CreditCard, ArrowLeft, Loader, CheckCircle, QrCode } from 'lucide-react';
-import { doc, updateDoc, addDoc, collection, Timestamp, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, Timestamp, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 
@@ -78,30 +78,46 @@ export default function CheckoutPage() {
         throw new Error(data?.details?.message || data?.error || 'Falha ao iniciar pagamento');
       }
 
+      // Definir valores antes de criar o registro
       if (data.method === 'pix') {
         setPixCopiaECola(data.qr);
         setPaymentId(String(data.paymentId));
+        
+        // Criar registro de pagamento COM os valores corretos
+        await addDoc(collection(db, 'pagamentos'), {
+          autopecaId: userData.id,
+          autopecaNome: userData.nome,
+          plano,
+          valor,
+          metodoPagamento: 'mercadopago',
+          statusPagamento: 'pendente',
+          pixCopiaECola: data.qr,
+          mercadoPagoId: String(data.paymentId),
+          external_reference: `${userData.id}|${plano}`,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
       } else {
-        setLinkPagamento(data.init_point || data.sandbox_init_point);
+        const link = data.init_point || data.sandbox_init_point;
+        setLinkPagamento(link);
+        
+        // Criar registro de pagamento para checkout
+        await addDoc(collection(db, 'pagamentos'), {
+          autopecaId: userData.id,
+          autopecaNome: userData.nome,
+          plano,
+          valor,
+          metodoPagamento: 'cartao',
+          statusPagamento: 'pendente',
+          linkPagamento: link,
+          external_reference: `${userData.id}|${plano}`,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+        
         // Abrir automaticamente o checkout em nova aba
-        try { window.open(data.init_point || data.sandbox_init_point, '_blank'); } catch {}
+        try { window.open(link, '_blank'); } catch {}
       }
-      
-      // Criar registro de pagamento
-      const pagamentoRef = await addDoc(collection(db, 'pagamentos'), {
-        autopecaId: userData.id,
-        autopecaNome: userData.nome,
-        plano,
-        valor,
-        metodoPagamento: metodoPagamento === 'pix' ? 'mercadopago' : 'cartao',
-        statusPagamento: 'pendente',
-        ...(pixCopiaECola ? { pixCopiaECola } : {}),
-        ...(paymentId ? { mercadoPagoId: paymentId } : {}),
-        ...(linkPagamento ? { linkPagamento } : {}),
-        external_reference: `${userData.id}|${plano}`,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
 
       // Criar assinatura
       const dataInicio = new Date();
@@ -133,23 +149,124 @@ export default function CheckoutPage() {
     }
   };
 
-  // Ouvir ativação automática via webhook e atualizar a tela em tempo real
+  // Polling para verificar status do pagamento (fallback do webhook)
   useEffect(() => {
-    if (!userData) return;
-    // Começa a escutar quando existir um pagamento em andamento
-    if ((pixCopiaECola || linkPagamento) && !escutandoAtivacao) {
-      setEscutandoAtivacao(true);
-      const unsub = onSnapshot(doc(db, 'users', userData.id), (snap) => {
-        const data: any = snap.data();
-        if (data?.assinaturaAtiva && data?.plano) {
-          setPagamentoAprovado(true);
-          toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
-          setTimeout(() => router.push('/dashboard'), 2000);
-        }
+    if (!paymentId || !userData || escutandoAtivacao) return;
+
+    setEscutandoAtivacao(true);
+    let pollInterval: NodeJS.Timeout;
+    let listenerUnsub: (() => void) | null = null;
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutos (5 segundos * 60)
+
+    // 1. Listener do Firestore (mais rápido se webhook funcionar)
+    console.log(`[Checkout] Iniciando listener do Firestore para usuário ${userData.id}`);
+    listenerUnsub = onSnapshot(doc(db, 'users', userData.id), (snap) => {
+      const data: any = snap.data();
+      console.log(`[Checkout] Listener Firestore - dados atualizados:`, {
+        assinaturaAtiva: data?.assinaturaAtiva,
+        plano: data?.plano,
+        esperado: plano
       });
-      return () => unsub();
-    }
-  }, [userData, pixCopiaECola, linkPagamento, escutandoAtivacao, router]);
+      
+      if (data?.assinaturaAtiva && data?.plano === plano) {
+        console.log(`[Checkout] ✅ Listener detectou plano ativo!`);
+        setPagamentoAprovado(true);
+        toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
+        if (pollInterval) clearInterval(pollInterval);
+        if (listenerUnsub) listenerUnsub();
+        setTimeout(() => router.push('/dashboard'), 2000);
+      }
+    }, (error) => {
+      console.error('[Checkout] Erro no listener do Firestore:', error);
+    });
+
+    // 2. Polling via API (verificar status diretamente no Mercado Pago)
+    const verificarPagamento = async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(pollInterval);
+        toast.error('Tempo de espera excedido. Verifique o status do pagamento manualmente.');
+        return;
+      }
+
+      try {
+        console.log(`[Checkout] Verificando pagamento ${paymentId} (tentativa ${attempts}/${maxAttempts})`);
+        
+        const resp = await fetch(`/api/mercadopago/status?paymentId=${paymentId}&autopecaId=${userData.id}&plano=${plano}`);
+        
+        if (!resp.ok) {
+          console.error(`[Checkout] Erro na API: ${resp.status} ${resp.statusText}`);
+          return;
+        }
+        
+        const data = await resp.json();
+        console.log(`[Checkout] Status do pagamento:`, data);
+        
+        if (data.ok && data.status === 'approved') {
+          console.log(`[Checkout] Pagamento aprovado! Verificando se plano foi ativado...`);
+          
+          // Se o endpoint já ativou o plano (data.activated === true), aguardar e verificar
+          if (data.activated) {
+            console.log(`[Checkout] Plano ativado pelo endpoint. Verificando Firestore...`);
+            // Aguardar um pouco para o Firestore sincronizar
+            setTimeout(async () => {
+              try {
+                const userRef = doc(db, 'users', userData.id);
+                const userDoc = await getDoc(userRef);
+                const userDataCheck: any = userDoc.data();
+                
+                console.log(`[Checkout] Dados do usuário no Firestore:`, {
+                  assinaturaAtiva: userDataCheck?.assinaturaAtiva,
+                  plano: userDataCheck?.plano,
+                  esperado: plano
+                });
+                
+                if (userDataCheck?.assinaturaAtiva && userDataCheck?.plano === plano) {
+                  console.log(`[Checkout] ✅ Plano confirmado ativo! Redirecionando...`);
+                  setPagamentoAprovado(true);
+                  toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
+                  if (pollInterval) clearInterval(pollInterval);
+                  if (listenerUnsub) listenerUnsub();
+                  setTimeout(() => router.push('/dashboard'), 2000);
+                } else {
+                  console.warn(`[Checkout] ⚠️ Plano ainda não está ativo no Firestore. Aguardando listener...`);
+                }
+              } catch (err) {
+                console.error(`[Checkout] Erro ao verificar Firestore:`, err);
+              }
+            }, 1000);
+          } else {
+            // Pagamento aprovado mas plano ainda não ativado (endpoint deve ter ativado agora)
+            console.log(`[Checkout] Pagamento aprovado mas plano não foi ativado ainda. Aguardando webhook/listener...`);
+            // O listener do Firestore vai pegar a mudança
+            // Aguardar um pouco mais para garantir
+          }
+        } else if (data.status === 'rejected' || data.status === 'cancelled') {
+          console.log(`[Checkout] ❌ Pagamento ${data.status}`);
+          clearInterval(pollInterval);
+          if (listenerUnsub) listenerUnsub();
+          toast.error('Pagamento foi rejeitado ou cancelado.');
+        } else if (data.status === 'pending') {
+          console.log(`[Checkout] ⏳ Pagamento ainda pendente...`);
+        } else {
+          console.log(`[Checkout] ⚠️ Status desconhecido: ${data.status}`);
+        }
+      } catch (error) {
+        console.error('[Checkout] Erro ao verificar pagamento:', error);
+        // Não parar o polling por causa de um erro temporário
+      }
+    };
+
+    // Verificar imediatamente e depois a cada 5 segundos
+    verificarPagamento();
+    pollInterval = setInterval(verificarPagamento, 5000);
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+      if (listenerUnsub) listenerUnsub();
+    };
+  }, [paymentId, userData, plano, escutandoAtivacao, router]);
 
   if (!userData || userData.tipo !== 'autopeca') {
     return null;
