@@ -160,7 +160,7 @@ export default function PlanosPage() {
           <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">
             Escolha seu Plano
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-white max-w-2xl mx-auto">
             Potencialize suas vendas com o plano ideal para o seu negócio
           </p>
           
@@ -210,7 +210,7 @@ export default function PlanosPage() {
                     <span className="text-4xl font-black text-gray-900">
                       R$ {plano.preco.toFixed(2).replace('.', ',')}
                     </span>
-                    <span className="text-gray-600">/mês</span>
+                    <span className="text-gray-600 dark:text-gray-300">/mês</span>
                   </div>
 
                   <div className={`mb-6 px-4 py-2 ${plano.corBg} rounded-lg`}>
@@ -223,7 +223,7 @@ export default function PlanosPage() {
                     {plano.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <Check size={20} className="text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">{feature}</span>
+                        <span className="text-sm text-gray-700 dark:text-white">{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -262,23 +262,23 @@ export default function PlanosPage() {
           
           <div className="space-y-4">
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">🔄 Como funciona a cobrança?</h3>
-              <p className="text-gray-600">A cobrança é mensal e renovada automaticamente. Você pode cancelar a qualquer momento.</p>
+              <h3 className="font-bold text-gray-900 dark:text-white mb-2">🔄 Como funciona a cobrança?</h3>
+              <p className="text-gray-600 dark:text-white">A cobrança é mensal e renovada automaticamente. Você pode cancelar a qualquer momento.</p>
             </div>
             
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">📊 O que acontece se eu exceder o limite?</h3>
-              <p className="text-gray-600">Você não poderá fazer novas ofertas até o próximo mês ou até fazer upgrade do plano.</p>
+              <h3 className="font-bold text-gray-900 dark:text-white mb-2">📊 O que acontece se eu exceder o limite?</h3>
+              <p className="text-gray-600 dark:text-white">Você não poderá fazer novas ofertas até o próximo mês ou até fazer upgrade do plano.</p>
             </div>
             
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">💳 Quais formas de pagamento aceitam?</h3>
-              <p className="text-gray-600">Aceitamos cartão de crédito, PIX e boleto através do Mercado Pago.</p>
+              <h3 className="font-bold text-gray-900 dark:text-white mb-2">💳 Quais formas de pagamento aceitam?</h3>
+              <p className="text-gray-600 dark:text-white">Aceitamos cartão de crédito, PIX e boleto através do Mercado Pago.</p>
             </div>
             
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">🔼 Posso fazer upgrade a qualquer momento?</h3>
-              <p className="text-gray-600">Sim! Você pode fazer upgrade imediatamente e o valor será proporcional.</p>
+              <h3 className="font-bold text-gray-900 dark:text-white mb-2">🔼 Posso fazer upgrade a qualquer momento?</h3>
+              <p className="text-gray-600 dark:text-white">Sim! Você pode fazer upgrade imediatamente e o valor será proporcional.</p>
             </div>
           </div>
         </div>

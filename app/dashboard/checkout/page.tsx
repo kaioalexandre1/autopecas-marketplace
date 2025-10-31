@@ -443,7 +443,7 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-4">
             Pagamento Aprovado!
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-lg text-gray-600 dark:text-white mb-6">
             Seu plano {planosInfo[plano].nome} foi ativado com sucesso!
           </p>
           <p className="text-sm text-gray-500">
@@ -477,16 +477,16 @@ export default function CheckoutPage() {
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                 Plano {planosInfo[plano].nome}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">{planosInfo[plano].limite}</p>
+              <p className="text-gray-600 dark:text-white mb-4">{planosInfo[plano].limite}</p>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-300">Valor mensal:</span>
+                <span className="text-gray-600 dark:text-white">Valor mensal:</span>
                 <span className="text-3xl font-black text-gray-900 dark:text-white">
                   R$ {valor.toFixed(2).replace('.', ',')}
                 </span>
               </div>
             </div>
 
-            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+            <div className="space-y-3 text-sm text-gray-600 dark:text-white">
               <div className="flex items-center gap-2">
                 <CheckCircle size={16} className="text-green-500" />
                 <span>Renovação automática mensal</span>
@@ -583,12 +583,12 @@ export default function CheckoutPage() {
                   <h3 className="font-bold text-gray-900 dark:text-white mb-2">
                     Pague com PIX
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-white mb-4">
                     Escaneie o QR Code ou copie o código PIX
                   </p>
                   
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-600">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 break-all font-mono">
+                    <div className="text-xs text-gray-500 dark:text-gray-300 break-all font-mono">
                       {pixCopiaECola}
                     </div>
                   </div>
@@ -606,10 +606,10 @@ export default function CheckoutPage() {
 
                 <div className="text-center space-y-4">
                   <Loader size={32} className="animate-spin text-blue-500 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-white">
                     Aguardando confirmação do pagamento...
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-200 mb-4">
                     Após realizar o pagamento PIX, clique no botão abaixo para confirmar
                   </p>
                   <button

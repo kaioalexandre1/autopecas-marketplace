@@ -135,7 +135,7 @@ export default function NegociosFechadosPage() {
           Negócios Fechados
         </h1>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <div className="flex items-center text-gray-600 dark:text-gray-300">
+          <div className="flex items-center text-gray-600 dark:text-white">
             <Calendar size={16} className="mr-2" />
             <span className="text-sm sm:text-base">
               {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
@@ -149,7 +149,7 @@ export default function NegociosFechadosPage() {
               className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
                 periodoSelecionado === 'hoje'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Hoje
@@ -159,7 +159,7 @@ export default function NegociosFechadosPage() {
               className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
                 periodoSelecionado === 'semana'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Semana
@@ -169,7 +169,7 @@ export default function NegociosFechadosPage() {
               className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
                 periodoSelecionado === 'mes'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Mês
@@ -235,10 +235,10 @@ export default function NegociosFechadosPage() {
       {negociosFiltrados.length === 0 ? (
         <div className="text-center py-12 sm:py-20 bg-white dark:bg-gray-800 rounded-xl shadow mt-6 sm:mt-8 border border-gray-200 dark:border-gray-700">
           <CheckCircle size={56} className="mx-auto text-gray-300 dark:text-gray-600 mb-3 sm:mb-4" />
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2 px-3">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-600 dark:text-white mb-2 px-3">
             Nenhum negócio fechado {periodoSelecionado === 'hoje' ? 'hoje' : periodoSelecionado === 'semana' ? 'esta semana' : 'este mês'}
           </h3>
-          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
+          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-200">
             Os negócios fechados aparecerão aqui
           </p>
         </div>
@@ -259,25 +259,25 @@ export default function NegociosFechadosPage() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mb-2 sm:mb-3">
-                    <div className="bg-blue-50 rounded-lg p-2.5 sm:p-3">
-                      <p className="text-[10px] sm:text-xs text-gray-600 mb-0.5 sm:mb-1">Oficina</p>
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{negocio.oficinaNome}</p>
+                    <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-2.5 sm:p-3">
+                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Oficina</p>
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{negocio.oficinaNome}</p>
                     </div>
 
-                    <div className="bg-green-50 rounded-lg p-2.5 sm:p-3">
-                      <p className="text-[10px] sm:text-xs text-gray-600 mb-0.5 sm:mb-1">Autopeça</p>
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{negocio.autopecaNome}</p>
+                    <div className="bg-green-50 dark:bg-green-900 rounded-lg p-2.5 sm:p-3">
+                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Autopeça</p>
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{negocio.autopecaNome}</p>
                     </div>
 
-                    <div className="bg-yellow-50 rounded-lg p-2.5 sm:p-3">
-                      <p className="text-[10px] sm:text-xs text-gray-600 mb-0.5 sm:mb-1">Valor Final</p>
+                    <div className="bg-yellow-50 dark:bg-yellow-900 rounded-lg p-2.5 sm:p-3">
+                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Valor Final</p>
                       <p className="font-bold text-green-700 text-base sm:text-lg">
                         R$ {negocio.valorFinal?.toFixed(2) || '0.00'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                  <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-white">
                     <Calendar size={14} className="mr-2 flex-shrink-0" />
                     <span>
                       Fechado às {format(negocio.createdAt, 'HH:mm', { locale: ptBR })}

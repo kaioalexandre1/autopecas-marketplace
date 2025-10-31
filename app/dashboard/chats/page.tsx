@@ -396,15 +396,39 @@ export default function ChatsPage() {
 
     setExcluindo(true);
     try {
-      const deletePromises = chatsEncerrados.map(chat => deleteDoc(doc(db, 'chats', chat.id)));
-      await Promise.all(deletePromises);
-      toast.success(`${chatsEncerrados.length} chat${chatsEncerrados.length > 1 ? 's' : ''} encerrado${chatsEncerrados.length > 1 ? 's' : ''} excluído${chatsEncerrados.length > 1 ? 's' : ''}!`);
-      if (chatSelecionado?.encerrado) {
-        setChatSelecionado(null);
+      let sucesso = 0;
+      let falhas = 0;
+      
+      for (const chat of chatsEncerrados) {
+        try {
+          // Verificar se o usuário tem permissão para excluir este chat
+          if (userData && (chat.oficinaId === userData.id || chat.autopecaId === userData.id)) {
+            await deleteDoc(doc(db, 'chats', chat.id));
+            sucesso++;
+            console.log(`✅ Chat ${chat.id} excluído com sucesso`);
+          } else {
+            console.warn(`⚠️ Sem permissão para excluir chat ${chat.id}`);
+            falhas++;
+          }
+        } catch (error: any) {
+          console.error(`❌ Erro ao excluir chat ${chat.id}:`, error);
+          falhas++;
+        }
       }
-    } catch (error) {
-      console.error('Erro ao excluir chats:', error);
-      toast.error('Erro ao excluir os chats');
+
+      if (sucesso > 0) {
+        toast.success(`${sucesso} chat${sucesso > 1 ? 's' : ''} excluído${sucesso > 1 ? 's' : ''} com sucesso!`);
+        if (chatSelecionado?.encerrado && chatsEncerrados.some(c => c.id === chatSelecionado.id)) {
+          setChatSelecionado(null);
+        }
+      }
+      
+      if (falhas > 0) {
+        toast.error(`${falhas} chat${falhas > 1 ? 's' : ''} não puderam ser excluído${falhas > 1 ? 's' : ''}. Verifique as permissões.`);
+      }
+    } catch (error: any) {
+      console.error('Erro geral ao excluir chats:', error);
+      toast.error(`Erro ao excluir os chats: ${error?.message || 'Erro desconhecido'}`);
     } finally {
       setExcluindo(false);
     }
@@ -458,10 +482,10 @@ export default function ChatsPage() {
             
             <div className="overflow-y-auto" style={{ height: 'calc(100% - 72px)' }}>
               {chats.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                  <MessageSquare size={56} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                  <p className="font-medium text-gray-700 dark:text-gray-300">Nenhuma conversa ainda</p>
-                  <p className="text-sm mt-2">
+                <div className="p-8 text-center text-gray-500 dark:text-white">
+                  <MessageSquare size={56} className="mx-auto mb-4 text-gray-300 dark:text-gray-400" />
+                  <p className="font-medium text-gray-700 dark:text-white">Nenhuma conversa ainda</p>
+                  <p className="text-sm mt-2 dark:text-gray-200">
                     {userData?.tipo === 'autopeca' 
                       ? 'Faça uma oferta para iniciar uma conversa'
                       : 'Aguarde ofertas em seus pedidos'}
@@ -496,7 +520,7 @@ export default function ChatsPage() {
                           )}
                         </div>
                         {chat.mensagens.length > 0 && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-300">
                             {formatDistanceToNow(
                               chat.mensagens[chat.mensagens.length - 1].createdAt,
                               { addSuffix: true, locale: ptBR }
@@ -505,21 +529,21 @@ export default function ChatsPage() {
                         )}
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600 mb-1">
+                      <div className="flex items-center text-sm text-gray-600 dark:text-white mb-1">
                         <span className="font-medium">{chat.nomePeca}</span>
                         {chat.encerrado && (
-                          <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">
+                          <span className="ml-2 px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-white rounded text-xs">
                             Encerrado
                           </span>
                         )}
                       </div>
                       
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-300">
                         {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
                       </p>
                       
                       {chat.mensagens.length > 0 && (
-                        <p className="text-xs text-gray-500 truncate mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-300 truncate mt-1">
                           {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
                         </p>
                       )}
@@ -531,11 +555,11 @@ export default function ChatsPage() {
           </div>
 
           {/* Área do Chat */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-700">
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden">
             {chatSelecionado ? (
               <>
                 {/* Header do Chat */}
-                <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+                <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 flex-shrink-0">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                     <div className="flex-1 min-w-0">
                       <h2 className="font-bold text-white text-base sm:text-lg truncate">
@@ -587,7 +611,7 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Mensagens */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white">
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800" style={{ maxHeight: 'calc(100vh - 280px)', minHeight: 0 }}>
                   {chatSelecionado.encerrado && (
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r-lg">
                       <div className="flex items-center">
@@ -605,10 +629,10 @@ export default function ChatsPage() {
                   )}
                   
                   {chatSelecionado.mensagens.length === 0 ? (
-                    <div className="text-center text-gray-500 py-12">
-                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-300" />
-                      <p className="text-lg font-medium text-gray-700">Nenhuma mensagem ainda</p>
-                      <p className="text-sm mt-2">Envie a primeira mensagem para iniciar a conversa!</p>
+                    <div className="text-center text-gray-500 dark:text-white py-12">
+                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-300 dark:text-gray-400" />
+                      <p className="text-lg font-medium text-gray-700 dark:text-white">Nenhuma mensagem ainda</p>
+                      <p className="text-sm mt-2 dark:text-gray-200">Envie a primeira mensagem para iniciar a conversa!</p>
                     </div>
                   ) : (
                     chatSelecionado.mensagens.map((msg) => {
@@ -623,7 +647,7 @@ export default function ChatsPage() {
                             className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-md ${
                               isMinha
                                 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                                : 'bg-white text-gray-900 border border-gray-200'
+                                : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
                             }`}
                           >
                             {msg.imagemUrl && (
@@ -637,7 +661,7 @@ export default function ChatsPage() {
                             {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
                             <span
                               className={`text-xs mt-2 block ${
-                                isMinha ? 'text-blue-100' : 'text-gray-500'
+                                isMinha ? 'text-blue-100' : 'text-gray-500 dark:text-gray-300'
                               }`}
                             >
                               {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
@@ -651,12 +675,12 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Input de Mensagem */}
-                <div className="p-3 sm:p-5 border-t border-gray-200 bg-gray-50">
+                <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
                   {chatSelecionado.encerrado ? (
-                    <div className="text-center py-4 sm:py-6 text-gray-500 bg-gray-100 rounded-xl">
-                      <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-400" />
-                      <p className="font-semibold text-gray-700 text-base sm:text-lg">Chat Encerrado</p>
-                      <p className="text-xs sm:text-sm mt-1">Este chat foi finalizado e não aceita mais mensagens.</p>
+                    <div className="text-center py-4 sm:py-6 text-gray-500 dark:text-white bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                      <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-400 dark:text-gray-300" />
+                      <p className="font-semibold text-gray-700 dark:text-white text-base sm:text-lg">Chat Encerrado</p>
+                      <p className="text-xs sm:text-sm mt-1 dark:text-gray-200">Este chat foi finalizado e não aceita mais mensagens.</p>
                     </div>
                   ) : (
                     <>

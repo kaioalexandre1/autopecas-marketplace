@@ -596,7 +596,7 @@ export default function DashboardPage() {
                 Pedidos ao Vivo
               </h1>
               
-              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-3 leading-relaxed">
+              <p className="text-sm text-gray-700 dark:text-white font-medium mb-3 leading-relaxed">
                 Seu pedido já está sendo divulgado ao vivo e você logo receberá ofertas!
               </p>
               
@@ -604,7 +604,7 @@ export default function DashboardPage() {
                 <div className="bg-white dark:bg-gray-800 px-3 py-1 rounded-lg shadow-sm border border-red-100 dark:border-gray-600">
                   <span className="text-xl font-black text-red-600 dark:text-red-400">{pedidos.length}</span>
                 </div>
-                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">
+                <p className="text-xs text-gray-700 dark:text-white font-medium">
                   pedido(s) ativo(s)
                 </p>
               </div>
@@ -734,7 +734,7 @@ export default function DashboardPage() {
                 
                 <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-gray-700 py-2 w-full sm:min-w-[280px] sm:w-auto z-20">
                   <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                    <p className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Opções de Filtro</p>
+                    <p className="text-xs font-bold text-gray-600 dark:text-white uppercase">Opções de Filtro</p>
                   </div>
                   
                   {/* Filtro de Condição */}
@@ -749,7 +749,7 @@ export default function DashboardPage() {
                       className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                         filtroCondicao === 'todas'
                           ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <Car size={16} />
@@ -764,7 +764,7 @@ export default function DashboardPage() {
                       className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                         filtroCondicao === 'Nova'
                           ? 'bg-green-600 text-white shadow-md'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <span className="text-lg">✨</span>
@@ -779,7 +779,7 @@ export default function DashboardPage() {
                       className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                         filtroCondicao === 'Usada'
                           ? 'bg-orange-600 text-white shadow-md'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <span className="text-lg">🔄</span>
@@ -799,7 +799,7 @@ export default function DashboardPage() {
                       className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-between ${
                         modoResumido
                           ? 'bg-purple-600 text-white shadow-md'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -817,7 +817,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                    <p className="text-xs text-gray-600 dark:text-gray-300 font-semibold">
+                    <p className="text-xs text-gray-600 dark:text-white font-semibold">
                       📊 {pedidos.filter(p => {
                         if (filtroCondicao === 'todas') return true;
                         if (!p.condicaoPeca) return false;
@@ -837,10 +837,10 @@ export default function DashboardPage() {
           {pedidos.length === 0 ? (
             <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700">
               <Search size={64} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-white mb-2">
                 Nenhum pedido ativo no momento
               </h3>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-gray-500 dark:text-gray-200">
                 {userData?.tipo === 'oficina' 
                   ? 'Crie o primeiro pedido clicando no botão acima'
                   : 'Aguarde novos pedidos de oficinas'}
