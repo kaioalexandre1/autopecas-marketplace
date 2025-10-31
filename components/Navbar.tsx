@@ -367,10 +367,10 @@ export default function Navbar() {
         corBorda: 'border-gray-600'
       },
       premium: {
-        nome: 'Premium',
-        cor: 'bg-blue-600',
+        nome: 'Silver',
+        cor: 'bg-slate-500',
         corTexto: 'text-white',
-        corBorda: 'border-blue-700'
+        corBorda: 'border-slate-600'
       },
       gold: {
         nome: 'Gold',
@@ -435,8 +435,8 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Seletor de Cidades (Múltipla) - Oculto no dashboard, aparece nos filtros */}
-            {userData && cidadesSelecionadas.length > 0 && pathname !== '/dashboard' && (
+            {/* Seletor de Cidades (Múltipla) - Removido do Navbar, agora está apenas nos filtros do dashboard */}
+            {false && (
               <div className="relative">
                 <button
                   onClick={() => setMostrarDropdown(!mostrarDropdown)}
@@ -571,8 +571,8 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Seletor de Ramo (CARRO, MOTO, CAMINHÃO, ÔNIBUS, TODOS) - Oculto no dashboard, aparece nos filtros */}
-            {userData && (userData.tipo === 'oficina' || userData.tipo === 'autopeca') && pathname !== '/dashboard' && (
+            {/* Seletor de Ramo (CARRO, MOTO, CAMINHÃO, ÔNIBUS, TODOS) - Removido do Navbar, agora está apenas nos filtros do dashboard */}
+            {false && (
               <div className="relative">
                 <button
                   onClick={() => setMostrarDropdownRamo(!mostrarDropdownRamo)}

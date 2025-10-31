@@ -1598,7 +1598,7 @@ export default function DashboardPage() {
                                 const plano = planosAutopecas[oferta.autopecaId] || 'basico';
                                 const cores: {[key: string]: string} = {
                                   basico: 'text-gray-700 dark:text-gray-900',
-                                  premium: 'text-blue-600 dark:text-blue-700',
+                                  premium: 'text-slate-600 dark:text-slate-400',
                                   gold: 'text-yellow-600 dark:text-yellow-700',
                                   platinum: 'text-purple-600 dark:text-purple-700'
                                 };
@@ -1610,7 +1610,7 @@ export default function DashboardPage() {
                                 };
                                 const nomesPlanos: {[key: string]: string} = {
                                   basico: '',
-                                  premium: 'Premium',
+                                  premium: 'Silver',
                                   gold: 'Gold',
                                   platinum: 'Platinum'
                                 };

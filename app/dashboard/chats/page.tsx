@@ -785,7 +785,7 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Mensagens */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-50 dark:to-gray-100" style={{ maxHeight: 'calc(100vh - 280px)', minHeight: 0 }}>
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-50 dark:to-gray-100" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
                   {chatSelecionado.encerrado && (
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r-lg">
                       <div className="flex items-center">

@@ -28,7 +28,7 @@ export default function CheckoutPage() {
 
   const planosInfo: Record<PlanoAssinatura, { nome: string; limite: string }> = {
     basico: { nome: 'Básico', limite: '20 ofertas/mês' },
-    premium: { nome: 'Premium', limite: '100 ofertas/mês' },
+    premium: { nome: 'Silver', limite: '100 ofertas/mês' },
     gold: { nome: 'Gold', limite: '200 ofertas/mês' },
     platinum: { nome: 'Platinum', limite: 'Ofertas ilimitadas' },
   };

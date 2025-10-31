@@ -30,10 +30,10 @@ export default function PlanosPage() {
       preco: PRECOS_PLANOS.basico,
       limite: LIMITES_PLANOS.basico,
       icone: Zap,
-      cor: 'from-gray-400 to-gray-600',
-      corBorda: 'border-gray-400',
-      corTexto: 'text-gray-600',
-      corBg: 'bg-gray-50',
+      cor: 'from-gray-300/60 to-gray-500/60',
+      corBorda: 'border-gray-300/50',
+      corTexto: 'text-gray-500',
+      corBg: 'bg-gray-50/80',
       features: [
         'Até 20 ofertas por mês',
         'Acesso a todos os pedidos',
@@ -44,14 +44,14 @@ export default function PlanosPage() {
     },
     {
       id: 'premium' as PlanoAssinatura,
-      nome: 'Premium',
+      nome: 'Silver',
       preco: PRECOS_PLANOS.premium,
       limite: LIMITES_PLANOS.premium,
       icone: Crown,
-      cor: 'from-blue-500 to-blue-700',
-      corBorda: 'border-blue-500',
-      corTexto: 'text-blue-600',
-      corBg: 'bg-blue-50',
+      cor: 'from-slate-300/60 to-slate-500/60',
+      corBorda: 'border-slate-300/50',
+      corTexto: 'text-slate-500',
+      corBg: 'bg-slate-50/80',
       features: [
         'Até 100 ofertas por mês',
         'Destaque em pesquisas',
@@ -59,7 +59,7 @@ export default function PlanosPage() {
         'Relatórios de vendas',
         'Suporte prioritário',
       ],
-      destaque: true,
+      destaque: false,
     },
     {
       id: 'gold' as PlanoAssinatura,
@@ -67,10 +67,10 @@ export default function PlanosPage() {
       preco: PRECOS_PLANOS.gold,
       limite: LIMITES_PLANOS.gold,
       icone: Gem,
-      cor: 'from-yellow-500 to-yellow-700',
-      corBorda: 'border-yellow-500',
+      cor: 'from-yellow-400/60 to-yellow-600/60',
+      corBorda: 'border-yellow-400/50',
       corTexto: 'text-yellow-600',
-      corBg: 'bg-yellow-50',
+      corBg: 'bg-yellow-50/80',
       features: [
         'Até 200 ofertas por mês',
         'Selo Gold verificado',
@@ -86,10 +86,10 @@ export default function PlanosPage() {
       preco: PRECOS_PLANOS.platinum,
       limite: LIMITES_PLANOS.platinum,
       icone: Crown,
-      cor: 'from-purple-500 to-purple-700',
-      corBorda: 'border-purple-500',
+      cor: 'from-purple-400/60 to-purple-600/60',
+      corBorda: 'border-purple-400/50',
       corTexto: 'text-purple-600',
-      corBg: 'bg-purple-50',
+      corBg: 'bg-purple-50/80',
       features: [
         'Ofertas ILIMITADAS',
         'Selo Platinum exclusivo',
@@ -98,7 +98,7 @@ export default function PlanosPage() {
         'Consultoria estratégica',
         'Suporte 24/7',
       ],
-      destaque: false,
+      destaque: true,
     },
   ];
 
@@ -153,19 +153,37 @@ export default function PlanosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen relative py-12 px-4 overflow-hidden">
+      {/* Fundo azul com flares neon */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-950">
+        {/* Flare neon 1 - Diagonal superior esquerda */}
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-cyan-400 opacity-30 blur-[120px] transform rotate-45 -translate-x-1/3 -translate-y-1/3"></div>
+        
+        {/* Flare neon 2 - Diagonal centro */}
+        <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] bg-blue-400 opacity-25 blur-[100px] transform rotate-45 -translate-x-1/2 -translate-y-1/2"></div>
+        
+        {/* Flare neon 3 - Diagonal inferior direita */}
+        <div className="absolute bottom-0 right-0 w-[700px] h-[700px] bg-cyan-300 opacity-20 blur-[140px] transform rotate-45 translate-x-1/3 translate-y-1/3"></div>
+        
+        {/* Flare neon 4 - Diagonal superior direita */}
+        <div className="absolute top-20 right-20 w-[400px] h-[400px] bg-blue-300 opacity-25 blur-[90px] transform rotate-12"></div>
+        
+        {/* Flare neon 5 - Diagonal inferior esquerda */}
+        <div className="absolute bottom-20 left-20 w-[450px] h-[450px] bg-cyan-500 opacity-20 blur-[110px] transform -rotate-12"></div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">
+          <h1 className="text-5xl font-black text-white mb-4 drop-shadow-lg">
             Escolha seu Plano
           </h1>
-          <p className="text-xl text-gray-600 dark:text-white max-w-2xl mx-auto">
+          <p className="text-xl text-white/90 max-w-2xl mx-auto drop-shadow-md">
             Potencialize suas vendas com o plano ideal para o seu negócio
           </p>
           
           {userData.plano && (
-            <div className="mt-6 inline-block px-6 py-3 bg-green-100 border-2 border-green-500 rounded-full">
+            <div className="mt-6 inline-block px-6 py-3 bg-green-100/95 border-2 border-green-500 rounded-full backdrop-blur-sm">
               <p className="text-green-800 font-bold">
                 Plano Atual: {planosConfig.find(p => p.id === userData.plano)?.nome} • 
                 {getLimiteAtual() === -1 ? ' Ilimitado' : ` ${getOfertasUsadas()}/${getLimiteAtual()} ofertas usadas`}
@@ -183,12 +201,12 @@ export default function PlanosPage() {
             return (
               <div
                 key={plano.id}
-                className={`relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-105 ${
-                  plano.destaque ? 'ring-4 ring-blue-500 scale-105' : ''
+                className={`relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-105 ${
+                  plano.destaque ? `ring-4 ${plano.corBorda} scale-105` : ''
                 } ${isPlanoAtual ? 'ring-4 ring-green-500' : ''}`}
               >
                 {plano.destaque && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-500 to-blue-700 text-white px-4 py-1 text-xs font-bold rounded-bl-lg">
+                  <div className={`absolute top-0 right-0 bg-gradient-to-r ${plano.cor} text-white px-4 py-1 text-xs font-bold rounded-bl-lg`}>
                     MAIS POPULAR
                   </div>
                 )}
@@ -199,8 +217,8 @@ export default function PlanosPage() {
                   </div>
                 )}
 
-                <div className={`h-32 bg-gradient-to-br ${plano.cor} flex items-center justify-center`}>
-                  <Icon size={64} className="text-white" />
+                <div className={`h-32 bg-gradient-to-br ${plano.cor} backdrop-blur-sm flex items-center justify-center`}>
+                  <Icon size={64} className="text-white/90" />
                 </div>
 
                 <div className="p-6">
@@ -231,10 +249,10 @@ export default function PlanosPage() {
                   <button
                     onClick={() => handleSelecionarPlano(plano.id)}
                     disabled={loading || isPlanoAtual}
-                    className={`w-full py-3 px-6 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${
+                    className={`w-full py-3 px-6 rounded-xl font-bold text-white/90 transition-all flex items-center justify-center gap-2 ${
                       isPlanoAtual
                         ? 'bg-gray-400 cursor-not-allowed'
-                        : `bg-gradient-to-r ${plano.cor} hover:shadow-2xl transform hover:-translate-y-1`
+                        : `bg-gradient-to-r ${plano.cor} backdrop-blur-sm hover:shadow-2xl transform hover:-translate-y-1`
                     }`}
                   >
                     {loading ? (
@@ -255,30 +273,30 @@ export default function PlanosPage() {
         </div>
 
         {/* FAQ */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl font-black text-gray-900 mb-6 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-6 text-center">
             Perguntas Frequentes
           </h2>
           
           <div className="space-y-4">
             <div>
               <h3 className="font-bold text-gray-900 dark:text-white mb-2">🔄 Como funciona a cobrança?</h3>
-              <p className="text-gray-600 dark:text-white">A cobrança é mensal e renovada automaticamente. Você pode cancelar a qualquer momento.</p>
+              <p className="text-gray-600 dark:text-gray-200">A cobrança é mensal e renovada automaticamente. Você pode cancelar a qualquer momento.</p>
             </div>
             
             <div>
               <h3 className="font-bold text-gray-900 dark:text-white mb-2">📊 O que acontece se eu exceder o limite?</h3>
-              <p className="text-gray-600 dark:text-white">Você não poderá fazer novas ofertas até o próximo mês ou até fazer upgrade do plano.</p>
+              <p className="text-gray-600 dark:text-gray-200">Você não poderá fazer novas ofertas até o próximo mês ou até fazer upgrade do plano.</p>
             </div>
             
             <div>
               <h3 className="font-bold text-gray-900 dark:text-white mb-2">💳 Quais formas de pagamento aceitam?</h3>
-              <p className="text-gray-600 dark:text-white">Aceitamos cartão de crédito, PIX e boleto através do Mercado Pago.</p>
+              <p className="text-gray-600 dark:text-gray-200">Aceitamos cartão de crédito, PIX e boleto através do Mercado Pago.</p>
             </div>
             
             <div>
               <h3 className="font-bold text-gray-900 dark:text-white mb-2">🔼 Posso fazer upgrade a qualquer momento?</h3>
-              <p className="text-gray-600 dark:text-white">Sim! Você pode fazer upgrade imediatamente e o valor será proporcional.</p>
+              <p className="text-gray-600 dark:text-gray-200">Sim! Você pode fazer upgrade imediatamente e o valor será proporcional.</p>
             </div>
           </div>
         </div>
