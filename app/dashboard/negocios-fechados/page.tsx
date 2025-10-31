@@ -238,7 +238,7 @@ export default function NegociosFechadosPage() {
           <h3 className="text-lg sm:text-xl font-semibold text-gray-600 dark:text-white mb-2 px-3">
             Nenhum negócio fechado {periodoSelecionado === 'hoje' ? 'hoje' : periodoSelecionado === 'semana' ? 'esta semana' : 'este mês'}
           </h3>
-          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-200">
+          <p className="text-sm sm:text-base text-gray-900 dark:text-gray-200">
             Os negócios fechados aparecerão aqui
           </p>
         </div>

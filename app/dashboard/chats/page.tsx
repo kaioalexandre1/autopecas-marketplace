@@ -396,38 +396,54 @@ export default function ChatsPage() {
 
     setExcluindo(true);
     try {
-      let sucesso = 0;
-      let falhas = 0;
-      
-      for (const chat of chatsEncerrados) {
-        try {
-          // Verificar se o usuário tem permissão para excluir este chat
-          if (userData && (chat.oficinaId === userData.id || chat.autopecaId === userData.id)) {
-            await deleteDoc(doc(db, 'chats', chat.id));
-            sucesso++;
-            console.log(`✅ Chat ${chat.id} excluído com sucesso`);
-          } else {
-            console.warn(`⚠️ Sem permissão para excluir chat ${chat.id}`);
-            falhas++;
-          }
-        } catch (error: any) {
-          console.error(`❌ Erro ao excluir chat ${chat.id}:`, error);
-          falhas++;
-        }
+      // Filtrar apenas chats que o usuário tem permissão para excluir
+      const chatsParaExcluir = chatsEncerrados.filter(chat => 
+        userData && (chat.oficinaId === userData.id || chat.autopecaId === userData.id)
+      );
+
+      if (chatsParaExcluir.length === 0) {
+        toast.error('Você não tem permissão para excluir nenhum chat encerrado');
+        setExcluindo(false);
+        return;
       }
 
-      if (sucesso > 0) {
-        toast.success(`${sucesso} chat${sucesso > 1 ? 's' : ''} excluído${sucesso > 1 ? 's' : ''} com sucesso!`);
-        if (chatSelecionado?.encerrado && chatsEncerrados.some(c => c.id === chatSelecionado.id)) {
-          setChatSelecionado(null);
+      console.log(`🗑️ Iniciando exclusão de ${chatsParaExcluir.length} chat(s)...`);
+
+      // Excluir todos os chats simultaneamente usando Promise.allSettled
+      const resultados = await Promise.allSettled(
+        chatsParaExcluir.map(async (chat) => {
+          console.log(`🗑️ Excluindo chat ${chat.id}...`);
+          await deleteDoc(doc(db, 'chats', chat.id));
+          console.log(`✅ Chat ${chat.id} excluído com sucesso`);
+          return { chatId: chat.id, sucesso: true };
+        })
+      );
+
+      const sucesso = resultados.filter(r => r.status === 'fulfilled').length;
+      const falhas = resultados.filter(r => r.status === 'rejected').length;
+
+      // Log detalhado das falhas
+      resultados.forEach((resultado, index) => {
+        if (resultado.status === 'rejected') {
+          console.error(`❌ Erro ao excluir chat ${chatsParaExcluir[index].id}:`, resultado.reason);
         }
-      }
-      
+      });
+
       if (falhas > 0) {
-        toast.error(`${falhas} chat${falhas > 1 ? 's' : ''} não puderam ser excluído${falhas > 1 ? 's' : ''}. Verifique as permissões.`);
+        toast.error(
+          `${sucesso} excluído${sucesso > 1 ? 's' : ''} com sucesso, mas ${falhas} falharam. Verifique o console para detalhes.`,
+          { duration: 5000 }
+        );
+      } else {
+        toast.success(`✅ Todos os ${sucesso} chat${sucesso > 1 ? 's' : ''} foram excluído${sucesso > 1 ? 's' : ''} com sucesso!`);
+      }
+
+      // Limpar chat selecionado se foi excluído
+      if (chatSelecionado?.encerrado && chatsParaExcluir.some(c => c.id === chatSelecionado.id)) {
+        setChatSelecionado(null);
       }
     } catch (error: any) {
-      console.error('Erro geral ao excluir chats:', error);
+      console.error('❌ Erro geral ao excluir chats:', error);
       toast.error(`Erro ao excluir os chats: ${error?.message || 'Erro desconhecido'}`);
     } finally {
       setExcluindo(false);
@@ -482,10 +498,10 @@ export default function ChatsPage() {
             
             <div className="overflow-y-auto" style={{ height: 'calc(100% - 72px)' }}>
               {chats.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 dark:text-white">
-                  <MessageSquare size={56} className="mx-auto mb-4 text-gray-300 dark:text-gray-400" />
-                  <p className="font-medium text-gray-700 dark:text-white">Nenhuma conversa ainda</p>
-                  <p className="text-sm mt-2 dark:text-gray-200">
+                <div className="p-8 text-center text-gray-900 dark:text-white">
+                  <MessageSquare size={56} className="mx-auto mb-4 text-gray-600 dark:text-gray-400" />
+                  <p className="font-medium text-gray-900 dark:text-white">Nenhuma conversa ainda</p>
+                  <p className="text-sm text-gray-900 mt-2 dark:text-gray-200">
                     {userData?.tipo === 'autopeca' 
                       ? 'Faça uma oferta para iniciar uma conversa'
                       : 'Aguarde ofertas em seus pedidos'}
@@ -520,7 +536,7 @@ export default function ChatsPage() {
                           )}
                         </div>
                         {chat.mensagens.length > 0 && (
-                          <span className="text-xs text-gray-500 dark:text-gray-300">
+                          <span className="text-xs text-gray-900 dark:text-gray-300">
                             {formatDistanceToNow(
                               chat.mensagens[chat.mensagens.length - 1].createdAt,
                               { addSuffix: true, locale: ptBR }
@@ -538,12 +554,12 @@ export default function ChatsPage() {
                         )}
                       </div>
                       
-                      <p className="text-xs text-gray-500 dark:text-gray-300">
+                      <p className="text-xs text-gray-900 dark:text-gray-300">
                         {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
                       </p>
                       
                       {chat.mensagens.length > 0 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-300 truncate mt-1">
+                        <p className="text-xs text-gray-900 dark:text-gray-300 truncate mt-1">
                           {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
                         </p>
                       )}
@@ -629,10 +645,10 @@ export default function ChatsPage() {
                   )}
                   
                   {chatSelecionado.mensagens.length === 0 ? (
-                    <div className="text-center text-gray-500 dark:text-white py-12">
-                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-300 dark:text-gray-400" />
-                      <p className="text-lg font-medium text-gray-700 dark:text-white">Nenhuma mensagem ainda</p>
-                      <p className="text-sm mt-2 dark:text-gray-200">Envie a primeira mensagem para iniciar a conversa!</p>
+                    <div className="text-center text-gray-900 dark:text-white py-12">
+                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-600 dark:text-gray-400" />
+                      <p className="text-lg font-medium text-gray-900 dark:text-white">Nenhuma mensagem ainda</p>
+                      <p className="text-sm text-gray-900 mt-2 dark:text-gray-200">Envie a primeira mensagem para iniciar a conversa!</p>
                     </div>
                   ) : (
                     chatSelecionado.mensagens.map((msg) => {
@@ -661,7 +677,7 @@ export default function ChatsPage() {
                             {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
                             <span
                               className={`text-xs mt-2 block ${
-                                isMinha ? 'text-blue-100' : 'text-gray-500 dark:text-gray-300'
+                                isMinha ? 'text-blue-100' : 'text-gray-900 dark:text-gray-300'
                               }`}
                             >
                               {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
@@ -677,10 +693,10 @@ export default function ChatsPage() {
                 {/* Input de Mensagem */}
                 <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
                   {chatSelecionado.encerrado ? (
-                    <div className="text-center py-4 sm:py-6 text-gray-500 dark:text-white bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                      <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-400 dark:text-gray-300" />
-                      <p className="font-semibold text-gray-700 dark:text-white text-base sm:text-lg">Chat Encerrado</p>
-                      <p className="text-xs sm:text-sm mt-1 dark:text-gray-200">Este chat foi finalizado e não aceita mais mensagens.</p>
+                    <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                      <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-700 dark:text-gray-300" />
+                      <p className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg">Chat Encerrado</p>
+                      <p className="text-xs sm:text-sm text-gray-900 mt-1 dark:text-gray-200">Este chat foi finalizado e não aceita mais mensagens.</p>
                     </div>
                   ) : (
                     <>
@@ -747,11 +763,11 @@ export default function ChatsPage() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-white">
                 <div className="text-center">
-                  <MessageSquare size={80} className="mx-auto mb-6 text-gray-300" />
-                  <p className="text-xl font-medium text-gray-700">Selecione uma conversa</p>
-                  <p className="text-sm mt-2">Escolha um chat na lista para começar</p>
+                  <MessageSquare size={80} className="mx-auto mb-6 text-gray-600 dark:text-gray-400" />
+                  <p className="text-xl font-medium text-gray-900 dark:text-white">Selecione uma conversa</p>
+                  <p className="text-sm text-gray-900 dark:text-gray-300 mt-2">Escolha um chat na lista para começar</p>
                 </div>
               </div>
             )}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User, NegocioFechado, Pedido, PlanoAssinatura, PRECOS_PLANOS } from '@/types';
 import { 
@@ -21,12 +21,15 @@ import {
   Lock,
   Unlock,
   Crown,
-  Ban
+  Ban,
+  Headphones,
+  MessageSquare
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { startOfDay, startOfWeek, startOfMonth, isAfter, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import ChatSuporteAdmin from '@/components/ChatSuporteAdmin';
 
 export default function AdminPage() {
   const { userData, loading: authLoading } = useAuth();
@@ -48,6 +51,11 @@ export default function AdminPage() {
   const [mpPublicKey, setMpPublicKey] = useState('');
   const [salvandoMP, setSalvandoMP] = useState(false);
 
+  // Estados para suporte
+  const [mostrarSuporte, setMostrarSuporte] = useState(false);
+  const [chatsSuporte, setChatsSuporte] = useState<any[]>([]);
+  const [chatSelecionado, setChatSelecionado] = useState<any>(null);
+
   // Verificar se é admin
   useEffect(() => {
     if (!authLoading && userData) {
@@ -65,8 +73,69 @@ export default function AdminPage() {
     if (userData?.role === 'admin') {
       carregarDados();
       carregarConfigMP();
+      carregarChatsSuporte();
     }
   }, [userData]);
+
+  // Carregar chats de suporte (com listener em tempo real quando modal estiver aberto)
+  useEffect(() => {
+    if (!mostrarSuporte || userData?.role !== 'admin') return;
+
+    const suporteQuery = query(collection(db, 'suporte_chats'), orderBy('updatedAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(suporteQuery, (snapshot) => {
+      const chatsData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+        };
+      });
+      setChatsSuporte(chatsData);
+      
+      // Se não há chat selecionado e há chats, selecionar o primeiro
+      setChatSelecionado(prev => {
+        if (!prev && chatsData.length > 0) {
+          return chatsData[0];
+        }
+        // Se o chat selecionado foi atualizado, atualizar o estado
+        if (prev) {
+          const chatAtualizado = chatsData.find(c => c.id === prev.id);
+          if (chatAtualizado) {
+            return chatAtualizado;
+          }
+        }
+        return prev;
+      });
+    });
+
+    return () => unsubscribe();
+  }, [mostrarSuporte, userData]);
+
+  const carregarChatsSuporte = async () => {
+    try {
+      const suporteSnapshot = await getDocs(query(collection(db, 'suporte_chats'), orderBy('updatedAt', 'desc')));
+      const chatsData = suporteSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+        };
+      });
+      setChatsSuporte(chatsData);
+      
+      // Se não há chat selecionado e há chats, selecionar o primeiro
+      if (!chatSelecionado && chatsData.length > 0) {
+        setChatSelecionado(chatsData[0]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar chats de suporte:', error);
+    }
+  };
 
   // Carregar configuração do Mercado Pago
   const carregarConfigMP = async () => {
@@ -277,7 +346,22 @@ export default function AdminPage() {
               <ArrowLeft size={20} />
               Voltar ao Dashboard
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <button
+                onClick={() => {
+                  setMostrarSuporte(true);
+                  carregarChatsSuporte();
+                }}
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-2xl transition-all font-black text-sm"
+              >
+                <Headphones size={24} />
+                PEDIDOS DE SUPORTE
+                {chatsSuporte.filter(c => c.status === 'aberto' || c.status === 'em_andamento').length > 0 && (
+                  <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                    {chatsSuporte.filter(c => c.status === 'aberto' || c.status === 'em_andamento').length}
+                  </span>
+                )}
+              </button>
               <button
                 onClick={() => setMostrarConfigMP(true)}
                 className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-2xl transition-all font-black text-sm animate-pulse hover:animate-none"
@@ -723,6 +807,108 @@ export default function AdminPage() {
                 >
                   {salvandoMP ? 'Salvando...' : 'Salvar Configuração'}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Suporte */}
+      {mostrarSuporte && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-500 to-purple-600">
+              <div className="flex items-center gap-3">
+                <Headphones size={32} className="text-white" />
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Pedidos de Suporte</h2>
+                  <p className="text-purple-100 text-sm">
+                    {chatsSuporte.length} chat{chatsSuporte.length !== 1 ? 's' : ''} de suporte
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setMostrarSuporte(false);
+                  setChatSelecionado(null);
+                }}
+                className="text-white hover:bg-white/20 rounded-full p-2"
+              >
+                <Ban size={24} />
+              </button>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Lista de Chats */}
+              <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                <div className="p-4 space-y-2">
+                  {chatsSuporte.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                      <MessageSquare size={48} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                      <p className="text-sm">Nenhum pedido de suporte</p>
+                    </div>
+                  ) : (
+                    chatsSuporte.map((chat) => (
+                      <button
+                        key={chat.id}
+                        onClick={() => setChatSelecionado(chat)}
+                        className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                          chatSelecionado?.id === chat.id
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-900 dark:text-white text-sm truncate">
+                              {chat.usuarioNome}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                              {chat.motivoLabel}
+                            </p>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs font-bold ml-2 flex-shrink-0 ${
+                            chat.status === 'aberto'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                              : chat.status === 'em_andamento'
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              : chat.status === 'resolvido'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {chat.status === 'aberto' ? 'Aberto' : 
+                             chat.status === 'em_andamento' ? 'Em Andamento' :
+                             chat.status === 'resolvido' ? 'Resolvido' : 'Fechado'}
+                          </span>
+                        </div>
+                        {chat.mensagens && chat.mensagens.length > 0 && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
+                            {chat.mensagens[chat.mensagens.length - 1].texto || 'Mensagem'}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {format(chat.updatedAt, "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                        </p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Chat Selecionado */}
+              <div className="flex-1 flex flex-col bg-white dark:bg-gray-800 overflow-hidden">
+                {chatSelecionado ? (
+                  <ChatSuporteAdmin chatId={chatSelecionado.id} userData={userData} />
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                    <div className="text-center">
+                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                      <p className="text-lg font-medium">Selecione um chat para visualizar</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -446,7 +446,7 @@ export default function CheckoutPage() {
           <p className="text-lg text-gray-600 dark:text-white mb-6">
             Seu plano {planosInfo[plano].nome} foi ativado com sucesso!
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-900 dark:text-gray-300">
             Redirecionando para o dashboard...
           </p>
         </div>
@@ -526,7 +526,7 @@ export default function CheckoutPage() {
                     <QrCode size={24} />
                     <div className="text-left">
                       <div>PIX</div>
-                      <div className="text-xs text-gray-500">Aprovação instantânea</div>
+                      <div className="text-xs text-gray-900 dark:text-gray-300">Aprovação instantânea</div>
                     </div>
                   </button>
 
@@ -541,7 +541,7 @@ export default function CheckoutPage() {
                     <CreditCard size={24} />
                     <div className="text-left">
                       <div>Cartão de Crédito</div>
-                      <div className="text-xs text-gray-500">Parcelamento disponível</div>
+                      <div className="text-xs text-gray-900 dark:text-gray-300">Parcelamento disponível</div>
                     </div>
                   </button>
 
@@ -588,7 +588,7 @@ export default function CheckoutPage() {
                   </p>
                   
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-600">
-                    <div className="text-xs text-gray-500 dark:text-gray-300 break-all font-mono">
+                    <div className="text-xs text-gray-900 dark:text-gray-300 break-all font-mono">
                       {pixCopiaECola}
                     </div>
                   </div>
@@ -609,7 +609,7 @@ export default function CheckoutPage() {
                   <p className="text-sm font-semibold text-gray-700 dark:text-white">
                     Aguardando confirmação do pagamento...
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-200 mb-4">
+                  <p className="text-xs text-gray-900 dark:text-gray-200 mb-4">
                     Após realizar o pagamento PIX, clique no botão abaixo para confirmar
                   </p>
                   <button
@@ -646,14 +646,14 @@ export default function CheckoutPage() {
                   >
                     ✓ Já Paguei o PIX - Confirmar Pagamento
                   </button>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-gray-900 dark:text-gray-300 mt-2">
                     O sistema também verifica automaticamente, mas você pode confirmar manualmente
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="mt-6 text-xs text-gray-500 text-center">
+            <div className="mt-6 text-xs text-gray-900 dark:text-gray-300 text-center">
               🔒 Pagamento processado com segurança pelo Mercado Pago
             </div>
           </div>

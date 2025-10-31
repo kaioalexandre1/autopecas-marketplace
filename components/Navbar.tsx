@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store } from 'lucide-react';
+import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones } from 'lucide-react';
+import ModalSuporte from './ModalSuporte';
 
 // Estrutura hierárquica: Brasil > Estados > Cidades (TODOS OS 27 ESTADOS)
 const estruturaBrasil = {
@@ -130,6 +131,7 @@ export default function Navbar() {
   const [ramoSelecionado, setRamoSelecionado] = useState<RamoVeiculo | 'TODOS'>('TODOS');
   const [mostrarDropdownRamo, setMostrarDropdownRamo] = useState(false);
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+  const [modalSuporteAberto, setModalSuporteAberto] = useState(false);
 
   // Função auxiliar para obter todas as cidades do Brasil
   const obterTodasCidades = (): string[] => {
@@ -290,7 +292,6 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Pedidos ao Vivo', icon: Radio },
     { href: '/dashboard/chats', label: 'Chats', icon: MessageSquare },
     { href: '/dashboard/negocios-fechados', label: 'Negócios Fechados', icon: CheckCircle },
-    ...(userData?.tipo === 'autopeca' ? [{ href: '/dashboard/planos', label: 'Planos', icon: Crown }] : []),
     ...(userData?.role === 'admin' ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
@@ -350,6 +351,44 @@ export default function Navbar() {
   };
 
   const ofertasInfo = getOfertasInfo();
+
+  // Função para obter cor e nome do plano
+  const getPlanoInfo = () => {
+    if (!userData || userData.tipo !== 'autopeca') return null;
+    
+    const plano = userData.plano || 'basico';
+    
+    const planosConfig: Record<string, { nome: string; cor: string; corTexto: string; corBorda: string }> = {
+      basico: {
+        nome: 'Básico',
+        cor: 'bg-gray-500',
+        corTexto: 'text-white',
+        corBorda: 'border-gray-600'
+      },
+      premium: {
+        nome: 'Premium',
+        cor: 'bg-blue-600',
+        corTexto: 'text-white',
+        corBorda: 'border-blue-700'
+      },
+      gold: {
+        nome: 'Gold',
+        cor: 'bg-yellow-500',
+        corTexto: 'text-white',
+        corBorda: 'border-yellow-600'
+      },
+      platinum: {
+        nome: 'Platinum',
+        cor: 'bg-purple-600',
+        corTexto: 'text-white',
+        corBorda: 'border-purple-700'
+      }
+    };
+    
+    return planosConfig[plano] || planosConfig.basico;
+  };
+
+  const planoInfo = getPlanoInfo();
 
   return (
     <nav className="navbar-custom bg-blue-700 relative z-50" style={{ backgroundColor: '#1d4ed8', opacity: 1, position: 'relative', zIndex: 9999 }}>
@@ -717,31 +756,36 @@ export default function Navbar() {
 
           {/* User Info - Desktop */}
           <div className="hidden lg:flex items-center space-x-3" style={{ opacity: 1 }}>
-            {/* Contador de Ofertas (apenas para autopeças) */}
-            {ofertasInfo && (
+            {/* Botão do Plano Atual (apenas para autopeças) */}
+            {ofertasInfo && planoInfo && (
               <Link
                 href="/dashboard/planos"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                  ofertasInfo.precisaUpgrade
-                    ? 'bg-yellow-400 border-yellow-500 text-yellow-900 hover:bg-yellow-300 animate-pulse'
-                    : 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all hover:opacity-90 ${planoInfo.cor} ${planoInfo.corTexto} ${planoInfo.corBorda} ${
+                  ofertasInfo.precisaUpgrade ? 'animate-pulse' : ''
                 }`}
                 title="Ver planos"
               >
-                {ofertasInfo.limite === -1 ? (
-                  <>
-                    <Crown size={18} />
-                    <span className="text-sm font-bold">∞ Ilimitado</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap size={18} />
-                    <span className="text-sm font-bold">
-                      {ofertasInfo.restantes}/{ofertasInfo.limite} ofertas
-                    </span>
-                  </>
-                )}
+                <Crown size={18} />
+                <span className="text-sm font-bold">
+                  {ofertasInfo.limite === -1 ? (
+                    `∞ ${planoInfo.nome}`
+                  ) : (
+                    `${planoInfo.nome} - ${ofertasInfo.restantes}/${ofertasInfo.limite}`
+                  )}
+                </span>
               </Link>
+            )}
+            
+            {/* Botão de Suporte (apenas para autopeças) */}
+            {userData?.tipo === 'autopeca' && (
+              <button
+                onClick={() => setModalSuporteAberto(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-white/30 text-white hover:bg-white/20 transition-all"
+                title="Suporte"
+              >
+                <Headphones size={18} />
+                <span className="text-sm font-bold hidden xl:inline">Suporte</span>
+              </button>
             )}
             
             {/* Botão de Configurações */}
@@ -799,35 +843,28 @@ export default function Navbar() {
                   </div>
                 </div>
                 
-                {/* Contador de Ofertas Mobile (apenas para autopeças) */}
-                {ofertasInfo && (
+                {/* Botão do Plano Atual Mobile (apenas para autopeças) */}
+                {ofertasInfo && planoInfo && (
                   <Link
                     href="/dashboard/planos"
                     onClick={() => setMenuMobileAberto(false)}
-                    className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 mt-3 transition-all ${
-                      ofertasInfo.precisaUpgrade
-                        ? 'bg-yellow-400 border-yellow-500 text-yellow-900 hover:bg-yellow-300 animate-pulse'
-                        : 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                    className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 mt-3 transition-all hover:opacity-90 ${planoInfo.cor} ${planoInfo.corTexto} ${planoInfo.corBorda} ${
+                      ofertasInfo.precisaUpgrade ? 'animate-pulse' : ''
                     }`}
                   >
-                    {ofertasInfo.limite === -1 ? (
-                      <>
-                        <Crown size={20} />
-                        <span className="text-sm font-bold">∞ Ofertas Ilimitadas</span>
-                      </>
-                    ) : (
-                      <>
-                        <Zap size={20} />
-                        <div>
-                          <div className="text-sm font-bold">
-                            {ofertasInfo.restantes} de {ofertasInfo.limite} ofertas restantes
-                          </div>
-                          {ofertasInfo.precisaUpgrade && (
-                            <div className="text-xs">Toque para fazer upgrade!</div>
-                          )}
-                        </div>
-                      </>
-                    )}
+                    <Crown size={20} />
+                    <div>
+                      <div className="text-sm font-bold">
+                        {ofertasInfo.limite === -1 ? (
+                          `∞ ${planoInfo.nome} - Ilimitado`
+                        ) : (
+                          `${planoInfo.nome} - ${ofertasInfo.restantes}/${ofertasInfo.limite} ofertas`
+                        )}
+                      </div>
+                      {ofertasInfo.precisaUpgrade && (
+                        <div className="text-xs opacity-90">Toque para fazer upgrade!</div>
+                      )}
+                    </div>
                   </Link>
                 )}
               </div>
@@ -856,6 +893,20 @@ export default function Navbar() {
                 })}
               </div>
 
+              {/* Botão de Suporte Mobile (apenas para autopeças) */}
+              {userData?.tipo === 'autopeca' && (
+                <button
+                  onClick={() => {
+                    setModalSuporteAberto(true);
+                    setMenuMobileAberto(false);
+                  }}
+                  className="w-full flex items-center px-4 py-3.5 mt-4 bg-blue-700 text-white rounded-lg font-semibold text-base"
+                >
+                  <Headphones size={24} className="mr-3" />
+                  Suporte
+                </button>
+              )}
+
               {/* Configurações Button Mobile */}
               <Link
                 href="/dashboard/configuracoes"
@@ -878,6 +929,12 @@ export default function Navbar() {
           </div>
         )}
       </div>
+
+      {/* Modal de Suporte */}
+      <ModalSuporte 
+        aberto={modalSuporteAberto} 
+        onFechar={() => setModalSuporteAberto(false)} 
+      />
     </nav>
   );
 }

@@ -127,7 +127,7 @@ export default function DashboardPage() {
 
   // Filtro de condição da peça
   const [filtroCondicao, setFiltroCondicao] = useState<'todas' | 'Nova' | 'Usada'>('todas');
-  const [modoResumido, setModoResumido] = useState(false);
+  const [modoResumido, setModoResumido] = useState(true);
   const [pedidosExpandidos, setPedidosExpandidos] = useState<string[]>([]);
   const [mostrarDropdownFiltros, setMostrarDropdownFiltros] = useState(false);
 
@@ -597,7 +597,9 @@ export default function DashboardPage() {
               </h1>
               
               <p className="text-sm text-gray-700 dark:text-white font-medium mb-3 leading-relaxed">
-                Seu pedido já está sendo divulgado ao vivo e você logo receberá ofertas!
+                {userData?.tipo === 'autopeca' 
+                  ? 'Para ver mais pedidos selecione mais localizações para ter acesso aos pedidos de outros locais'
+                  : 'Seu pedido já está sendo divulgado ao vivo e você logo receberá ofertas!'}
               </p>
               
               <div className="flex items-center gap-2">
@@ -739,7 +741,7 @@ export default function DashboardPage() {
                   
                   {/* Filtro de Condição */}
                   <div className="px-4 py-3 space-y-2">
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Condição da Peça</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-300 uppercase mb-2">Condição da Peça</p>
                     
                     <button
                       onClick={() => {
@@ -804,7 +806,7 @@ export default function DashboardPage() {
                     >
                       <span className="flex items-center gap-2">
                         <span className="text-lg">📋</span>
-                        Ver pedidos resumidos
+                        {modoResumido ? 'Ver pedidos completos' : 'Ver pedidos resumidos'}
                       </span>
                       <div className={`w-10 h-5 rounded-full relative transition-colors ${
                         modoResumido ? 'bg-purple-800' : 'bg-gray-400'
@@ -840,7 +842,7 @@ export default function DashboardPage() {
               <h3 className="text-xl font-semibold text-gray-600 dark:text-white mb-2">
                 Nenhum pedido ativo no momento
               </h3>
-              <p className="text-gray-500 dark:text-gray-200">
+              <p className="text-gray-900 dark:text-gray-200">
                 {userData?.tipo === 'oficina' 
                   ? 'Crie o primeiro pedido clicando no botão acima'
                   : 'Aguarde novos pedidos de oficinas'}
@@ -961,7 +963,7 @@ export default function DashboardPage() {
                             {pedido.ofertas.length} {pedido.ofertas.length === 1 ? 'oferta' : 'ofertas'}
                           </span>
                         ) : (
-                          <span className="text-gray-400 text-base font-black">
+                          <span className="text-gray-900 dark:text-gray-300 text-base font-black">
                             Sem ofertas
                           </span>
                         )}
@@ -1085,7 +1087,7 @@ export default function DashboardPage() {
               {/* Segundo Retângulo Branco - Especificações Adicionais */}
               {(pedido.especificacaoMotor || pedido.notaFiscal || pedido.observacao) && (
                 <div className="bg-white rounded-lg p-4 mb-4 shadow-md border border-gray-200">
-                  <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                  <div className="text-xs font-bold text-gray-900 dark:text-gray-300 uppercase tracking-wider mb-3">
                     Especificações Adicionais
                   </div>
                   <div className="space-y-2">
@@ -1371,7 +1373,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-xl">📝</span>
                   <p className="text-base font-bold text-blue-900">Campos Opcionais</p>
-                  <span className="text-xs text-gray-500 ml-2">(não obrigatórios)</span>
+                  <span className="text-xs text-gray-900 dark:text-gray-300 ml-2">(não obrigatórios)</span>
                 </div>
                 
                 <div className="space-y-4">
@@ -1495,7 +1497,7 @@ export default function DashboardPage() {
                   placeholder="0.00"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-900 dark:text-gray-300 mt-1">
                   Digite apenas números. Ex: 150 ou 150.50
                 </p>
               </div>
@@ -1512,10 +1514,10 @@ export default function DashboardPage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                   placeholder="Ex: Produto original, entrega em 2 dias, garantia de 6 meses..."
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-900 dark:text-gray-300 mt-1">
                   💡 Adicione detalhes sobre a peça, prazo, garantia, etc. (máx. 150 caracteres)
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-900 dark:text-gray-300 mt-1">
                   {observacaoOferta.length}/150 caracteres
                 </p>
               </div>

@@ -130,9 +130,9 @@ export default function ConfiguracoesPage() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-start gap-3">
-                  <User size={20} className="text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+                  <User size={20} className="text-gray-700 dark:text-gray-400 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-300 font-medium mb-1">Nome</div>
+                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1">Nome</div>
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                       {userData?.nome || 'Não informado'}
                     </div>
@@ -140,9 +140,9 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <Store size={20} className="text-gray-500 dark:text-gray-300 mt-0.5 flex-shrink-0" />
+                  <Store size={20} className="text-gray-700 dark:text-gray-300 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-300 font-medium mb-1">Nome da Loja</div>
+                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1">Nome da Loja</div>
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                       {userData?.nomeLoja || userData?.nome || 'Não informado'}
                     </div>
@@ -150,9 +150,9 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <FileText size={20} className="text-gray-500 dark:text-gray-300 mt-0.5 flex-shrink-0" />
+                  <FileText size={20} className="text-gray-700 dark:text-gray-300 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-300 font-medium mb-1">Documento (CPF/CNPJ)</div>
+                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1">Documento (CPF/CNPJ)</div>
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                       {userData?.documento || 'Não informado'}
                     </div>
@@ -160,9 +160,9 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Phone size={20} className="text-gray-500 dark:text-gray-300 mt-0.5 flex-shrink-0" />
+                  <Phone size={20} className="text-gray-700 dark:text-gray-300 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-300 font-medium mb-1">Telefone</div>
+                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1">Telefone</div>
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                       {userData?.telefone || 'Não informado'}
                     </div>
@@ -170,9 +170,9 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <MapPin size={20} className="text-gray-500 dark:text-gray-300 mt-0.5 flex-shrink-0" />
+                  <MapPin size={20} className="text-gray-700 dark:text-gray-300 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-300 font-medium mb-1">Cidade</div>
+                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1">Cidade</div>
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                       {userData?.cidade ? userData.cidade.split('-')[0] : 'Não informado'}
                     </div>
@@ -181,10 +181,10 @@ export default function ConfiguracoesPage() {
 
                 <div className="flex items-start gap-3">
                   <div className="w-5 h-5 flex items-center justify-center mt-0.5 flex-shrink-0">
-                    <span className="text-gray-500 dark:text-gray-300">🏷️</span>
+                    <span className="text-gray-700 dark:text-gray-300">🏷️</span>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-300 font-medium mb-1">Tipo</div>
+                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1">Tipo</div>
                     <div className={`text-xs px-3 py-1 rounded-full inline-block font-semibold border ${getTipoBadgeColor()}`}>
                       {getTipoLabel()}
                     </div>

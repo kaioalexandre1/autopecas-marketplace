@@ -66,6 +66,9 @@ service cloud.firestore {
       allow update: if request.auth != null && 
                     (resource.data.oficinaId == request.auth.uid || 
                      resource.data.autopecaId == request.auth.uid);
+      allow delete: if request.auth != null && 
+                    (resource.data.oficinaId == request.auth.uid || 
+                     resource.data.autopecaId == request.auth.uid);
     }
     
     // Negócios Fechados

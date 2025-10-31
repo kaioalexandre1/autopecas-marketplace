@@ -180,7 +180,16 @@ service cloud.firestore {
     
     // Chats podem ser acessados pelos participantes
     match /chats/{chatId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null && 
+                   (resource.data.oficinaId == request.auth.uid || 
+                    resource.data.autopecaId == request.auth.uid);
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+                    (resource.data.oficinaId == request.auth.uid || 
+                     resource.data.autopecaId == request.auth.uid);
+      allow delete: if request.auth != null && 
+                    (resource.data.oficinaId == request.auth.uid || 
+                     resource.data.autopecaId == request.auth.uid);
     }
     
     // Negócios fechados podem ser lidos pelos participantes
