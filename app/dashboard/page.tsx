@@ -517,7 +517,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Elementos decorativos de fundo - IDÊNTICOS à página de cadastro */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Círculos grandes desfocados */}
@@ -575,7 +575,7 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row items-stretch gap-3 sm:gap-6 mb-6 sm:mb-8">
         {/* Título à Esquerda - Quadrado Moderno */}
         <div className="flex-shrink-0 w-full lg:w-auto">
-          <div className="bg-gradient-to-br from-red-50 via-pink-50 to-orange-50 rounded-2xl shadow-lg border-2 border-red-200 p-4 sm:p-6 relative overflow-hidden h-full">
+          <div className="bg-gradient-to-br from-red-50 via-pink-50 to-orange-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-2xl shadow-lg border-2 border-red-200 dark:border-gray-600 p-4 sm:p-6 relative overflow-hidden h-full">
             {/* Decoração de fundo */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-full opacity-30 -mr-16 -mt-16"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-100 rounded-full opacity-30 -ml-12 -mb-12"></div>
@@ -592,19 +592,19 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 sm:mb-3 leading-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-2 sm:mb-3 leading-tight">
                 Pedidos ao Vivo
               </h1>
               
-              <p className="text-sm text-gray-700 font-medium mb-3 leading-relaxed">
+              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-3 leading-relaxed">
                 Seu pedido já está sendo divulgado ao vivo e você logo receberá ofertas!
               </p>
               
               <div className="flex items-center gap-2">
-                <div className="bg-white px-3 py-1 rounded-lg shadow-sm border border-red-100">
-                  <span className="text-xl font-black text-red-600">{pedidos.length}</span>
+                <div className="bg-white dark:bg-gray-800 px-3 py-1 rounded-lg shadow-sm border border-red-100 dark:border-gray-600">
+                  <span className="text-xl font-black text-red-600 dark:text-red-400">{pedidos.length}</span>
                 </div>
-                <p className="text-xs text-gray-700 font-medium">
+                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">
                   pedido(s) ativo(s)
                 </p>
               </div>
@@ -732,9 +732,9 @@ export default function DashboardPage() {
                   onClick={() => setMostrarDropdownFiltros(false)}
                 />
                 
-                <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-2xl border-2 border-blue-200 py-2 w-full sm:min-w-[280px] sm:w-auto z-20">
-                  <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
-                    <p className="text-xs font-bold text-gray-600 uppercase">Opções de Filtro</p>
+                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-gray-700 py-2 w-full sm:min-w-[280px] sm:w-auto z-20">
+                  <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    <p className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Opções de Filtro</p>
                   </div>
                   
                   {/* Filtro de Condição */}
@@ -749,7 +749,7 @@ export default function DashboardPage() {
                       className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                         filtroCondicao === 'todas'
                           ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <Car size={16} />
@@ -764,7 +764,7 @@ export default function DashboardPage() {
                       className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                         filtroCondicao === 'Nova'
                           ? 'bg-green-600 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <span className="text-lg">✨</span>
@@ -779,7 +779,7 @@ export default function DashboardPage() {
                       className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                         filtroCondicao === 'Usada'
                           ? 'bg-orange-600 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <span className="text-lg">🔄</span>
@@ -799,7 +799,7 @@ export default function DashboardPage() {
                       className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-between ${
                         modoResumido
                           ? 'bg-purple-600 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -816,8 +816,8 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
-                    <p className="text-xs text-gray-600 font-semibold">
+                  <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 font-semibold">
                       📊 {pedidos.filter(p => {
                         if (filtroCondicao === 'todas') return true;
                         if (!p.condicaoPeca) return false;
@@ -835,12 +835,12 @@ export default function DashboardPage() {
       {/* Grid de Pedidos */}
       <div className="flex-1">
           {pedidos.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-xl shadow">
-              <Search size={64} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">
+            <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700">
+              <Search size={64} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">
                 Nenhum pedido ativo no momento
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 dark:text-gray-400">
                 {userData?.tipo === 'oficina' 
                   ? 'Crie o primeiro pedido clicando no botão acima'
                   : 'Aguarde novos pedidos de oficinas'}
@@ -893,7 +893,7 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={pedido.id}
-                      className="bg-white rounded-lg shadow-[0_0_10px_2px_rgba(0,51,102,0.4)] hover:shadow-[0_0_15px_3px_rgba(0,51,102,0.7)] transition-all duration-300 ease-in-out p-1.5 border-2 border-blue-800 hover:border-blue-900 cursor-pointer aspect-square flex flex-col justify-between min-h-0 relative"
+                      className="bg-white dark:bg-gray-800 rounded-lg shadow-[0_0_10px_2px_rgba(0,51,102,0.4)] dark:shadow-[0_0_10px_2px_rgba(59,130,246,0.3)] hover:shadow-[0_0_15px_3px_rgba(0,51,102,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(59,130,246,0.5)] transition-all duration-300 ease-in-out p-1.5 border-2 border-blue-800 dark:border-blue-600 hover:border-blue-900 dark:hover:border-blue-500 cursor-pointer aspect-square flex flex-col justify-between min-h-0 relative"
                       onClick={() => toggleExpansaoPedido(pedido.id)}
                     >
                       {/* Botão de cancelar (canto superior direito) */}
@@ -945,8 +945,8 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Informações do Carro */}
-                      <div className="bg-white rounded-md p-1 mb-0.5 shadow-sm border border-gray-200">
-                        <p className="text-base text-gray-900 font-black leading-tight line-clamp-1 text-center px-0.5">
+                      <div className="bg-white dark:bg-gray-700 rounded-md p-1 mb-0.5 shadow-sm border border-gray-200 dark:border-gray-600">
+                        <p className="text-base text-gray-900 dark:text-white font-black leading-tight line-clamp-1 text-center px-0.5">
                           {pedido.marcaCarro} {pedido.modeloCarro}
                         </p>
                         <p className="text-base text-blue-700 font-black text-center">
@@ -975,7 +975,7 @@ export default function DashboardPage() {
                 return (
             <div
               key={pedido.id}
-              className={`bg-white rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] transition-all duration-300 ease-in-out p-4 border-2 border-blue-800 hover:border-blue-900 ${
+              className={`bg-white dark:bg-gray-800 rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)] transition-all duration-300 ease-in-out p-4 border-2 border-blue-800 dark:border-blue-600 hover:border-blue-900 dark:hover:border-blue-500 ${
                 !modoResumido && 'animate-slide-in'
               } ${modoResumido && isExpandido ? 'col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-2' : ''}`}
             >

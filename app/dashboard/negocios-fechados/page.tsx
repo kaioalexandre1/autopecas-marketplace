@@ -130,12 +130,12 @@ export default function NegociosFechadosPage() {
   return (
     <div>
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-2">
           <CheckCircle className="mr-2 sm:mr-3 text-green-600" size={28} />
           Negócios Fechados
         </h1>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center text-gray-600 dark:text-gray-300">
             <Calendar size={16} className="mr-2" />
             <span className="text-sm sm:text-base">
               {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
@@ -149,7 +149,7 @@ export default function NegociosFechadosPage() {
               className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
                 periodoSelecionado === 'hoje'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Hoje
@@ -159,7 +159,7 @@ export default function NegociosFechadosPage() {
               className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
                 periodoSelecionado === 'semana'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Semana
@@ -169,7 +169,7 @@ export default function NegociosFechadosPage() {
               className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
                 periodoSelecionado === 'mes'
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Mês
@@ -233,12 +233,12 @@ export default function NegociosFechadosPage() {
 
       {/* Lista de Negócios Fechados */}
       {negociosFiltrados.length === 0 ? (
-        <div className="text-center py-12 sm:py-20 bg-white rounded-xl shadow mt-6 sm:mt-8">
-          <CheckCircle size={56} className="mx-auto text-gray-300 mb-3 sm:mb-4" />
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-600 mb-2 px-3">
+        <div className="text-center py-12 sm:py-20 bg-white dark:bg-gray-800 rounded-xl shadow mt-6 sm:mt-8 border border-gray-200 dark:border-gray-700">
+          <CheckCircle size={56} className="mx-auto text-gray-300 dark:text-gray-600 mb-3 sm:mb-4" />
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2 px-3">
             Nenhum negócio fechado {periodoSelecionado === 'hoje' ? 'hoje' : periodoSelecionado === 'semana' ? 'esta semana' : 'este mês'}
           </h3>
-          <p className="text-sm sm:text-base text-gray-500">
+          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
             Os negócios fechados aparecerão aqui
           </p>
         </div>
@@ -247,13 +247,13 @@ export default function NegociosFechadosPage() {
           {negociosFiltrados.map((negocio) => (
             <div
               key={negocio.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-6 border-l-4 border-green-500 animate-slide-in"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-6 border-l-4 border-green-500 dark:border-green-600 animate-slide-in border border-gray-200 dark:border-gray-700"
             >
               <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-0">
                 <div className="flex-1 w-full">
                   <div className="flex items-center mb-2 sm:mb-3">
                     <CheckCircle className="text-green-600 mr-2 flex-shrink-0" size={20} />
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                       {negocio.nomePeca}
                     </h3>
                   </div>

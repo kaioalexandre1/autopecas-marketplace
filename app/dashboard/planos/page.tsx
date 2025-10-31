@@ -153,14 +153,14 @@ export default function PlanosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-black text-gray-900 mb-4">
+          <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">
             Escolha seu Plano
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Potencialize suas vendas com o plano ideal para o seu negócio
           </p>
           
@@ -183,7 +183,7 @@ export default function PlanosPage() {
             return (
               <div
                 key={plano.id}
-                className={`relative bg-white rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-105 ${
+                className={`relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-105 ${
                   plano.destaque ? 'ring-4 ring-blue-500 scale-105' : ''
                 } ${isPlanoAtual ? 'ring-4 ring-green-500' : ''}`}
               >

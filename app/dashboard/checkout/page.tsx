@@ -435,15 +435,15 @@ export default function CheckoutPage() {
 
   if (pagamentoAprovado) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-12 text-center max-w-md border border-gray-200 dark:border-gray-700">
           <div className="mb-6">
             <CheckCircle size={80} className="text-green-500 mx-auto" />
           </div>
-          <h1 className="text-3xl font-black text-gray-900 mb-4">
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-4">
             Pagamento Aprovado!
           </h1>
-          <p className="text-lg text-gray-600 mb-6">
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
             Seu plano {planosInfo[plano].nome} foi ativado com sucesso!
           </p>
           <p className="text-sm text-gray-500">
@@ -455,7 +455,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Botão Voltar */}
         <button
@@ -468,25 +468,25 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Resumo do Plano */}
-          <div className="bg-white rounded-3xl shadow-xl p-8">
-            <h2 className="text-2xl font-black text-gray-900 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">
               Resumo do Pedido
             </h2>
 
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-600">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                 Plano {planosInfo[plano].nome}
               </h3>
-              <p className="text-gray-600 mb-4">{planosInfo[plano].limite}</p>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">{planosInfo[plano].limite}</p>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Valor mensal:</span>
-                <span className="text-3xl font-black text-gray-900">
+                <span className="text-gray-600 dark:text-gray-300">Valor mensal:</span>
+                <span className="text-3xl font-black text-gray-900 dark:text-white">
                   R$ {valor.toFixed(2).replace('.', ',')}
                 </span>
               </div>
             </div>
 
-            <div className="space-y-3 text-sm text-gray-600">
+            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
               <div className="flex items-center gap-2">
                 <CheckCircle size={16} className="text-green-500" />
                 <span>Renovação automática mensal</span>
@@ -507,8 +507,8 @@ export default function CheckoutPage() {
           </div>
 
           {/* Forma de Pagamento */}
-          <div className="bg-white rounded-3xl shadow-xl p-8">
-            <h2 className="text-2xl font-black text-gray-900 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">
               Forma de Pagamento
             </h2>
 
@@ -578,17 +578,17 @@ export default function CheckoutPage() {
               </>
             ) : (
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-6 text-center">
-                  <QrCode size={48} className="text-green-600 mx-auto mb-4" />
-                  <h3 className="font-bold text-gray-900 mb-2">
+                <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-gray-700 dark:to-gray-700 rounded-2xl p-6 text-center border border-gray-200 dark:border-gray-600">
+                  <QrCode size={48} className="text-green-600 dark:text-green-400 mx-auto mb-4" />
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">
                     Pague com PIX
                   </h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                     Escaneie o QR Code ou copie o código PIX
                   </p>
                   
-                  <div className="bg-white rounded-lg p-4 mb-4">
-                    <div className="text-xs text-gray-500 break-all font-mono">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-600">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 break-all font-mono">
                       {pixCopiaECola}
                     </div>
                   </div>
@@ -606,10 +606,10 @@ export default function CheckoutPage() {
 
                 <div className="text-center space-y-4">
                   <Loader size={32} className="animate-spin text-blue-500 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-gray-700">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Aguardando confirmação do pagamento...
                   </p>
-                  <p className="text-xs text-gray-500 mb-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                     Após realizar o pagamento PIX, clique no botão abaixo para confirmar
                   </p>
                   <button

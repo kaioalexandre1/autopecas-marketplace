@@ -425,16 +425,16 @@ export default function ChatsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-3 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-8 flex items-center">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-8 flex items-center">
           <MessageSquare className="mr-2 sm:mr-3 text-blue-600" size={32} />
           Conversas
         </h1>
 
         <div className="grid lg:grid-cols-3 gap-3 sm:gap-6" style={{ height: 'calc(100vh - 140px)' }}>
           {/* Lista de Chats */}
-          <div className="lg:col-span-1 bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+          <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
             <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <div>
@@ -458,9 +458,9 @@ export default function ChatsPage() {
             
             <div className="overflow-y-auto" style={{ height: 'calc(100% - 72px)' }}>
               {chats.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <MessageSquare size={56} className="mx-auto mb-4 text-gray-300" />
-                  <p className="font-medium text-gray-700">Nenhuma conversa ainda</p>
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  <MessageSquare size={56} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                  <p className="font-medium text-gray-700 dark:text-gray-300">Nenhuma conversa ainda</p>
                   <p className="text-sm mt-2">
                     {userData?.tipo === 'autopeca' 
                       ? 'Faça uma oferta para iniciar uma conversa'
@@ -480,15 +480,15 @@ export default function ChatsPage() {
                       }}
                       className={`p-4 border-b border-gray-100 cursor-pointer transition-all ${
                         chatSelecionado?.id === chat.id 
-                          ? 'bg-green-100 border-l-4 border-l-green-600' 
+                          ? 'bg-green-100 dark:bg-green-900 border-l-4 border-l-green-600 dark:border-l-green-500' 
                           : chat.encerrado
-                          ? 'bg-gray-100 opacity-70 hover:bg-gray-150'
-                          : 'bg-white hover:bg-blue-50'
+                          ? 'bg-gray-100 dark:bg-gray-700 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-600'
+                          : 'bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-gray-600'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center">
-                          <h3 className="font-semibold text-gray-900 text-sm">
+                          <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                             {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
                           </h3>
                           {naoLidas && (
@@ -531,7 +531,7 @@ export default function ChatsPage() {
           </div>
 
           {/* Área do Chat */}
-          <div className="lg:col-span-2 bg-white rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200">
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-700">
             {chatSelecionado ? (
               <>
                 {/* Header do Chat */}
