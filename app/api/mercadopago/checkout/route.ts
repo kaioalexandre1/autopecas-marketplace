@@ -44,13 +44,25 @@ export async function POST(request: Request) {
           'X-Idempotency-Key': idemKey,
         },
         body: JSON.stringify({
-          transaction_amount: amount,
-          description: `Assinatura plano ${plano}`,
+          transaction_amount: parseFloat(amount.toFixed(2)),
+          description: `Assinatura plano ${plano} - Grupão das Autopeças`, // Descrição detalhada
           payment_method_id: 'pix',
           payer: { 
             email: email || `${autopecaId}@example.com`,
             ...(firstName && { first_name: firstName }),
             ...(lastName && { last_name: lastName }),
+          },
+          additional_info: {
+            items: [
+              {
+                id: `${autopecaId}-${plano}-${Date.now()}`,
+                title: `Assinatura ${plano}`,
+                description: `Plano de assinatura ${plano} - Grupão das Autopeças`,
+                quantity: 1,
+                unit_price: parseFloat(amount.toFixed(2)),
+                category_id: 'subscriptions',
+              },
+            ],
           },
           notification_url,
           external_reference,
@@ -71,39 +83,86 @@ export async function POST(request: Request) {
 
     // Para cartão: criar assinatura recorrente (Preapproval)
     if (metodo === 'cartao') {
+      // Validar valor mínimo (R$ 1,00 é o mínimo para assinaturas)
+      if (amount < 1.0) {
+        return NextResponse.json({ 
+          ok: false, 
+          error: 'valor_minimo', 
+          message: 'O valor mínimo para assinaturas é R$ 1,00' 
+        }, { status: 400 });
+      }
+
+      // Calcular data de início (hoje + 1 dia para dar tempo do usuário aprovar)
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + 1);
+      
+      const preapprovalBody: any = {
+        reason: `Assinatura ${plano} - Grupão das Autopeças`,
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: 'months',
+          transaction_amount: parseFloat(amount.toFixed(2)),
+          currency_id: 'BRL',
+          start_date: startDate.toISOString(),
+        },
+        payer_email: email || `${autopecaId}@example.com`,
+        external_reference,
+        notification_url,
+        back_url: `${fullBase}/dashboard/checkout?checkout=success`,
+      };
+
+      // Adicionar campos opcionais apenas se estiverem preenchidos
+      if (firstName) {
+        preapprovalBody.payer_first_name = firstName;
+      }
+      if (lastName) {
+        preapprovalBody.payer_last_name = lastName;
+      }
+      if (deviceId) {
+        preapprovalBody.device_id = deviceId;
+      }
+
+      console.log('📤 Criando Preapproval com dados:', JSON.stringify(preapprovalBody, null, 2));
+
       const preapprovalResp = await fetch('https://api.mercadopago.com/preapproval', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: JSON.stringify(preapprovalBody),
+      });
+
+      const preapproval = await preapprovalResp.json();
+      
+      if (!preapprovalResp.ok) {
+        console.error('❌ Erro ao criar preapproval:', JSON.stringify(preapproval, null, 2));
+        console.error('Status:', preapprovalResp.status);
+        console.error('Request body enviado:', JSON.stringify({
           reason: `Assinatura ${plano} - Grupão das Autopeças`,
           auto_recurring: {
             frequency: 1,
             frequency_type: 'months',
             transaction_amount: amount,
             currency_id: 'BRL',
-            // start_date será definido automaticamente pelo MP quando a assinatura for autorizada
-            end_date: null, // Sem data de término (renovação infinita)
+            end_date: null,
           },
           payer_email: email || `${autopecaId}@example.com`,
-          ...(firstName && { payer_first_name: firstName }),
-          ...(lastName && { payer_last_name: lastName }),
           external_reference,
           notification_url,
           back_url: `${fullBase}/dashboard?checkout=success`,
           status: 'pending',
-          ...(deviceId && { device_id: deviceId }),
-        }),
-      });
-
-      const preapproval = await preapprovalResp.json();
-      
-      if (!preapprovalResp.ok) {
-        console.error('Erro ao criar preapproval:', preapproval);
-        return NextResponse.json({ ok: false, error: 'mp_preapproval_error', details: preapproval }, { status: preapprovalResp.status });
+        }, null, 2));
+        return NextResponse.json({ 
+          ok: false, 
+          error: 'mp_preapproval_error', 
+          details: preapproval,
+          message: preapproval?.message || 'Erro ao criar assinatura',
+          cause: preapproval?.cause || [],
+        }, { status: preapprovalResp.status });
       }
+
+      console.log('✅ Preapproval criado com sucesso:', preapproval.id);
 
       // Retornar link de inscrição na assinatura
       return NextResponse.json({ 
@@ -125,12 +184,13 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         items: [
           {
-            title: `Assinatura ${plano}`,
-            description: `Plano de assinatura ${plano} - Grupão das Autopeças`, // Descrição para melhorar aprovação
-            quantity: 1,
-            unit_price: amount,
+            id: `${autopecaId}-${plano}-${Date.now()}`, // Código único do item (ganha 3 pontos)
+            title: `Assinatura ${plano}`, // Nome do item (ganha 2 pontos)
+            description: `Plano de assinatura ${plano} - Grupão das Autopeças`, // Descrição (ganha 2 pontos)
+            quantity: 1, // Quantidade (ganha 2 pontos)
+            unit_price: parseFloat(amount.toFixed(2)), // Preço unitário (ganha 2 pontos)
             currency_id: 'BRL',
-            category_id: 'subscriptions', // Categoria para melhorar aprovação
+            category_id: 'subscriptions', // Categoria (ganha 3 pontos)
           },
         ],
         payer: { 

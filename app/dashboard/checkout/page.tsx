@@ -181,8 +181,19 @@ export default function CheckoutPage() {
       });
       const data = await resp.json();
       if (!resp.ok || !data.ok) {
-        console.error('Erro checkout MP:', data);
-        throw new Error(data?.details?.message || data?.error || 'Falha ao iniciar pagamento');
+        console.error('❌ Erro checkout MP:', data);
+        const errorMessage = data?.message || data?.details?.message || data?.error || 'Falha ao iniciar pagamento';
+        const errorDetails = data?.details?.cause || data?.cause || [];
+        
+        // Mensagem mais detalhada para o usuário
+        let mensagemUsuario = errorMessage;
+        if (Array.isArray(errorDetails) && errorDetails.length > 0) {
+          const detalhes = errorDetails.map((c: any) => c?.description || c?.message || JSON.stringify(c)).join(', ');
+          mensagemUsuario = `${errorMessage}. Detalhes: ${detalhes}`;
+        }
+        
+        toast.error(mensagemUsuario);
+        throw new Error(mensagemUsuario);
       }
 
       // Definir valores antes de criar o registro
@@ -228,10 +239,16 @@ export default function CheckoutPage() {
         // Redirecionar para página de aprovação da assinatura
         const initPoint = data.init_point || data.sandbox_init_point;
         if (initPoint) {
-          window.location.href = initPoint;
+          console.log('🔗 Redirecionando para:', initPoint);
+          toast.success('Redirecionando para aprovar assinatura...');
+          // Pequeno delay para garantir que o toast apareça
+          setTimeout(() => {
+            window.location.href = initPoint;
+          }, 500);
           return;
         } else {
-          toast.error('Erro: Link de aprovação não encontrado');
+          console.error('❌ Link de aprovação não encontrado na resposta:', data);
+          toast.error('Erro: Link de aprovação não encontrado. Verifique o console para mais detalhes.');
         }
       } else {
         const link = data.init_point || data.sandbox_init_point;
