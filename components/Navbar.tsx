@@ -389,7 +389,7 @@ export default function Navbar() {
                     <circle cx="12" cy="10" r="2" fill="#1E40AF"/>
                   </g>
               </svg>
-              <div className="hidden md:block text-xl lg:text-3xl font-black text-white uppercase tracking-wide mr-2 md:mr-4 lg:mr-6" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>
+              <div className="hidden md:block text-xl lg:text-3xl font-black text-white uppercase tracking-wide mr-2 md:mr-4 lg:mr-6 whitespace-nowrap" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>
                 Grupão das Autopeças
               </div>
             </Link>
