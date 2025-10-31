@@ -745,12 +745,12 @@ export default function Navbar() {
             )}
             
             {/* Nome da Loja em Quadradinho */}
-            <div className="bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl px-4 py-2.5 shadow-lg">
+            <div className="bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-lg px-3 py-1.5 shadow-lg">
               <div className="flex items-center gap-2">
-                <Store size={18} className="text-yellow-400" />
-                <div className="text-right">
-                  <div className="text-xs text-white/80 font-medium">Loja</div>
-                  <div className="text-sm font-bold text-white whitespace-nowrap">
+                <Store size={16} className="text-yellow-400 flex-shrink-0" />
+                <div className="text-left">
+                  <div className="text-xs text-white/80 font-medium leading-none">Loja</div>
+                  <div className="text-xs font-bold text-white whitespace-nowrap max-w-[120px] truncate">
                     {userData?.nomeLoja || userData?.nome || 'Minha Loja'}
                   </div>
                 </div>
