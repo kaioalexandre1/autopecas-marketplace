@@ -356,8 +356,8 @@ export default function Navbar() {
       <div className="container mx-auto px-3 sm:px-4" style={{ opacity: 1 }}>
         <div className="flex items-center justify-between h-16 sm:h-20" style={{ opacity: 1 }}>
           {/* Logo */}
-          <div className="flex items-center space-x-2 sm:space-x-6" style={{ opacity: 1 }}>
-            <Link href="/" className="flex items-center space-x-2 sm:space-x-4" style={{ opacity: 1 }}>
+          <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6" style={{ opacity: 1 }}>
+            <Link href="/" className="flex items-center space-x-2 sm:space-x-3 md:space-x-4" style={{ opacity: 1 }}>
               {/* Logo Simples - Carro Amarelo */}
               <svg width="50" height="50" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="sm:w-[70px] sm:h-[70px]" style={{ opacity: 1 }}>
                   <defs>
@@ -389,7 +389,7 @@ export default function Navbar() {
                     <circle cx="12" cy="10" r="2" fill="#1E40AF"/>
                   </g>
               </svg>
-              <div className="hidden md:block text-xl lg:text-3xl font-black text-white uppercase tracking-wide" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>
+              <div className="hidden md:block text-xl lg:text-3xl font-black text-white uppercase tracking-wide mr-2 md:mr-4 lg:mr-6" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>
                 Grupão das Autopeças
               </div>
             </Link>
@@ -693,7 +693,7 @@ export default function Navbar() {
           </div>
 
           {/* Navigation Links - Desktop */}
-          <div className="hidden lg:flex items-center space-x-1" style={{ opacity: 1 }}>
+          <div className="hidden lg:flex items-center space-x-2 ml-4" style={{ opacity: 1 }}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
