@@ -1407,17 +1407,24 @@ export default function DashboardPage() {
                 return (
             <div
               key={pedido.id}
-              className={`bg-white dark:bg-gray-100 rounded-xl transition-all duration-300 ease-in-out p-4 border-2 ${
+              className={`rounded-xl transition-all duration-300 ease-in-out p-4 border-2 ${
                 !modoResumido && 'animate-slide-in'
               } ${modoResumido && isExpandido ? 'col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-2' : ''} ${
                 pedido.condicaoPeca === 'Nova' 
-                  ? 'border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.5)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)]'
+                  ? 'bg-green-50 dark:bg-green-100 border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.5)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)]'
                   : pedido.condicaoPeca === 'Usada'
-                  ? 'border-orange-500 dark:border-orange-600 shadow-[0_0_15px_3px_rgba(249,115,22,0.5)] dark:shadow-[0_0_15px_3px_rgba(249,115,22,0.4)] hover:border-orange-600 dark:hover:border-orange-500 hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.6)]'
+                  ? 'bg-orange-50 dark:bg-orange-100 border-orange-500 dark:border-orange-600 shadow-[0_0_15px_3px_rgba(249,115,22,0.5)] dark:shadow-[0_0_15px_3px_rgba(249,115,22,0.4)] hover:border-orange-600 dark:hover:border-orange-500 hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.6)]'
                   : pedido.condicaoPeca === 'Nova ou Usada'
                   ? 'border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.3)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.5)]'
-                  : 'border-blue-800 dark:border-blue-600 shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:border-blue-900 dark:hover:border-blue-500 hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)]'
+                  : 'bg-white dark:bg-gray-100 border-blue-800 dark:border-blue-600 shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:border-blue-900 dark:hover:border-blue-500 hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)]'
               }`}
+              style={
+                pedido.condicaoPeca === 'Nova ou Usada'
+                  ? {
+                      background: 'linear-gradient(135deg, rgba(209, 250, 229, 0.8) 0%, rgba(209, 250, 229, 0.8) 45%, rgba(254, 243, 199, 0.8) 55%, rgba(254, 243, 199, 0.8) 100%)',
+                    }
+                  : undefined
+              }
             >
               {/* Botões no canto superior direito */}
               <div className="float-right flex gap-2">
