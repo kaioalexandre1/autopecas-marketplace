@@ -64,6 +64,7 @@ export async function POST(request: Request) {
               },
             ],
           },
+          statement_descriptor: 'GRUPAO AUTOPECAS', // Descrição na fatura do cartão (10 pontos)
           notification_url,
           external_reference,
           binary_mode: true,
@@ -206,7 +207,7 @@ export async function POST(request: Request) {
           pending: `${fullBase}/dashboard?checkout=pending`,
         },
         auto_return: 'approved',
-        statement_descriptor: 'WRX PARTS',
+        statement_descriptor: 'GRUPAO AUTOPECAS', // Descrição na fatura do cartão (10 pontos)
         binary_mode: true,
       }),
     });
