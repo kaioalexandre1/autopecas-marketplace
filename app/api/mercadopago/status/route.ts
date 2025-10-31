@@ -96,13 +96,21 @@ export async function GET(request: Request) {
         });
       } else {
         console.log(`[Status API] Plano já está ativo, não é necessário atualizar`);
+        // Retornar activated: true mesmo que já estivesse ativo
+        return NextResponse.json({ 
+          ok: true, 
+          status: 'approved',
+          activated: true,
+          alreadyActive: true,
+          message: 'Plano já está ativo'
+        });
       }
     }
 
     return NextResponse.json({ 
       ok: true, 
       status,
-      activated: status === 'approved' ? true : false
+      activated: false
     });
   } catch (err: any) {
     console.error('Erro ao verificar status:', err);
