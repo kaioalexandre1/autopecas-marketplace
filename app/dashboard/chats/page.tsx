@@ -30,7 +30,9 @@ import {
   CheckCircle, 
   XCircle,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
+  Phone
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -48,6 +50,7 @@ export default function ChatsPage() {
   const [enviando, setEnviando] = useState(false);
   const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [telefoneOutroUsuario, setTelefoneOutroUsuario] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -155,6 +158,52 @@ export default function ChatsPage() {
       }
     }
   }, [chats, chatSelecionado]);
+
+  // Buscar telefone do outro usuário quando um chat é selecionado
+  useEffect(() => {
+    if (!chatSelecionado || !userData) {
+      setTelefoneOutroUsuario(null);
+      return;
+    }
+
+    const buscarTelefone = async () => {
+      try {
+        const outroUsuarioId = userData.tipo === 'oficina' 
+          ? chatSelecionado.autopecaId 
+          : chatSelecionado.oficinaId;
+        
+        const userDoc = await getDoc(doc(db, 'users', outroUsuarioId));
+        if (userDoc.exists()) {
+          const outroUsuarioData = userDoc.data();
+          setTelefoneOutroUsuario(outroUsuarioData.telefone || null);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar telefone do usuário:', error);
+        setTelefoneOutroUsuario(null);
+      }
+    };
+
+    buscarTelefone();
+  }, [chatSelecionado, userData]);
+
+  // Função para formatar telefone para o link do WhatsApp (remover caracteres não numéricos)
+  const formatarTelefoneParaWhatsApp = (telefone: string) => {
+    return telefone.replace(/\D/g, ''); // Remove tudo que não é número
+  };
+
+  // Função para abrir WhatsApp
+  const abrirWhatsApp = () => {
+    if (!telefoneOutroUsuario) {
+      toast.error('Telefone não disponível');
+      return;
+    }
+
+    const telefoneFormatado = formatarTelefoneParaWhatsApp(telefoneOutroUsuario);
+    const mensagem = encodeURIComponent('Oi vim pelo grupão das autopeças e gostaria de mais informações');
+    const url = `https://api.whatsapp.com/send/?phone=${telefoneFormatado}&text=${mensagem}&type=phone_number&app_absent=0`;
+    
+    window.open(url, '_blank');
+  };
 
   // Selecionar automaticamente o chat quando vindo da URL
   useEffect(() => {
@@ -543,14 +592,21 @@ export default function ChatsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-8 flex items-center">
+        {/* Título - Oculto no mobile quando há chat selecionado */}
+        <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-8 flex items-center ${
+          chatSelecionado ? 'hidden lg:flex' : 'flex'
+        }`}>
           <MessageSquare className="mr-2 sm:mr-3 text-blue-600" size={32} />
           Conversas
         </h1>
 
-        <div className="grid lg:grid-cols-3 gap-3 sm:gap-6" style={{ height: 'calc(100vh - 140px)' }}>
+        {/* Mobile: Mostrar lista OU chat, não ambos */}
+        {/* Desktop: Mostrar ambos lado a lado */}
+        <div className={`grid lg:grid-cols-3 gap-3 sm:gap-6 ${chatSelecionado ? 'h-[calc(100vh-80px)] lg:h-[calc(100vh-140px)]' : 'h-[calc(100vh-140px)]'}`}>
           {/* Lista de Chats */}
-          <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+          <div className={`lg:col-span-1 bg-white dark:bg-gray-100 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-300 ${
+            chatSelecionado ? 'hidden lg:block' : 'block'
+          }`}>
             <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <div>
@@ -572,7 +628,7 @@ export default function ChatsPage() {
               </div>
             </div>
             
-            <div className="overflow-y-auto" style={{ height: 'calc(100% - 72px)' }}>
+            <div className="overflow-y-auto" style={{ height: 'calc(100% - 90px)' }}>
               {chats.length === 0 ? (
                 <div className="p-8 text-center text-gray-900 dark:text-white">
                   <MessageSquare size={56} className="mx-auto mb-4 text-gray-600 dark:text-gray-400" />
@@ -594,17 +650,17 @@ export default function ChatsPage() {
                         setChatSelecionado(chat);
                         marcarComoLido(chat);
                       }}
-                      className={`relative p-4 border-b border-gray-100 cursor-pointer transition-all ${
+                      className={`relative p-4 border-b border-gray-100 dark:border-gray-300 cursor-pointer transition-all ${
                         chatSelecionado?.id === chat.id 
                           ? 'bg-green-100 dark:bg-green-900 border-l-4 border-l-green-600 dark:border-l-green-500' 
                           : chat.encerrado
-                          ? 'bg-gray-100 dark:bg-gray-700 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-600'
-                          : 'bg-white dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
+                          ? 'bg-gray-100 dark:bg-gray-50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-100'
+                          : 'bg-white dark:bg-gray-50 hover:bg-green-50 dark:hover:bg-green-100 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center">
-                          <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-900 text-sm">
                             {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
                           </h3>
                           {naoLidas && (
@@ -612,7 +668,7 @@ export default function ChatsPage() {
                           )}
                         </div>
                         {chat.mensagens.length > 0 && (
-                          <span className="text-xs text-gray-900 dark:text-gray-300">
+                          <span className="text-xs text-gray-900 dark:text-gray-900">
                             {formatDistanceToNow(
                               chat.mensagens[chat.mensagens.length - 1].createdAt,
                               { addSuffix: true, locale: ptBR }
@@ -621,21 +677,21 @@ export default function ChatsPage() {
                         )}
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600 dark:text-white mb-1">
+                      <div className="flex items-center text-sm text-gray-900 dark:text-gray-900 mb-1">
                         <span className="font-medium">{chat.nomePeca}</span>
                         {chat.encerrado && (
-                          <span className="ml-2 px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-white rounded text-xs">
+                          <span className="ml-2 px-2 py-0.5 bg-gray-200 dark:bg-gray-300 text-gray-700 dark:text-gray-900 rounded text-xs">
                             Encerrado
                           </span>
                         )}
                       </div>
                       
-                      <p className="text-xs text-gray-900 dark:text-gray-300">
+                      <p className="text-xs text-gray-900 dark:text-gray-900">
                         {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
                       </p>
                       
                       {chat.mensagens.length > 0 && (
-                        <p className="text-xs text-gray-900 dark:text-gray-300 truncate mt-1">
+                        <p className="text-xs text-gray-900 dark:text-gray-900 truncate mt-1">
                           {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
                         </p>
                       )}
@@ -647,63 +703,89 @@ export default function ChatsPage() {
           </div>
 
           {/* Área do Chat */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className={`lg:col-span-2 bg-white dark:bg-gray-100 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-300 overflow-hidden ${
+            chatSelecionado ? 'block' : 'hidden lg:block'
+          }`}>
             {chatSelecionado ? (
               <>
                 {/* Header do Chat */}
                 <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 flex-shrink-0">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-                    <div className="flex-1 min-w-0">
-                      <h2 className="font-bold text-white text-base sm:text-lg truncate">
-                        {userData?.tipo === 'oficina' 
-                          ? chatSelecionado.autopecaNome 
-                          : chatSelecionado.oficinaNome}
-                      </h2>
-                      <p className="text-blue-100 text-xs sm:text-sm mt-0.5 sm:mt-1 truncate">{chatSelecionado.nomePeca}</p>
-                      <p className="text-blue-200 text-[10px] sm:text-xs truncate">
-                        {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
-                      </p>
-                    </div>
+                  <div className="flex items-start gap-2 sm:gap-0">
+                    {/* Botão Voltar - Apenas no Mobile */}
+                    <button
+                      onClick={() => setChatSelecionado(null)}
+                      className="lg:hidden p-2 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0 mt-1"
+                      title="Voltar para conversas"
+                    >
+                      <ArrowLeft size={20} className="text-white" />
+                    </button>
                     
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-                      <button
-                        onClick={() => setMostrarEntregadores(true)}
-                        className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
-                        title="Solicitar entregador"
-                      >
-                        <Truck size={16} className="mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Entregador</span>
-                        <span className="sm:hidden">Entreg.</span>
-                      </button>
-                      
-                      {!chatSelecionado.encerrado && (
-                        <button
-                          onClick={finalizarNegociacao}
-                          className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
-                          title="Marcar como negócio fechado"
-                        >
-                          <CheckCircle size={16} className="mr-1 sm:mr-2" />
-                          <span className="hidden lg:inline">Negócio Fechado</span>
-                          <span className="lg:hidden">Fechado</span>
-                        </button>
-                      )}
-                      
-                      <button
-                        onClick={excluirChat}
-                        disabled={excluindo}
-                        className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
-                        title="Cancelar pedido"
-                      >
-                        <XCircle size={16} className="mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Cancelar</span>
-                        <span className="sm:hidden">X</span>
-                      </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+                        <div className="flex-1 min-w-0">
+                          <h2 className="font-bold text-white text-base sm:text-lg truncate">
+                            {userData?.tipo === 'oficina' 
+                              ? chatSelecionado.autopecaNome 
+                              : chatSelecionado.oficinaNome}
+                          </h2>
+                          <p className="text-blue-100 text-xs sm:text-sm mt-0.5 sm:mt-1 truncate">{chatSelecionado.nomePeca}</p>
+                          <p className="text-blue-200 text-[10px] sm:text-xs truncate">
+                            {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
+                          </p>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                          {telefoneOutroUsuario && (
+                            <button
+                              onClick={abrirWhatsApp}
+                              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                              title="Abrir WhatsApp"
+                            >
+                              <Phone size={16} className="mr-1 sm:mr-2" />
+                              <span>WhatsApp</span>
+                            </button>
+                          )}
+                          
+                          <button
+                            onClick={() => setMostrarEntregadores(true)}
+                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                            title="Solicitar entregador"
+                          >
+                            <Truck size={16} className="mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Entregador</span>
+                            <span className="sm:hidden">Entreg.</span>
+                          </button>
+                          
+                          {!chatSelecionado.encerrado && (
+                            <button
+                              onClick={finalizarNegociacao}
+                              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                              title="Marcar como negócio fechado"
+                            >
+                              <CheckCircle size={16} className="mr-1 sm:mr-2" />
+                              <span className="hidden lg:inline">Negócio Fechado</span>
+                              <span className="lg:hidden">Fechado</span>
+                            </button>
+                          )}
+                          
+                          <button
+                            onClick={excluirChat}
+                            disabled={excluindo}
+                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                            title="Cancelar pedido"
+                          >
+                            <XCircle size={16} className="mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Cancelar</span>
+                            <span className="sm:hidden">X</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Mensagens */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800" style={{ maxHeight: 'calc(100vh - 280px)', minHeight: 0 }}>
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-50 dark:to-gray-100" style={{ maxHeight: 'calc(100vh - 280px)', minHeight: 0 }}>
                   {chatSelecionado.encerrado && (
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r-lg">
                       <div className="flex items-center">
@@ -739,7 +821,7 @@ export default function ChatsPage() {
                             className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-md ${
                               isMinha
                                 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                                : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
+                                : 'bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 border border-gray-200 dark:border-gray-300'
                             }`}
                           >
                             {msg.imagemUrl && (
@@ -753,7 +835,7 @@ export default function ChatsPage() {
                             {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
                             <span
                               className={`text-xs mt-2 block ${
-                                isMinha ? 'text-blue-100' : 'text-gray-900 dark:text-gray-300'
+                                isMinha ? 'text-blue-100' : 'text-gray-900 dark:text-gray-900'
                               }`}
                             >
                               {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
@@ -767,7 +849,7 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Input de Mensagem */}
-                <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
+                <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-300 bg-gray-50 dark:bg-gray-100 flex-shrink-0">
                   {chatSelecionado.encerrado ? (
                     <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
                       <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-700 dark:text-gray-300" />
@@ -808,24 +890,25 @@ export default function ChatsPage() {
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="p-2 sm:p-3 text-blue-600 hover:bg-blue-50 rounded-lg sm:rounded-xl transition-colors border border-gray-300 flex-shrink-0"
+                          className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex-shrink-0"
                           title="Enviar imagem"
                         >
                           <ImageIcon size={20} />
                         </button>
-
+                        
                         <input
                           type="text"
                           value={mensagem}
                           onChange={(e) => setMensagem(e.target.value)}
                           placeholder="Digite sua mensagem..."
-                          className="flex-1 px-3 sm:px-5 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+                          className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 placeholder-gray-500 dark:placeholder-gray-500"
                         />
-
+                        
                         <button
                           type="submit"
                           disabled={enviando || (!mensagem.trim() && !imagemUpload)}
-                          className="p-2 sm:p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex-shrink-0"
+                          className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                          title="Enviar mensagem"
                         >
                           {enviando ? (
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>

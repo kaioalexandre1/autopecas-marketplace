@@ -391,7 +391,7 @@ export default function DashboardPage() {
       await addDoc(collection(db, 'pedidos'), {
         oficinaId: userData.id,
         oficinaNome: userData.nome,
-        ramo: userData.ramo || 'CARRO', // Usar ramo padrão do usuário
+        ramo: userData.ramo || 'CARRO', // SEMPRE usar o ramo de cadastro da oficina
         nomePeca,
         marcaCarro,
         modeloCarro,
@@ -402,7 +402,7 @@ export default function DashboardPage() {
         ...(observacao && { observacao }), // Adiciona apenas se preenchido
         status: 'ativo',
         ofertas: [],
-        cidade: cidadesSelecionadas[0] || userData.cidade, // Usar primeira cidade selecionada
+        cidade: userData.cidade, // SEMPRE usar a cidade de cadastro da oficina
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
@@ -754,41 +754,41 @@ export default function DashboardPage() {
       {/* Conteúdo principal (com z-index para ficar acima do fundo) */}
       <div className="relative z-10 p-3 sm:p-6">
         {/* Header com Banner Horizontal */}
-        <div className="flex flex-col lg:flex-row items-stretch gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div className="flex flex-col lg:flex-row items-stretch gap-2 sm:gap-3 mb-3 sm:mb-4">
         {/* Título à Esquerda - Quadrado Moderno */}
         <div className="flex-shrink-0 w-full lg:w-auto">
-          <div className="bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl shadow-lg border-2 border-red-300 dark:border-red-400 p-4 sm:p-6 relative overflow-hidden h-full">
+          <div className="bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-xl shadow-lg border-2 border-red-300 dark:border-red-400 p-2.5 sm:p-3 relative overflow-hidden h-full">
                 {/* Decoração de fundo */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-400 rounded-full opacity-30 -mr-16 -mt-16"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-red-400 rounded-full opacity-30 -ml-12 -mb-12"></div>
             
             {/* Conteúdo */}
             <div className="relative z-10 flex flex-col justify-center h-full">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
                 {/* Badge LIVE */}
-                <div className="flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full shadow-md">
-                  <Radio className="text-white" size={16} strokeWidth={3} />
-                  <span className="text-white text-xs font-black uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 bg-red-500 px-2 py-0.5 rounded-full shadow-md">
+                  <Radio className="text-white" size={12} strokeWidth={3} />
+                  <span className="text-white text-[10px] font-black uppercase tracking-wider">
                     AO VIVO
                   </span>
                 </div>
               </div>
               
-              <h1 className="text-xl sm:text-2xl font-black text-white mb-2 sm:mb-3 leading-tight">
+              <h1 className="text-base sm:text-lg font-black text-white mb-1 leading-tight">
                 Pedidos ao Vivo
               </h1>
               
-              <p className="text-sm text-white font-medium mb-3 leading-relaxed">
+              <p className="text-xs text-white font-medium mb-2 leading-tight line-clamp-2">
                 {userData?.tipo === 'autopeca' 
                   ? 'Para ver mais pedidos selecione mais localizações para ter acesso aos pedidos de outros locais'
                   : 'Seu pedido já está sendo divulgado ao vivo e você logo receberá ofertas!'}
               </p>
               
-              <div className="flex items-center gap-2">
-                <div className="bg-white px-3 py-1 rounded-lg shadow-sm border border-red-100">
-                  <span className="text-xl font-black text-red-600">{pedidos.length}</span>
+              <div className="flex items-center gap-1.5">
+                <div className="bg-white px-2 py-0.5 rounded-lg shadow-sm border border-red-100">
+                  <span className="text-base font-black text-red-600">{pedidos.length}</span>
                 </div>
-                <p className="text-xs text-white font-medium">
+                <p className="text-[10px] text-white font-medium">
                   pedido(s) ativo(s)
                 </p>
               </div>
@@ -799,32 +799,32 @@ export default function DashboardPage() {
         {/* Banner Horizontal à Direita */}
         {userData?.tipo === 'autopeca' && pedidos.length > 0 && (
           <div className="flex-1 w-full lg:w-auto">
-            <div className="bg-gradient-to-r from-green-500 via-emerald-600 to-teal-700 rounded-2xl shadow-xl p-4 sm:p-6 text-white overflow-hidden relative h-full">
+            <div className="bg-gradient-to-r from-green-500 via-emerald-600 to-teal-700 rounded-xl shadow-xl p-2.5 sm:p-3 text-white overflow-hidden relative h-full">
               {/* Decoração de Fundo */}
               <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-24 -mt-24"></div>
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-white opacity-5 rounded-full -ml-16 -mb-16"></div>
               
               {/* Conteúdo Horizontal */}
-              <div className="relative z-10 flex items-center justify-between gap-6 h-full">
+              <div className="relative z-10 flex items-center justify-between gap-3 h-full">
                 {/* Lado Esquerdo - Call to Action Principal */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="bg-white bg-opacity-20 w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-sm flex-shrink-0 shadow-lg">
-                      <DollarSign size={28} className="text-white" strokeWidth={3} />
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="bg-white bg-opacity-20 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm flex-shrink-0 shadow-lg">
+                      <DollarSign size={20} className="text-white" strokeWidth={3} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black leading-tight mb-1">
+                      <h2 className="text-base sm:text-lg font-black leading-tight mb-0.5">
                         FAÇA SUA OFERTA AGORA!
                       </h2>
-                      <p className="text-sm font-bold text-green-100">
+                      <p className="text-xs font-bold text-green-100">
                         Conecte-se direto com oficinas da região
                       </p>
                     </div>
                   </div>
                   
                   {/* Informações Adicionais */}
-                  <div className="mt-3 bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-3 border border-white border-opacity-20">
-                    <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="mt-1.5 bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-2 border border-white border-opacity-20">
+                    <div className="grid grid-cols-2 gap-2 text-[10px]">
                       <div className="flex items-center gap-2">
                         <div className="bg-yellow-400 rounded-full p-1">
                           <svg className="w-3 h-3 text-green-900" fill="currentColor" viewBox="0 0 20 20">
@@ -864,15 +864,15 @@ export default function DashboardPage() {
 
                 {/* Lado Direito - Estatística de Oportunidades */}
                 <div className="flex-shrink-0">
-                  <div className="bg-white bg-opacity-15 backdrop-blur-sm rounded-xl px-6 py-4 border-2 border-white border-opacity-30 shadow-2xl">
-                    <div className="text-center mb-3">
-                      <p className="text-5xl font-black leading-none mb-1">{pedidos.length}</p>
-                      <p className="text-xs font-bold text-green-100 uppercase tracking-wider">
+                  <div className="bg-white bg-opacity-15 backdrop-blur-sm rounded-lg px-3 py-2 border-2 border-white border-opacity-30 shadow-2xl">
+                    <div className="text-center mb-2">
+                      <p className="text-3xl font-black leading-none mb-0.5">{pedidos.length}</p>
+                      <p className="text-[10px] font-bold text-green-100 uppercase tracking-wider">
                         {pedidos.length === 1 ? 'Oportunidade' : 'Oportunidades'}
                       </p>
                     </div>
-                    <div className="bg-yellow-400 text-green-900 px-3 py-1.5 rounded-full text-center">
-                      <p className="text-xs font-black uppercase tracking-wide">
+                    <div className="bg-yellow-400 text-green-900 px-2 py-1 rounded-full text-center">
+                      <p className="text-[10px] font-black uppercase tracking-wide">
                         🔥 Ativas Agora
                       </p>
                     </div>
@@ -896,8 +896,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Dropdown de Filtros */}
-      {pedidos.length > 0 && (
-        <div className="mb-6 flex justify-start px-3 sm:px-0">
+      <div className="mb-6 flex justify-start px-3 sm:px-0">
           <div className="relative w-full sm:w-auto">
             <button
               onClick={() => setMostrarDropdownFiltros(!mostrarDropdownFiltros)}
@@ -1232,7 +1231,6 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      )}
 
       {/* Grid de Pedidos */}
       <div className="flex-1">
@@ -1295,7 +1293,15 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={pedido.id}
-                      className="bg-white dark:bg-gray-100 rounded-lg shadow-[0_0_10px_2px_rgba(0,51,102,0.4)] dark:shadow-[0_0_10px_2px_rgba(59,130,246,0.3)] hover:shadow-[0_0_15px_3px_rgba(0,51,102,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(59,130,246,0.5)] transition-all duration-300 ease-in-out p-1.5 border-2 border-blue-800 dark:border-blue-600 hover:border-blue-900 dark:hover:border-blue-500 cursor-pointer aspect-square flex flex-col justify-between min-h-0 relative"
+                      className={`bg-white dark:bg-gray-100 rounded-lg transition-all duration-300 ease-in-out p-1.5 border-2 cursor-pointer aspect-square flex flex-col justify-between min-h-0 relative ${
+                        pedido.condicaoPeca === 'Nova' 
+                          ? 'border-green-500 dark:border-green-600 shadow-[0_0_10px_2px_rgba(16,185,129,0.4)] dark:shadow-[0_0_10px_2px_rgba(16,185,129,0.3)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_15px_3px_rgba(16,185,129,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(16,185,129,0.5)]'
+                          : pedido.condicaoPeca === 'Usada'
+                          ? 'border-orange-500 dark:border-orange-600 shadow-[0_0_10px_2px_rgba(249,115,22,0.4)] dark:shadow-[0_0_10px_2px_rgba(249,115,22,0.3)] hover:border-orange-600 dark:hover:border-orange-500 hover:shadow-[0_0_15px_3px_rgba(249,115,22,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(249,115,22,0.5)]'
+                          : pedido.condicaoPeca === 'Nova ou Usada'
+                          ? 'border-green-500 dark:border-green-600 shadow-[0_0_10px_2px_rgba(16,185,129,0.3)] dark:shadow-[0_0_10px_2px_rgba(16,185,129,0.2)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_15px_3px_rgba(16,185,129,0.5)] dark:hover:shadow-[0_0_15px_3px_rgba(16,185,129,0.4)]'
+                          : 'border-blue-800 dark:border-blue-600 shadow-[0_0_10px_2px_rgba(0,51,102,0.4)] dark:shadow-[0_0_10px_2px_rgba(59,130,246,0.3)] hover:border-blue-900 dark:hover:border-blue-500 hover:shadow-[0_0_15px_3px_rgba(0,51,102,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(59,130,246,0.5)]'
+                      }`}
                       onClick={() => toggleExpansaoPedido(pedido.id)}
                     >
                       {/* Botão de cancelar (canto superior direito) */}
@@ -1371,12 +1377,12 @@ export default function DashboardPage() {
 
                       {/* Informações do Carro */}
                       <div className="bg-white dark:bg-gray-50 rounded-md p-1 mb-0.5 shadow-sm border border-gray-200 dark:border-gray-300">
-                        <p className="text-base text-gray-900 dark:text-gray-900 font-black leading-tight line-clamp-1 text-center px-0.5">
+                        <p className="text-base text-gray-900 dark:text-gray-900 font-black leading-tight line-clamp-1 text-center px-0.5 uppercase">
                           {pedido.marcaCarro} {pedido.modeloCarro}
                         </p>
                         <p className="text-base text-blue-700 dark:text-blue-700 font-black text-center">
                           {pedido.anoCarro}
-                          {pedido.especificacaoMotor && ` ${pedido.especificacaoMotor}`}
+                          {pedido.especificacaoMotor && ` | ${pedido.especificacaoMotor}`}
                         </p>
                       </div>
 
@@ -1401,9 +1407,17 @@ export default function DashboardPage() {
                 return (
             <div
               key={pedido.id}
-              className={`bg-white dark:bg-gray-100 rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)] transition-all duration-300 ease-in-out p-4 border-2 border-blue-800 dark:border-blue-600 hover:border-blue-900 dark:hover:border-blue-500 ${
+              className={`bg-white dark:bg-gray-100 rounded-xl transition-all duration-300 ease-in-out p-4 border-2 ${
                 !modoResumido && 'animate-slide-in'
-              } ${modoResumido && isExpandido ? 'col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-2' : ''}`}
+              } ${modoResumido && isExpandido ? 'col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-2' : ''} ${
+                pedido.condicaoPeca === 'Nova' 
+                  ? 'border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.5)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)]'
+                  : pedido.condicaoPeca === 'Usada'
+                  ? 'border-orange-500 dark:border-orange-600 shadow-[0_0_15px_3px_rgba(249,115,22,0.5)] dark:shadow-[0_0_15px_3px_rgba(249,115,22,0.4)] hover:border-orange-600 dark:hover:border-orange-500 hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.6)]'
+                  : pedido.condicaoPeca === 'Nova ou Usada'
+                  ? 'border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.3)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.5)]'
+                  : 'border-blue-800 dark:border-blue-600 shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:border-blue-900 dark:hover:border-blue-500 hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)]'
+              }`}
             >
               {/* Botões no canto superior direito */}
               <div className="float-right flex gap-2">
@@ -1514,7 +1528,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-base text-blue-700 dark:text-blue-700 font-bold mt-0.5">
                       ANO: {pedido.anoCarro}
-                      {pedido.especificacaoMotor && ` ${pedido.especificacaoMotor}`}
+                      {pedido.especificacaoMotor && ` | ${pedido.especificacaoMotor}`}
                     </div>
                   </div>
                 </div>
@@ -1784,7 +1798,23 @@ export default function DashboardPage() {
       {mostrarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">Novo Pedido</h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">Novo Pedido</h2>
+            
+            {/* Informações sobre cidade e ramo */}
+            <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
+              <p className="text-sm text-blue-900 dark:text-blue-100 font-semibold mb-1">
+                ℹ️ Informações do Pedido:
+              </p>
+              <p className="text-xs text-blue-800 dark:text-blue-200">
+                <strong>Cidade:</strong> {userData?.cidade || 'Não informada'}
+              </p>
+              <p className="text-xs text-blue-800 dark:text-blue-200">
+                <strong>Tipo de Veículo:</strong> {userData?.ramo || 'Não informado'}
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 italic">
+                O pedido sempre será criado na sua cidade de cadastro e com o tipo de veículo do seu cadastro.
+              </p>
+            </div>
             
             <form onSubmit={criarPedido} className="space-y-6">
               {/* Campos Obrigatórios */}
@@ -1951,8 +1981,9 @@ export default function DashboardPage() {
             
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
               <h3 className="font-bold text-gray-900">{pedidoSelecionado.nomePeca}</h3>
-              <p className="text-sm text-gray-600">
-                {pedidoSelecionado.marcaCarro} {pedidoSelecionado.modeloCarro} ({pedidoSelecionado.anoCarro})
+              <p className="text-sm text-gray-600 uppercase">
+                {pedidoSelecionado.marcaCarro} {pedidoSelecionado.modeloCarro} ({pedidoSelecionado.anoCarro}
+                {pedidoSelecionado.especificacaoMotor && ` | ${pedidoSelecionado.especificacaoMotor}`})
               </p>
               {pedidoSelecionado.condicaoPeca && (
                 <div className="mt-3 flex justify-center">
