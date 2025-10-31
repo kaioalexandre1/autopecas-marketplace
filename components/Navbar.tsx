@@ -368,9 +368,9 @@ export default function Navbar() {
       },
       premium: {
         nome: 'Silver',
-        cor: 'bg-slate-500',
+        cor: 'bg-blue-600',
         corTexto: 'text-white',
-        corBorda: 'border-slate-600'
+        corBorda: 'border-blue-700'
       },
       gold: {
         nome: 'Gold',

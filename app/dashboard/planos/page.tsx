@@ -30,10 +30,11 @@ export default function PlanosPage() {
       preco: PRECOS_PLANOS.basico,
       limite: LIMITES_PLANOS.basico,
       icone: Zap,
-      cor: 'from-gray-300/60 to-gray-500/60',
-      corBorda: 'border-gray-300/50',
-      corTexto: 'text-gray-500',
-      corBg: 'bg-gray-50/80',
+      cor: 'from-gray-400 to-gray-600',
+      corBorda: 'border-gray-400',
+      corTexto: 'text-gray-700',
+      corBg: 'bg-gray-100',
+      corFundoInterno: 'bg-gray-50',
       features: [
         'Até 20 ofertas por mês',
         'Acesso a todos os pedidos',
@@ -48,10 +49,11 @@ export default function PlanosPage() {
       preco: PRECOS_PLANOS.premium,
       limite: LIMITES_PLANOS.premium,
       icone: Crown,
-      cor: 'from-slate-300/60 to-slate-500/60',
-      corBorda: 'border-slate-300/50',
-      corTexto: 'text-slate-500',
-      corBg: 'bg-slate-50/80',
+      cor: 'from-blue-500 to-blue-700',
+      corBorda: 'border-blue-500',
+      corTexto: 'text-blue-700',
+      corBg: 'bg-blue-100',
+      corFundoInterno: 'bg-blue-50',
       features: [
         'Até 100 ofertas por mês',
         'Destaque em pesquisas',
@@ -67,10 +69,11 @@ export default function PlanosPage() {
       preco: PRECOS_PLANOS.gold,
       limite: LIMITES_PLANOS.gold,
       icone: Gem,
-      cor: 'from-yellow-400/60 to-yellow-600/60',
-      corBorda: 'border-yellow-400/50',
-      corTexto: 'text-yellow-600',
-      corBg: 'bg-yellow-50/80',
+      cor: 'from-yellow-500 to-yellow-700',
+      corBorda: 'border-yellow-500',
+      corTexto: 'text-yellow-700',
+      corBg: 'bg-yellow-100',
+      corFundoInterno: 'bg-yellow-50',
       features: [
         'Até 200 ofertas por mês',
         'Selo Gold verificado',
@@ -86,10 +89,11 @@ export default function PlanosPage() {
       preco: PRECOS_PLANOS.platinum,
       limite: LIMITES_PLANOS.platinum,
       icone: Crown,
-      cor: 'from-purple-400/60 to-purple-600/60',
-      corBorda: 'border-purple-400/50',
-      corTexto: 'text-purple-600',
-      corBg: 'bg-purple-50/80',
+      cor: 'from-purple-500 to-purple-700',
+      corBorda: 'border-purple-500',
+      corTexto: 'text-purple-700',
+      corBg: 'bg-purple-100',
+      corFundoInterno: 'bg-purple-50',
       features: [
         'Ofertas ILIMITADAS',
         'Selo Platinum exclusivo',
@@ -154,8 +158,8 @@ export default function PlanosPage() {
 
   return (
     <div className="min-h-screen relative py-12 px-4 overflow-hidden">
-      {/* Fundo azul com flares neon */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-950">
+      {/* Fundo azul claro com flares neon */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400">
         {/* Flare neon 1 - Diagonal superior esquerda */}
         <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-cyan-400 opacity-30 blur-[120px] transform rotate-45 -translate-x-1/3 -translate-y-1/3"></div>
         
@@ -201,7 +205,7 @@ export default function PlanosPage() {
             return (
               <div
                 key={plano.id}
-                className={`relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-105 ${
+                className={`relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-105 ${
                   plano.destaque ? `ring-4 ${plano.corBorda} scale-105` : ''
                 } ${isPlanoAtual ? 'ring-4 ring-green-500' : ''}`}
               >
@@ -217,18 +221,18 @@ export default function PlanosPage() {
                   </div>
                 )}
 
-                <div className={`h-32 bg-gradient-to-br ${plano.cor} backdrop-blur-sm flex items-center justify-center`}>
-                  <Icon size={64} className="text-white/90" />
+                <div className={`h-32 bg-gradient-to-br ${plano.cor} flex items-center justify-center`}>
+                  <Icon size={64} className="text-white" />
                 </div>
 
-                <div className="p-6">
-                  <h3 className="text-2xl font-black text-gray-900 mb-2">{plano.nome}</h3>
+                <div className={`p-6 ${plano.corFundoInterno}`}>
+                  <h3 className={`text-2xl font-black ${plano.corTexto} mb-2`}>{plano.nome}</h3>
                   
                   <div className="mb-6">
-                    <span className="text-4xl font-black text-gray-900">
+                    <span className={`text-4xl font-black ${plano.corTexto}`}>
                       R$ {plano.preco.toFixed(2).replace('.', ',')}
                     </span>
-                    <span className="text-gray-600 dark:text-gray-300">/mês</span>
+                    <span className={plano.corTexto}>/mês</span>
                   </div>
 
                   <div className={`mb-6 px-4 py-2 ${plano.corBg} rounded-lg`}>
@@ -241,7 +245,7 @@ export default function PlanosPage() {
                     {plano.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <Check size={20} className="text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700 dark:text-white">{feature}</span>
+                        <span className={`text-sm ${plano.corTexto}`}>{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -249,10 +253,10 @@ export default function PlanosPage() {
                   <button
                     onClick={() => handleSelecionarPlano(plano.id)}
                     disabled={loading || isPlanoAtual}
-                    className={`w-full py-3 px-6 rounded-xl font-bold text-white/90 transition-all flex items-center justify-center gap-2 ${
+                    className={`w-full py-3 px-6 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${
                       isPlanoAtual
                         ? 'bg-gray-400 cursor-not-allowed'
-                        : `bg-gradient-to-r ${plano.cor} backdrop-blur-sm hover:shadow-2xl transform hover:-translate-y-1`
+                        : `bg-gradient-to-r ${plano.cor} hover:shadow-2xl transform hover:-translate-y-1`
                     }`}
                   >
                     {loading ? (
