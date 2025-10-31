@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
 import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones } from 'lucide-react';
 import ModalSuporte from './ModalSuporte';
+import { useUnreadChats } from '@/hooks/useUnreadChats';
 
 // Estrutura hierárquica: Brasil > Estados > Cidades (TODOS OS 27 ESTADOS)
 const estruturaBrasil = {
@@ -389,6 +390,7 @@ export default function Navbar() {
   };
 
   const planoInfo = getPlanoInfo();
+  const unreadChatsCount = useUnreadChats();
 
   return (
     <nav className="navbar-custom bg-blue-700 relative z-50" style={{ backgroundColor: '#1d4ed8', opacity: 1, position: 'relative', zIndex: 9999 }}>
@@ -433,8 +435,8 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Seletor de Cidades (Múltipla) */}
-            {userData && cidadesSelecionadas.length > 0 && (
+            {/* Seletor de Cidades (Múltipla) - Oculto no dashboard, aparece nos filtros */}
+            {userData && cidadesSelecionadas.length > 0 && pathname !== '/dashboard' && (
               <div className="relative">
                 <button
                   onClick={() => setMostrarDropdown(!mostrarDropdown)}
@@ -569,8 +571,8 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Seletor de Ramo (CARRO, MOTO, CAMINHÃO, ÔNIBUS, TODOS) */}
-            {userData && (userData.tipo === 'oficina' || userData.tipo === 'autopeca') && (
+            {/* Seletor de Ramo (CARRO, MOTO, CAMINHÃO, ÔNIBUS, TODOS) - Oculto no dashboard, aparece nos filtros */}
+            {userData && (userData.tipo === 'oficina' || userData.tipo === 'autopeca') && pathname !== '/dashboard' && (
               <div className="relative">
                 <button
                   onClick={() => setMostrarDropdownRamo(!mostrarDropdownRamo)}
@@ -736,12 +738,13 @@ export default function Navbar() {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
+              const showBadge = item.href === '/dashboard/chats' && unreadChatsCount > 0;
               
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center px-4 py-2.5 rounded-lg font-medium ${
+                  className={`relative flex items-center px-4 py-2.5 rounded-lg font-medium ${
                     isActive
                       ? 'bg-yellow-400 text-blue-900 font-bold shadow-lg'
                       : 'text-white'
@@ -749,6 +752,11 @@ export default function Navbar() {
                 >
                   <Icon size={20} className="mr-2" />
                   {item.label}
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadChatsCount > 9 ? '9+' : unreadChatsCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -874,13 +882,14 @@ export default function Navbar() {
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
+                  const showBadge = item.href === '/dashboard/chats' && unreadChatsCount > 0;
                   
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setMenuMobileAberto(false)}
-                      className={`flex items-center px-4 py-3.5 rounded-lg font-semibold text-base ${
+                      className={`relative flex items-center px-4 py-3.5 rounded-lg font-semibold text-base ${
                         isActive
                           ? 'bg-yellow-400 text-blue-900 shadow-lg'
                           : 'bg-blue-700 text-white'
@@ -888,6 +897,11 @@ export default function Navbar() {
                     >
                       <Icon size={24} className="mr-3" />
                       {item.label}
+                      {showBadge && (
+                        <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                          {unreadChatsCount > 9 ? '9+' : unreadChatsCount}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

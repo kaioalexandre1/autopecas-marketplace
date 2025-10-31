@@ -20,6 +20,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Chat, Mensagem } from '@/types';
+import { excluirChatsDoPedido } from '@/lib/chatUtils';
 import { 
   MessageSquare, 
   Send, 
@@ -69,8 +70,10 @@ export default function ChatsPage() {
 
     if (!q) return;
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const chatsData: Chat[] = [];
+      const chatsParaVerificar: string[] = [];
+      
       snapshot.forEach((doc) => {
         const data = doc.data();
         chatsData.push({
@@ -86,7 +89,43 @@ export default function ChatsPage() {
             createdAt: m.createdAt?.toDate() || new Date(),
           })) || [],
         } as Chat);
+        
+        // Coletar IDs de chats com pedidoId para verificar se o pedido ainda existe
+        if (data.pedidoId) {
+          chatsParaVerificar.push(doc.id);
+        }
       });
+      
+      // Verificar se os pedidos relacionados aos chats ainda existem
+      if (chatsParaVerificar.length > 0) {
+        const pedidosParaVerificar = new Set(
+          chatsData.filter(c => c.pedidoId).map(c => c.pedidoId!)
+        );
+        
+        for (const pedidoId of pedidosParaVerificar) {
+          try {
+            const pedidoDoc = await getDoc(doc(db, 'pedidos', pedidoId));
+            if (!pedidoDoc.exists()) {
+              // Pedido não existe mais, excluir todos os chats relacionados
+              console.log(`⚠️ Pedido ${pedidoId} não encontrado - excluindo chats relacionados...`);
+              await excluirChatsDoPedido(pedidoId);
+            } else {
+              // Verificar se o pedido está expirado ou cancelado
+              const pedidoData = pedidoDoc.data();
+              const criacao = pedidoData.createdAt?.toDate() || new Date();
+              const agora = new Date();
+              const horasPassadas = (agora.getTime() - criacao.getTime()) / (1000 * 60 * 60);
+              
+              if (horasPassadas >= 24 || pedidoData.status !== 'ativo') {
+                console.log(`⚠️ Pedido ${pedidoId} expirado ou inativo - excluindo chats relacionados...`);
+                await excluirChatsDoPedido(pedidoId);
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Erro ao verificar pedido ${pedidoId}:`, error);
+          }
+        }
+      }
       
       chatsData.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
       setChats(chatsData);
@@ -408,14 +447,39 @@ export default function ChatsPage() {
       }
 
       console.log(`🗑️ Iniciando exclusão de ${chatsParaExcluir.length} chat(s)...`);
+      console.log('📋 Chats a excluir:', chatsParaExcluir.map(c => ({
+        id: c.id,
+        oficinaId: c.oficinaId,
+        autopecaId: c.autopecaId,
+        userDataId: userData?.id,
+        podeExcluir: c.oficinaId === userData?.id || c.autopecaId === userData?.id
+      })));
 
       // Excluir todos os chats simultaneamente usando Promise.allSettled
       const resultados = await Promise.allSettled(
         chatsParaExcluir.map(async (chat) => {
-          console.log(`🗑️ Excluindo chat ${chat.id}...`);
-          await deleteDoc(doc(db, 'chats', chat.id));
-          console.log(`✅ Chat ${chat.id} excluído com sucesso`);
-          return { chatId: chat.id, sucesso: true };
+          console.log(`🗑️ Excluindo chat ${chat.id}...`, {
+            oficinaId: chat.oficinaId,
+            autopecaId: chat.autopecaId,
+            userId: userData?.id
+          });
+          
+          try {
+            await deleteDoc(doc(db, 'chats', chat.id));
+            console.log(`✅ Chat ${chat.id} excluído com sucesso`);
+            return { chatId: chat.id, sucesso: true };
+          } catch (error: any) {
+            console.error(`❌ Erro ao excluir chat ${chat.id}:`, {
+              code: error?.code,
+              message: error?.message,
+              chat: {
+                id: chat.id,
+                oficinaId: chat.oficinaId,
+                autopecaId: chat.autopecaId
+              }
+            });
+            throw error;
+          }
         })
       );
 
@@ -425,7 +489,19 @@ export default function ChatsPage() {
       // Log detalhado das falhas
       resultados.forEach((resultado, index) => {
         if (resultado.status === 'rejected') {
-          console.error(`❌ Erro ao excluir chat ${chatsParaExcluir[index].id}:`, resultado.reason);
+          const erro = resultado.reason;
+          const chat = chatsParaExcluir[index];
+          console.error(`❌ Erro ao excluir chat ${chat.id}:`, {
+            erro: erro,
+            code: erro?.code,
+            message: erro?.message,
+            chat: {
+              id: chat.id,
+              oficinaId: chat.oficinaId,
+              autopecaId: chat.autopecaId,
+              userId: userData?.id
+            }
+          });
         }
       });
 
@@ -518,12 +594,12 @@ export default function ChatsPage() {
                         setChatSelecionado(chat);
                         marcarComoLido(chat);
                       }}
-                      className={`p-4 border-b border-gray-100 cursor-pointer transition-all ${
+                      className={`relative p-4 border-b border-gray-100 cursor-pointer transition-all ${
                         chatSelecionado?.id === chat.id 
                           ? 'bg-green-100 dark:bg-green-900 border-l-4 border-l-green-600 dark:border-l-green-500' 
                           : chat.encerrado
                           ? 'bg-gray-100 dark:bg-gray-700 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-600'
-                          : 'bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-gray-600'
+                          : 'bg-white dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">

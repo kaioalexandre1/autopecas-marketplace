@@ -27,17 +27,17 @@ service cloud.firestore {
     // Chats podem ser acessados pelos participantes
     match /chats/{chatId} {
       allow read: if request.auth != null && 
-                   (resource.data.oficinaId == request.auth.uid || 
-                    resource.data.autopecaId == request.auth.uid ||
+                   ((resource.data.oficinaId != null && resource.data.oficinaId == request.auth.uid) ||
+                    (resource.data.autopecaId != null && resource.data.autopecaId == request.auth.uid) ||
                     isAdmin());
       allow create: if request.auth != null;
       allow update: if request.auth != null && 
-                    (resource.data.oficinaId == request.auth.uid || 
-                     resource.data.autopecaId == request.auth.uid ||
+                    ((resource.data.oficinaId != null && resource.data.oficinaId == request.auth.uid) ||
+                     (resource.data.autopecaId != null && resource.data.autopecaId == request.auth.uid) ||
                      isAdmin());
       allow delete: if request.auth != null && 
-                    (resource.data.oficinaId == request.auth.uid || 
-                     resource.data.autopecaId == request.auth.uid ||
+                    ((resource.data.oficinaId != null && resource.data.oficinaId == request.auth.uid) ||
+                     (resource.data.autopecaId != null && resource.data.autopecaId == request.auth.uid) ||
                      isAdmin());
     }
     

@@ -40,7 +40,7 @@ export interface Pedido {
   marcaCarro: string;
   modeloCarro: string;
   anoCarro: string;
-  condicaoPeca: 'Nova' | 'Usada'; // Obrigatório: condição da peça
+  condicaoPeca: 'Nova' | 'Usada' | 'Nova ou Usada'; // Obrigatório: condição da peça
   especificacaoMotor?: string; // Opcional: Ex: 1.0, 2.0, 1.6
   notaFiscal?: string; // Opcional: 'com nota' ou 'sem nota'
   observacao?: string; // Opcional: observações extras

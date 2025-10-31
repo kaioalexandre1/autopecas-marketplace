@@ -14,15 +14,18 @@ import {
   Timestamp,
   arrayUnion,
   getDocs,
-  deleteDoc
+  deleteDoc,
+  getDoc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pedido, Oferta, RamoVeiculo } from '@/types';
-import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp, Trash2, CheckCircle, ChevronRight } from 'lucide-react';
 import { formatarPreco } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import OfertasFreteModal from '@/components/OfertasFreteModal';
+import { excluirChatsDoPedido } from '@/lib/chatUtils';
+import { estruturaBrasil, obterTodasCidades } from '@/lib/estruturaBrasil';
 
 export default function DashboardPage() {
   const { userData } = useAuth();
@@ -36,6 +39,11 @@ export default function DashboardPage() {
   const [enderecos, setEnderecos] = useState<{[key: string]: any}>({});
   const [cidadesSelecionadas, setCidadesSelecionadas] = useState<string[]>([]);
   const [ramoSelecionado, setRamoSelecionado] = useState<RamoVeiculo | 'TODOS'>('TODOS');
+  const [mostrarDropdownLocalizacao, setMostrarDropdownLocalizacao] = useState(false);
+  const [mostrarDropdownRamo, setMostrarDropdownRamo] = useState(false);
+  const [estadosExpandidos, setEstadosExpandidos] = useState<string[]>([]);
+  const [brasilSelecionado, setBrasilSelecionado] = useState(false);
+  const [planosAutopecas, setPlanosAutopecas] = useState<{[key: string]: string}>({});
 
   // Banco de emojis de peças de carro
   const emojisAutopecas = ['🔧', '⚙️', '🔩', '⛽', '🛞', '🔋', '💡', '🪛', '🛠️', '🔌'];
@@ -82,10 +90,21 @@ export default function DashboardPage() {
   // Carregar cidades selecionadas do localStorage
   useEffect(() => {
     const cidadesSalvas = localStorage.getItem('cidadesSelecionadas');
-    if (cidadesSalvas) {
-      setCidadesSelecionadas(JSON.parse(cidadesSalvas));
+    const brasilSalvo = localStorage.getItem('brasilSelecionado');
+    
+    if (brasilSalvo === 'true') {
+      setBrasilSelecionado(true);
+      setCidadesSelecionadas(obterTodasCidades());
+    } else if (cidadesSalvas) {
+      const cidades = JSON.parse(cidadesSalvas);
+      setCidadesSelecionadas(cidades);
+      // Verificar se todas as cidades estão selecionadas (Brasil)
+      if (cidades.length === obterTodasCidades().length) {
+        setBrasilSelecionado(true);
+      }
     } else if (userData?.cidade) {
-      setCidadesSelecionadas([userData.cidade]);
+      const nomeCidade = userData.cidade.split('-')[0];
+      setCidadesSelecionadas([nomeCidade]);
     }
 
     // Carregar ramo selecionado do localStorage ou usar padrão do usuário
@@ -96,6 +115,95 @@ export default function DashboardPage() {
       setRamoSelecionado(userData.ramo);
     }
   }, [userData]);
+  
+  // Funções para gerenciar localizações
+  const estadoTotalmenteSelecionado = (estado: string): boolean => {
+    const cidadesDoEstado = estruturaBrasil[estado as keyof typeof estruturaBrasil];
+    return cidadesDoEstado.every(cidade => cidadesSelecionadas.includes(cidade));
+  };
+
+  const toggleBrasil = () => {
+    if (brasilSelecionado) {
+      const nomeCidade = userData?.cidade?.split('-')[0] || 'Maringá';
+      setCidadesSelecionadas([nomeCidade]);
+      setBrasilSelecionado(false);
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify([nomeCidade]));
+      localStorage.setItem('brasilSelecionado', 'false');
+    } else {
+      const todasCidades = obterTodasCidades();
+      setCidadesSelecionadas(todasCidades);
+      setBrasilSelecionado(true);
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify(todasCidades));
+      localStorage.setItem('brasilSelecionado', 'true');
+    }
+    setTimeout(() => window.location.reload(), 100);
+  };
+
+  const toggleEstadoExpansao = (estado: string) => {
+    setEstadosExpandidos(prev => 
+      prev.includes(estado) 
+        ? prev.filter(e => e !== estado)
+        : [...prev, estado]
+    );
+  };
+
+  const toggleEstado = (estado: string) => {
+    const cidadesDoEstado = estruturaBrasil[estado as keyof typeof estruturaBrasil];
+    
+    if (estadoTotalmenteSelecionado(estado)) {
+      const novaSelecao = cidadesSelecionadas.filter(c => !cidadesDoEstado.includes(c));
+      if (novaSelecao.length === 0) {
+        const nomeCidade = userData?.cidade?.split('-')[0] || 'Maringá';
+        novaSelecao.push(nomeCidade);
+      }
+      setCidadesSelecionadas(novaSelecao);
+      setBrasilSelecionado(false);
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify(novaSelecao));
+      localStorage.setItem('brasilSelecionado', 'false');
+    } else {
+      const novaSelecao = [...new Set([...cidadesSelecionadas, ...cidadesDoEstado])];
+      setCidadesSelecionadas(novaSelecao);
+      
+      if (novaSelecao.length === obterTodasCidades().length) {
+        setBrasilSelecionado(true);
+        localStorage.setItem('brasilSelecionado', 'true');
+      }
+      
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify(novaSelecao));
+    }
+    setTimeout(() => window.location.reload(), 100);
+  };
+
+  const toggleCidade = (cidade: string) => {
+    setCidadesSelecionadas(prev => {
+      let novaSelecao: string[];
+      if (prev.includes(cidade)) {
+        novaSelecao = prev.filter(c => c !== cidade);
+        if (novaSelecao.length === 0) {
+          const nomeCidade = userData?.cidade?.split('-')[0] || 'Maringá';
+          novaSelecao.push(nomeCidade);
+        }
+        setBrasilSelecionado(false);
+      } else {
+        novaSelecao = [...prev, cidade];
+        const todasCidades = obterTodasCidades();
+        if (novaSelecao.length === todasCidades.length) {
+          setBrasilSelecionado(true);
+        }
+      }
+      localStorage.setItem('cidadesSelecionadas', JSON.stringify(novaSelecao));
+      localStorage.setItem('brasilSelecionado', brasilSelecionado ? 'true' : 'false');
+      return novaSelecao;
+    });
+    setTimeout(() => window.location.reload(), 100);
+  };
+
+  const handleMudarRamo = (novoRamo: RamoVeiculo | 'TODOS') => {
+    setRamoSelecionado(novoRamo);
+    localStorage.setItem('ramoSelecionado', novoRamo);
+    setMostrarDropdownRamo(false);
+    setTimeout(() => window.location.reload(), 100);
+  };
 
   // Atualizar timers a cada minuto
   useEffect(() => {
@@ -126,7 +234,7 @@ export default function DashboardPage() {
   const [observacaoOferta, setObservacaoOferta] = useState('');
 
   // Filtro de condição da peça
-  const [filtroCondicao, setFiltroCondicao] = useState<'todas' | 'Nova' | 'Usada'>('todas');
+  const [filtroCondicao, setFiltroCondicao] = useState<'todas' | 'Nova' | 'Usada' | 'Nova ou Usada'>('todas');
   const [modoResumido, setModoResumido] = useState(true);
   const [pedidosExpandidos, setPedidosExpandidos] = useState<string[]>([]);
   const [mostrarDropdownFiltros, setMostrarDropdownFiltros] = useState(false);
@@ -172,10 +280,40 @@ export default function DashboardPage() {
         }
       });
 
-      // Exclusão automática desabilitada para evitar erros de permissão
-      // Os pedidos expirados podem ser removidos manualmente pelo admin
+      // Excluir chats relacionados aos pedidos expirados
       if (pedidosExpirados.length > 0) {
-        console.log(`${pedidosExpirados.length} pedido(s) expirado(s) detectado(s) - exclusão manual necessária`);
+        console.log(`⏰ ${pedidosExpirados.length} pedido(s) expirado(s) detectado(s) - excluindo chats relacionados...`);
+        
+        // Excluir chats de cada pedido expirado
+        pedidosExpirados.forEach(async (pedidoId) => {
+          try {
+            const chatsExcluidos = await excluirChatsDoPedido(pedidoId);
+            if (chatsExcluidos > 0) {
+              console.log(`✅ ${chatsExcluidos} chat(s) do pedido ${pedidoId} foram excluídos`);
+            }
+            
+            // Atualizar status do pedido para 'expirado' ou excluir (conforme necessário)
+            // Por enquanto, apenas excluímos os chats. O pedido pode ser excluído manualmente pelo admin.
+            try {
+              await updateDoc(doc(db, 'pedidos', pedidoId), {
+                status: 'expirado',
+                updatedAt: Timestamp.now(),
+              });
+              console.log(`✅ Pedido ${pedidoId} marcado como expirado`);
+            } catch (updateError) {
+              console.error(`⚠️ Erro ao atualizar status do pedido ${pedidoId}:`, updateError);
+              // Tentar excluir o pedido diretamente
+              try {
+                await deleteDoc(doc(db, 'pedidos', pedidoId));
+                console.log(`✅ Pedido ${pedidoId} excluído diretamente`);
+              } catch (deleteError) {
+                console.error(`❌ Erro ao excluir pedido ${pedidoId}:`, deleteError);
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Erro ao processar pedido expirado ${pedidoId}:`, error);
+          }
+        });
       }
 
       // Ordenar: primeiro por número de ofertas (maior primeiro), depois por data
@@ -190,6 +328,38 @@ export default function DashboardPage() {
       });
 
       setPedidos(pedidosData);
+      
+      // Buscar planos das autopeças que fizeram ofertas
+      const autopecaIds = new Set<string>();
+      pedidosData.forEach(pedido => {
+        pedido.ofertas?.forEach(oferta => {
+          if (oferta.autopecaId) {
+            autopecaIds.add(oferta.autopecaId);
+          }
+        });
+      });
+      
+      // Buscar planos de autopeças que ainda não estão no cache
+      const novosPlanos: {[key: string]: string} = {};
+      const promessasPlanos = Array.from(autopecaIds).map(async (autopecaId) => {
+        // Só buscar se ainda não estiver no cache
+        if (!planosAutopecas[autopecaId]) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', autopecaId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              novosPlanos[autopecaId] = userData.plano || 'basico';
+            }
+          } catch (error) {
+            console.error(`Erro ao buscar plano do usuário ${autopecaId}:`, error);
+          }
+        }
+      });
+      
+      await Promise.all(promessasPlanos);
+      if (Object.keys(novosPlanos).length > 0) {
+        setPlanosAutopecas(prev => ({ ...prev, ...novosPlanos }));
+      }
       
       // Buscar endereços para entregadores
       if (userData?.tipo === 'entregador') {
@@ -279,6 +449,18 @@ export default function DashboardPage() {
       console.log('User ID:', userData.id);
       console.log('Pedido:', pedido);
       
+      // Primeiro excluir todos os chats relacionados ao pedido
+      try {
+        const chatsExcluidos = await excluirChatsDoPedido(pedidoId);
+        if (chatsExcluidos > 0) {
+          console.log(`✅ ${chatsExcluidos} chat(s) relacionado(s) ao pedido foram excluídos`);
+        }
+      } catch (chatError) {
+        console.error('⚠️ Erro ao excluir chats do pedido (continuando com cancelamento):', chatError);
+        // Não interromper o cancelamento do pedido se houver erro ao excluir chats
+      }
+      
+      // Depois excluir o pedido
       await deleteDoc(doc(db, 'pedidos', pedidoId));
       toast.success('Pedido cancelado com sucesso!');
     } catch (error: any) {
@@ -575,10 +757,10 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row items-stretch gap-3 sm:gap-6 mb-6 sm:mb-8">
         {/* Título à Esquerda - Quadrado Moderno */}
         <div className="flex-shrink-0 w-full lg:w-auto">
-          <div className="bg-gradient-to-br from-red-50 via-pink-50 to-orange-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-2xl shadow-lg border-2 border-red-200 dark:border-gray-600 p-4 sm:p-6 relative overflow-hidden h-full">
-            {/* Decoração de fundo */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-full opacity-30 -mr-16 -mt-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-100 rounded-full opacity-30 -ml-12 -mb-12"></div>
+          <div className="bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl shadow-lg border-2 border-red-300 dark:border-red-400 p-4 sm:p-6 relative overflow-hidden h-full">
+                {/* Decoração de fundo */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-400 rounded-full opacity-30 -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-red-400 rounded-full opacity-30 -ml-12 -mb-12"></div>
             
             {/* Conteúdo */}
             <div className="relative z-10 flex flex-col justify-center h-full">
@@ -592,21 +774,21 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-2 sm:mb-3 leading-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-white mb-2 sm:mb-3 leading-tight">
                 Pedidos ao Vivo
               </h1>
               
-              <p className="text-sm text-gray-700 dark:text-white font-medium mb-3 leading-relaxed">
+              <p className="text-sm text-white font-medium mb-3 leading-relaxed">
                 {userData?.tipo === 'autopeca' 
                   ? 'Para ver mais pedidos selecione mais localizações para ter acesso aos pedidos de outros locais'
                   : 'Seu pedido já está sendo divulgado ao vivo e você logo receberá ofertas!'}
               </p>
               
               <div className="flex items-center gap-2">
-                <div className="bg-white dark:bg-gray-800 px-3 py-1 rounded-lg shadow-sm border border-red-100 dark:border-gray-600">
-                  <span className="text-xl font-black text-red-600 dark:text-red-400">{pedidos.length}</span>
+                <div className="bg-white px-3 py-1 rounded-lg shadow-sm border border-red-100">
+                  <span className="text-xl font-black text-red-600">{pedidos.length}</span>
                 </div>
-                <p className="text-xs text-gray-700 dark:text-white font-medium">
+                <p className="text-xs text-white font-medium">
                   pedido(s) ativo(s)
                 </p>
               </div>
@@ -734,11 +916,203 @@ export default function DashboardPage() {
                   onClick={() => setMostrarDropdownFiltros(false)}
                 />
                 
-                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-gray-700 py-2 w-full sm:min-w-[280px] sm:w-auto z-20">
+                <div 
+                  className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-gray-700 py-2 w-full sm:min-w-[320px] sm:w-auto z-20 max-h-[90vh] overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                     <p className="text-xs font-bold text-gray-600 dark:text-white uppercase">Opções de Filtro</p>
                   </div>
                   
+                  {/* Seletor de Localização */}
+                  <div className="px-4 py-3 space-y-2">
+                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-300 uppercase mb-2">Localização</p>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMostrarDropdownLocalizacao(!mostrarDropdownLocalizacao);
+                        }}
+                        className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-all flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <MapPin size={16} className="text-blue-600" />
+                          <span className="text-sm font-medium">
+                            {brasilSelecionado 
+                              ? '🇧🇷 Brasil' 
+                              : cidadesSelecionadas.length === 1
+                              ? cidadesSelecionadas[0]
+                              : `${cidadesSelecionadas.length} cidade(s)`}
+                          </span>
+                        </div>
+                        <ChevronDown size={16} className={`transition-transform ${mostrarDropdownLocalizacao ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {mostrarDropdownLocalizacao && (
+                        <div 
+                          className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 py-2 w-full max-h-[400px] overflow-y-auto z-30"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">Selecione Brasil, Estados ou Cidades</p>
+                          </div>
+                          
+                          {/* BRASIL */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBrasil();
+                              setMostrarDropdownLocalizacao(false);
+                            }}
+                            className="w-full px-4 py-2 flex items-center gap-2 text-left hover:bg-blue-50 dark:hover:bg-gray-700 font-bold"
+                          >
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                              brasilSelecionado
+                                ? 'bg-blue-600 border-blue-600'
+                                : 'border-gray-400'
+                            }`}>
+                              {brasilSelecionado && (
+                                <CheckCircle size={14} className="text-white" />
+                              )}
+                            </div>
+                            <span className="text-sm text-blue-900 dark:text-blue-200">🇧🇷 BRASIL</span>
+                          </button>
+                          
+                          <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                          
+                          {/* ESTADOS */}
+                          {Object.entries(estruturaBrasil).map(([estado, cidades]) => (
+                            <div key={estado}>
+                              <div className="flex items-center">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleEstadoExpansao(estado);
+                                  }}
+                                  className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                  <ChevronRight 
+                                    size={16} 
+                                    className={`text-gray-600 dark:text-gray-300 transition-transform ${estadosExpandidos.includes(estado) ? 'rotate-90' : ''}`}
+                                  />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleEstado(estado);
+                                  }}
+                                  className="flex-1 px-2 py-2 flex items-center gap-2 text-left hover:bg-blue-50 dark:hover:bg-gray-700"
+                                >
+                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                    estadoTotalmenteSelecionado(estado)
+                                      ? 'bg-blue-600 border-blue-600'
+                                      : 'border-gray-400'
+                                  }`}>
+                                    {estadoTotalmenteSelecionado(estado) && (
+                                      <CheckCircle size={14} className="text-white" />
+                                    )}
+                                  </div>
+                                  <span className="text-sm text-gray-900 dark:text-white">{estado}</span>
+                                </button>
+                              </div>
+                              
+                              {/* CIDADES */}
+                              {estadosExpandidos.includes(estado) && (
+                                <div className="pl-8">
+                                  {cidades.map((cidade) => (
+                                    <button
+                                      key={cidade}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleCidade(cidade);
+                                      }}
+                                      className="w-full px-4 py-2 flex items-center gap-2 text-left hover:bg-blue-50 dark:hover:bg-gray-700"
+                                    >
+                                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                        cidadesSelecionadas.includes(cidade)
+                                          ? 'bg-blue-600 border-blue-600'
+                                          : 'border-gray-400'
+                                      }`}>
+                                        {cidadesSelecionadas.includes(cidade) && (
+                                          <CheckCircle size={12} className="text-white" />
+                                        )}
+                                      </div>
+                                      <span className="text-xs text-gray-700 dark:text-gray-300">{cidade}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+
+                  {/* Seletor de Veículo */}
+                  <div className="px-4 py-3 space-y-2">
+                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-300 uppercase mb-2">Tipo de Veículo</p>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMostrarDropdownRamo(!mostrarDropdownRamo);
+                        }}
+                        className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-all flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          {ramoSelecionado === 'CARRO' && '🚗'}
+                          {ramoSelecionado === 'MOTO' && '🏍️'}
+                          {ramoSelecionado === 'CAMINHÃO' && '🚛'}
+                          {ramoSelecionado === 'ÔNIBUS' && '🚌'}
+                          {ramoSelecionado === 'TODOS' && '🚙'}
+                          <span className="text-sm font-medium">
+                            {ramoSelecionado === 'TODOS' ? 'Todos os Veículos' : ramoSelecionado}
+                          </span>
+                        </div>
+                        <ChevronDown size={16} className={`transition-transform ${mostrarDropdownRamo ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {mostrarDropdownRamo && (
+                        <div 
+                          className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 py-2 w-full z-30"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {(['TODOS', 'CARRO', 'MOTO', 'CAMINHÃO', 'ÔNIBUS'] as const).map((ramo) => (
+                            <button
+                              key={ramo}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMudarRamo(ramo === 'TODOS' ? 'TODOS' : ramo);
+                              }}
+                              className={`w-full px-4 py-2 flex items-center gap-2 text-left hover:bg-blue-50 dark:hover:bg-gray-700 ${
+                                ramoSelecionado === ramo ? 'bg-blue-100 dark:bg-blue-900' : ''
+                              }`}
+                            >
+                              <span className="text-lg">
+                                {ramo === 'CARRO' && '🚗'}
+                                {ramo === 'MOTO' && '🏍️'}
+                                {ramo === 'CAMINHÃO' && '🚛'}
+                                {ramo === 'ÔNIBUS' && '🚌'}
+                                {ramo === 'TODOS' && '🚙'}
+                              </span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {ramo === 'TODOS' ? 'Todos os Veículos' : ramo}
+                              </span>
+                              {ramoSelecionado === ramo && (
+                                <CheckCircle size={16} className="text-blue-600 ml-auto" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+
                   {/* Filtro de Condição */}
                   <div className="px-4 py-3 space-y-2">
                     <p className="text-xs font-semibold text-gray-900 dark:text-gray-300 uppercase mb-2">Condição da Peça</p>
@@ -787,6 +1161,28 @@ export default function DashboardPage() {
                       <span className="text-lg">🔄</span>
                       Peças Usadas
                     </button>
+                    
+                    <button
+                      onClick={() => {
+                        setFiltroCondicao('Nova ou Usada');
+                        setMostrarDropdownFiltros(false);
+                      }}
+                      className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        filtroCondicao === 'Nova ou Usada'
+                          ? 'shadow-md text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                      style={
+                        filtroCondicao === 'Nova ou Usada'
+                          ? {
+                              background: 'linear-gradient(135deg, #10b981 0%, #10b981 45%, #f97316 55%, #f97316 100%)'
+                            }
+                          : undefined
+                      }
+                    >
+                      <span className="text-lg">✨🔄</span>
+                      Nova ou Usada
+                    </button>
                   </div>
 
                   <div className="border-t border-gray-200 my-2"></div>
@@ -824,6 +1220,10 @@ export default function DashboardPage() {
                         if (filtroCondicao === 'todas') return true;
                         if (!p.condicaoPeca) return false;
                         return p.condicaoPeca === filtroCondicao;
+                      }).filter((pedido) => {
+                        // Filtrar por ramo também
+                        if (ramoSelecionado === 'TODOS') return true;
+                        return pedido.ramo === ramoSelecionado;
                       }).length} pedido(s) {modoResumido && '(modo compacto)'}
                     </p>
                   </div>
@@ -895,7 +1295,7 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={pedido.id}
-                      className="bg-white dark:bg-gray-800 rounded-lg shadow-[0_0_10px_2px_rgba(0,51,102,0.4)] dark:shadow-[0_0_10px_2px_rgba(59,130,246,0.3)] hover:shadow-[0_0_15px_3px_rgba(0,51,102,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(59,130,246,0.5)] transition-all duration-300 ease-in-out p-1.5 border-2 border-blue-800 dark:border-blue-600 hover:border-blue-900 dark:hover:border-blue-500 cursor-pointer aspect-square flex flex-col justify-between min-h-0 relative"
+                      className="bg-white dark:bg-gray-100 rounded-lg shadow-[0_0_10px_2px_rgba(0,51,102,0.4)] dark:shadow-[0_0_10px_2px_rgba(59,130,246,0.3)] hover:shadow-[0_0_15px_3px_rgba(0,51,102,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(59,130,246,0.5)] transition-all duration-300 ease-in-out p-1.5 border-2 border-blue-800 dark:border-blue-600 hover:border-blue-900 dark:hover:border-blue-500 cursor-pointer aspect-square flex flex-col justify-between min-h-0 relative"
                       onClick={() => toggleExpansaoPedido(pedido.id)}
                     >
                       {/* Botão de cancelar (canto superior direito) */}
@@ -920,13 +1320,25 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Retângulo com Nome da Peça - mesmo estilo do card completo */}
-                      <div className={`rounded-lg p-1.5 mb-0.5 border shadow-sm flex-1 flex flex-col justify-center ${
-                        pedido.condicaoPeca === 'Nova' 
-                          ? 'bg-gradient-to-br from-green-50 via-green-100 to-green-50 border-green-400'
-                          : pedido.condicaoPeca === 'Usada'
-                          ? 'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 border-orange-400'
-                          : 'bg-gradient-to-br from-blue-50 via-blue-100 to-cyan-100 border-blue-400'
-                      }`}>
+                      <div 
+                        className={`rounded-lg p-1.5 mb-0.5 border shadow-sm flex-1 flex flex-col justify-center ${
+                          pedido.condicaoPeca === 'Nova' 
+                            ? 'bg-gradient-to-br from-green-50 via-green-100 to-green-50 border-green-400'
+                            : pedido.condicaoPeca === 'Usada'
+                            ? 'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 border-orange-400'
+                            : pedido.condicaoPeca === 'Nova ou Usada'
+                            ? 'border-green-400 border-orange-400'
+                            : 'bg-gradient-to-br from-blue-50 via-blue-100 to-cyan-100 border-blue-400'
+                        }`}
+                        style={
+                          pedido.condicaoPeca === 'Nova ou Usada'
+                            ? {
+                                background: 'linear-gradient(135deg, rgba(209, 250, 229, 0.7) 0%, rgba(209, 250, 229, 0.7) 45%, rgba(254, 243, 199, 0.7) 55%, rgba(254, 243, 199, 0.7) 100%)',
+                                borderColor: '#10b981',
+                              }
+                            : undefined
+                        }
+                      >
                         {/* Nome da Peça */}
                         <h3 className="font-black text-xl text-gray-900 line-clamp-2 leading-tight uppercase text-center mb-0.5 px-0.5">
                           {pedido.nomePeca}
@@ -935,24 +1347,36 @@ export default function DashboardPage() {
                         {/* Badge de Condição */}
                         {pedido.condicaoPeca && (
                           <div className="flex justify-center">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-bold text-sm ${
-                              pedido.condicaoPeca === 'Nova' 
-                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
-                                : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
-                            }`}>
-                              {pedido.condicaoPeca.toUpperCase()}
-                            </span>
+                            {pedido.condicaoPeca === 'Nova ou Usada' ? (
+                              <span 
+                                className="inline-flex items-center px-2 py-0.5 rounded-full font-bold text-sm text-white relative overflow-hidden"
+                                style={{
+                                  background: 'linear-gradient(135deg, #10b981 0%, #10b981 45%, #f97316 55%, #f97316 100%)'
+                                }}
+                              >
+                                NOVO/USADO
+                              </span>
+                            ) : (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-bold text-sm ${
+                                pedido.condicaoPeca === 'Nova' 
+                                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
+                                  : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
+                              }`}>
+                                {pedido.condicaoPeca.toUpperCase()}
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
 
                       {/* Informações do Carro */}
-                      <div className="bg-white dark:bg-gray-700 rounded-md p-1 mb-0.5 shadow-sm border border-gray-200 dark:border-gray-600">
-                        <p className="text-base text-gray-900 dark:text-white font-black leading-tight line-clamp-1 text-center px-0.5">
+                      <div className="bg-white dark:bg-gray-50 rounded-md p-1 mb-0.5 shadow-sm border border-gray-200 dark:border-gray-300">
+                        <p className="text-base text-gray-900 dark:text-gray-900 font-black leading-tight line-clamp-1 text-center px-0.5">
                           {pedido.marcaCarro} {pedido.modeloCarro}
                         </p>
-                        <p className="text-base text-blue-700 font-black text-center">
+                        <p className="text-base text-blue-700 dark:text-blue-700 font-black text-center">
                           {pedido.anoCarro}
+                          {pedido.especificacaoMotor && ` ${pedido.especificacaoMotor}`}
                         </p>
                       </div>
 
@@ -977,7 +1401,7 @@ export default function DashboardPage() {
                 return (
             <div
               key={pedido.id}
-              className={`bg-white dark:bg-gray-800 rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)] transition-all duration-300 ease-in-out p-4 border-2 border-blue-800 dark:border-blue-600 hover:border-blue-900 dark:hover:border-blue-500 ${
+              className={`bg-white dark:bg-gray-100 rounded-xl shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)] transition-all duration-300 ease-in-out p-4 border-2 border-blue-800 dark:border-blue-600 hover:border-blue-900 dark:hover:border-blue-500 ${
                 !modoResumido && 'animate-slide-in'
               } ${modoResumido && isExpandido ? 'col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-2' : ''}`}
             >
@@ -1008,45 +1432,45 @@ export default function DashboardPage() {
                   </button>
                 )}
               </div>
-              {/* Dia + Cidade */}
-              <div className="mb-3">
+              
+              {/* Informações Compactas: Dia/Cidade, Horário e Nome da Loja */}
+              <div className="mb-3 text-center">
                 {diaIndicador && (
-                  <p className="text-center text-sm text-gray-700 font-bold">
+                  <p className="text-xs text-gray-900 dark:text-gray-900 font-semibold mb-1">
                     {diaIndicador} - {pedido.cidade}
                   </p>
                 )}
-              </div>
-
-              {/* Horário de Criação */}
-              <div className="mb-4">
-                <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 border-blue-200 bg-blue-50 font-bold text-sm text-blue-700">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                  </svg>
-                  <span>
-                    Pedido criado às {pedido.createdAt instanceof Date 
-                      ? pedido.createdAt.toLocaleTimeString('pt-BR', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })
-                      : 'Agora'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Nome da Loja Centralizado */}
-              <div className="text-center mb-3">
-                <p className="text-2xl font-black text-blue-600 uppercase tracking-wide">{pedido.oficinaNome}</p>
+                <p className="text-xs text-gray-900 dark:text-gray-900 font-semibold mb-2">
+                  Pedido criado às {pedido.createdAt instanceof Date 
+                    ? pedido.createdAt.toLocaleTimeString('pt-BR', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })
+                    : 'Agora'}
+                </p>
+                <p className="text-xl font-black text-blue-600 dark:text-blue-400 uppercase tracking-wide">{pedido.oficinaNome}</p>
               </div>
 
               {/* Retângulo com Nome da Peça */}
-              <div className={`rounded-xl p-5 mb-4 border-2 shadow-md hover:shadow-lg transition-shadow ${
-                pedido.condicaoPeca === 'Nova' 
-                  ? 'bg-gradient-to-br from-green-50 via-green-100 to-green-50 border-green-400'
-                  : pedido.condicaoPeca === 'Usada'
-                  ? 'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 border-orange-400'
-                  : 'bg-gradient-to-br from-blue-50 via-blue-100 to-cyan-100 border-blue-400'
-              }`}>
+              <div 
+                className={`rounded-xl p-5 mb-4 border-2 shadow-md hover:shadow-lg transition-shadow ${
+                  pedido.condicaoPeca === 'Nova' 
+                    ? 'bg-gradient-to-br from-green-50 via-green-100 to-green-50 border-green-400'
+                    : pedido.condicaoPeca === 'Usada'
+                    ? 'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 border-orange-400'
+                    : pedido.condicaoPeca === 'Nova ou Usada'
+                    ? 'border-green-400 border-orange-400'
+                    : 'bg-gradient-to-br from-blue-50 via-blue-100 to-cyan-100 border-blue-400'
+                }`}
+                style={
+                  pedido.condicaoPeca === 'Nova ou Usada'
+                    ? {
+                        background: 'linear-gradient(135deg, rgba(209, 250, 229, 0.7) 0%, rgba(209, 250, 229, 0.7) 45%, rgba(254, 243, 199, 0.7) 55%, rgba(254, 243, 199, 0.7) 100%)',
+                        borderColor: '#10b981',
+                      }
+                    : undefined
+                }
+              >
                 {/* Nome da Peça */}
                 <div className="mb-3">
                   <h3 className="font-black text-3xl text-gray-900 tracking-tight uppercase leading-tight text-center">
@@ -1056,37 +1480,49 @@ export default function DashboardPage() {
                 {/* Badge de Condição da Peça */}
                 {pedido.condicaoPeca && (
                   <div className="flex items-center justify-center gap-2">
-                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-lg ${
-                      pedido.condicaoPeca === 'Nova' 
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
-                        : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
-                    }`}>
-                      PEÇA {pedido.condicaoPeca.toUpperCase()}
-                    </span>
+                    {pedido.condicaoPeca === 'Nova ou Usada' ? (
+                      <span 
+                        className="inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-lg text-white relative overflow-hidden"
+                        style={{
+                          background: 'linear-gradient(135deg, #10b981 0%, #10b981 45%, #f97316 55%, #f97316 100%)'
+                        }}
+                      >
+                        PEÇA NOVO/USADO
+                      </span>
+                    ) : (
+                      <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-lg ${
+                        pedido.condicaoPeca === 'Nova' 
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
+                          : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
+                      }`}>
+                        PEÇA {pedido.condicaoPeca.toUpperCase()}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
 
               {/* Primeiro Retângulo Branco - Informações do Carro */}
-              <div className="bg-white rounded-lg p-4 mb-3 shadow-md border border-gray-200">
+              <div className="bg-white dark:bg-gray-50 rounded-lg p-4 mb-3 shadow-md border border-gray-200 dark:border-gray-300">
                 <div className="flex items-center gap-3">
                   <div className="bg-blue-600 p-2 rounded-md shadow-sm">
                     <Car size={20} className="text-white" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-black text-xl text-gray-900 uppercase leading-tight tracking-wide">
+                    <div className="font-black text-xl text-gray-900 dark:text-gray-900 uppercase leading-tight tracking-wide">
                       {pedido.marcaCarro} {pedido.modeloCarro}
                     </div>
-                    <div className="text-base text-blue-700 font-bold mt-0.5">
+                    <div className="text-base text-blue-700 dark:text-blue-700 font-bold mt-0.5">
                       ANO: {pedido.anoCarro}
+                      {pedido.especificacaoMotor && ` ${pedido.especificacaoMotor}`}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Segundo Retângulo Branco - Especificações Adicionais */}
+                  {/* Segundo Retângulo Branco - Especificações Adicionais */}
               {(pedido.especificacaoMotor || pedido.notaFiscal || pedido.observacao) && (
-                <div className="bg-white rounded-lg p-4 mb-4 shadow-md border border-gray-200">
+                <div className="bg-white dark:bg-gray-50 rounded-lg p-4 mb-4 shadow-md border border-gray-200 dark:border-gray-300">
                   <div className="text-xs font-bold text-gray-900 dark:text-gray-300 uppercase tracking-wider mb-3">
                     Especificações Adicionais
                   </div>
@@ -1125,7 +1561,7 @@ export default function DashboardPage() {
               {/* Ofertas */}
               <div className="mb-4">
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-gray-600">Ofertas recebidas:</span>
+                  <span className="text-gray-900 dark:text-gray-900 font-semibold">Ofertas recebidas:</span>
                   <span className="font-semibold text-gray-900">
                     {pedido.ofertas?.length || 0}
                   </span>
@@ -1139,12 +1575,44 @@ export default function DashboardPage() {
                         <div
                           key={oferta.id}
                           className={`text-xs p-2 rounded ${
-                            idx === 0 ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                            idx === 0 ? 'bg-green-50 dark:bg-green-100 border border-green-200 dark:border-green-300' : 'bg-gray-50 dark:bg-gray-100'
                           }`}
                         >
                           <div className="flex justify-between items-center mb-1">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-medium">{oferta.autopecaNome}</span>
+                            <div className="flex items-center space-x-2 flex-wrap">
+                              {(() => {
+                                const plano = planosAutopecas[oferta.autopecaId] || 'basico';
+                                const cores: {[key: string]: string} = {
+                                  basico: 'text-gray-700 dark:text-gray-900',
+                                  premium: 'text-blue-600 dark:text-blue-700',
+                                  gold: 'text-yellow-600 dark:text-yellow-700',
+                                  platinum: 'text-purple-600 dark:text-purple-700'
+                                };
+                                const emojis: {[key: string]: string} = {
+                                  basico: '',
+                                  premium: '💎',
+                                  gold: '🏆',
+                                  platinum: '👑'
+                                };
+                                const nomesPlanos: {[key: string]: string} = {
+                                  basico: '',
+                                  premium: 'Premium',
+                                  gold: 'Gold',
+                                  platinum: 'Platinum'
+                                };
+                                return (
+                                  <>
+                                    <span className={`font-bold ${cores[plano]}`}>
+                                      {oferta.autopecaNome}
+                                    </span>
+                                    {plano !== 'basico' && (
+                                      <span className={`italic ${cores[plano]} text-xs`}>
+                                        - {nomesPlanos[plano]} {emojis[plano]}
+                                      </span>
+                                    )}
+                                  </>
+                                );
+                              })()}
                               {userData?.tipo === 'oficina' && userData.id === pedido.oficinaId && (
                                 <button
                                   onClick={() => abrirChat(pedido, oferta)}
@@ -1156,12 +1624,12 @@ export default function DashboardPage() {
                                 </button>
                               )}
                             </div>
-                            <span className="text-green-700 font-semibold">
+                            <span className="text-green-700 dark:text-green-800 font-semibold">
                               {formatarPreco(oferta.preco)}
                             </span>
                           </div>
                           {oferta.observacao && (
-                            <div className="text-xs text-gray-600 italic mt-1 pl-2 border-l-2 border-gray-300">
+                            <div className="text-xs text-gray-900 dark:text-gray-900 italic mt-1 pl-2 border-l-2 border-gray-300 dark:border-gray-400">
                               💬 {oferta.observacao}
                             </div>
                           )}
@@ -1212,7 +1680,41 @@ export default function DashboardPage() {
                       <div className="text-blue-700">
                         <div className="flex items-center mb-1">
                           <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                          <span className="font-medium">Autopeça: {pedido.ofertas[0].autopecaNome}</span>
+                          {(() => {
+                            const oferta = pedido.ofertas[0];
+                            const plano = planosAutopecas[oferta.autopecaId] || 'basico';
+                            const cores: {[key: string]: string} = {
+                              basico: 'text-gray-700 dark:text-gray-900',
+                              premium: 'text-blue-600 dark:text-blue-700',
+                              gold: 'text-yellow-600 dark:text-yellow-700',
+                              platinum: 'text-purple-600 dark:text-purple-700'
+                            };
+                            const emojis: {[key: string]: string} = {
+                              basico: '',
+                              premium: '💎',
+                              gold: '🏆',
+                              platinum: '👑'
+                            };
+                            const nomesPlanos: {[key: string]: string} = {
+                              basico: '',
+                              premium: 'Premium',
+                              gold: 'Gold',
+                              platinum: 'Platinum'
+                            };
+                            return (
+                              <span className="font-semibold">
+                                Autopeça:{' '}
+                                <span className={`font-bold ${cores[plano]}`}>
+                                  {oferta.autopecaNome}
+                                </span>
+                                {plano !== 'basico' && (
+                                  <span className={`italic ${cores[plano]} text-sm ml-1`}>
+                                    - {nomesPlanos[plano]} {emojis[plano]}
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })()}
                         </div>
                         {enderecos[pedido.id]?.autopeca && (
                           <div className="ml-4 text-xs text-blue-600">
@@ -1363,6 +1865,7 @@ export default function DashboardPage() {
                       <option value="">Selecione...</option>
                       <option value="Nova">Nova</option>
                       <option value="Usada">Usada</option>
+                      <option value="Nova ou Usada">Nova ou Usada</option>
                     </select>
                   </div>
                 </div>
@@ -1453,13 +1956,24 @@ export default function DashboardPage() {
               </p>
               {pedidoSelecionado.condicaoPeca && (
                 <div className="mt-3 flex justify-center">
-                  <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-md ${
-                    pedidoSelecionado.condicaoPeca === 'Nova' 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-orange-500 text-white'
-                  }`}>
-                    PEÇA {pedidoSelecionado.condicaoPeca.toUpperCase()}
-                  </span>
+                  {pedidoSelecionado.condicaoPeca === 'Nova ou Usada' ? (
+                    <span 
+                      className="inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-md text-white relative overflow-hidden"
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #10b981 45%, #f97316 55%, #f97316 100%)'
+                      }}
+                    >
+                      PEÇA NOVO/USADO
+                    </span>
+                  ) : (
+                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-md ${
+                      pedidoSelecionado.condicaoPeca === 'Nova' 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-orange-500 text-white'
+                    }`}>
+                      PEÇA {pedidoSelecionado.condicaoPeca.toUpperCase()}
+                    </span>
+                  )}
                 </div>
               )}
               {pedidoSelecionado.especificacaoMotor && (
