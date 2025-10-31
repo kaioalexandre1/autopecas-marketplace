@@ -25,6 +25,7 @@ export interface User {
   mesReferenciaOfertas?: string; // Mês de referência (formato: "2025-01")
   assinaturaAtiva?: boolean; // Se a assinatura está ativa
   dataProximoPagamento?: Date; // Data do próximo pagamento
+  subscriptionId?: string; // ID da assinatura recorrente no Mercado Pago (para pagamentos automáticos)
   contaBloqueada?: boolean; // Se a conta foi bloqueada pelo admin
   
   createdAt: Date;
@@ -156,6 +157,7 @@ export interface Pagamento {
   metodoPagamento: 'mercadopago' | 'pix' | 'boleto' | 'cartao';
   statusPagamento: 'pendente' | 'aprovado' | 'recusado' | 'cancelado';
   mercadoPagoId?: string; // ID do pagamento no Mercado Pago
+  subscriptionId?: string; // ID da assinatura recorrente (quando pagamento via cartão com renovação automática)
   pixCopiaECola?: string; // Código PIX
   linkPagamento?: string; // Link para pagamento
   dataVencimento?: Date;

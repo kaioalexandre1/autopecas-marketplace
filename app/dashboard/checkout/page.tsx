@@ -39,6 +39,55 @@ export default function CheckoutPage() {
     }
   }, [userData, router]);
 
+  // Estado para armazenar instância do MercadoPago
+  const [mpInstance, setMpInstance] = useState<any>(null);
+
+  // Inicializar MercadoPago SDK quando o componente carregar
+  useEffect(() => {
+    const inicializarSDK = () => {
+      if (typeof window !== 'undefined' && (window as any).MercadoPago) {
+        try {
+          // Obter public key da variável de ambiente ou usar a chave padrão
+          const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || 'APP_USR-eaa4c975-34b1-44b1-898e-8551eb0ca677';
+          
+          if (!publicKey) {
+            console.warn('⚠️ Public Key do Mercado Pago não configurada.');
+            return;
+          }
+          
+          // Inicializar SDK do Mercado Pago com public key
+          const mp = new (window as any).MercadoPago(publicKey, {
+            locale: 'pt-BR',
+            advancedFraudPrevention: true, // Ativa coleta automática do device_id
+          });
+          
+          setMpInstance(mp);
+          console.log('✅ MercadoPago SDK inicializado com sucesso');
+        } catch (error) {
+          console.error('Erro ao inicializar MercadoPago SDK:', error);
+        }
+      } else {
+        // Aguardar SDK carregar
+        setTimeout(inicializarSDK, 300);
+      }
+    };
+    
+    // Aguardar DOM estar pronto
+    if (typeof window !== 'undefined') {
+      if (document.readyState === 'complete') {
+        inicializarSDK();
+      } else {
+        window.addEventListener('load', inicializarSDK);
+      }
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('load', inicializarSDK);
+      }
+    };
+  }, []);
+
   const simularPagamentoPix = async () => {
     setProcessando(true);
     
@@ -54,12 +103,67 @@ export default function CheckoutPage() {
     return pixSimulado;
   };
 
+  // Função para obter Device ID do MercadoPago SDK
+  const obterDeviceId = (): string | null => {
+    try {
+      // Forma 1: Obter da instância do MercadoPago
+      if (mpInstance && typeof mpInstance.getDeviceId === 'function') {
+        const deviceId = mpInstance.getDeviceId();
+        if (deviceId) {
+          console.log('✅ Device ID obtido da instância:', deviceId);
+          return deviceId;
+        }
+      }
+      
+      // Forma 2: Tentar obter do objeto global MP
+      if (typeof window !== 'undefined' && (window as any).MP) {
+        const mpGlobal = (window as any).MP;
+        if (typeof mpGlobal.getDeviceId === 'function') {
+          const deviceId = mpGlobal.getDeviceId();
+          if (deviceId) {
+            console.log('✅ Device ID obtido do objeto global:', deviceId);
+            return deviceId;
+          }
+        }
+      }
+      
+      // Forma 3: Tentar obter do localStorage (fallback)
+      if (typeof window !== 'undefined') {
+        const deviceId = localStorage.getItem('mp_device_id');
+        if (deviceId) {
+          console.log('✅ Device ID obtido do localStorage:', deviceId);
+          return deviceId;
+        }
+      }
+      
+      console.warn('⚠️ Device ID não encontrado. O SDK pode não estar totalmente inicializado.');
+      return null;
+    } catch (error) {
+      console.error('Erro ao obter device_id:', error);
+      return null;
+    }
+  };
+
+  // Função para extrair primeiro e último nome
+  const extrairNomeCompleto = (nomeCompleto: string) => {
+    const partes = nomeCompleto.trim().split(' ');
+    const firstName = partes[0] || '';
+    const lastName = partes.slice(1).join(' ') || '';
+    return { firstName, lastName };
+  };
+
   const handleConfirmarPagamento = async () => {
     if (!userData) return;
 
     setLoading(true);
     
     try {
+      // Obter device_id do SDK MercadoPago
+      const deviceId = obterDeviceId();
+      
+      // Extrair primeiro e último nome
+      const { firstName, lastName } = extrairNomeCompleto(userData.nome);
+      
       // Chamar API real
       const resp = await fetch('/api/mercadopago/checkout', {
         method: 'POST',
@@ -70,6 +174,9 @@ export default function CheckoutPage() {
           autopecaId: userData.id,
           autopecaNome: userData.nome,
           email: userData?.email || `${userData.id}@example.com`,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          deviceId: deviceId || undefined,
         }),
       });
       const data = await resp.json();
@@ -91,7 +198,7 @@ export default function CheckoutPage() {
           autopecaNome: userData.nome,
           plano,
           valor,
-          metodoPagamento: 'mercadopago',
+          metodoPagamento: 'pix',
           statusPagamento: 'pendente',
           pixCopiaECola: data.qr,
           mercadoPagoId: String(data.paymentId),
@@ -99,6 +206,33 @@ export default function CheckoutPage() {
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         });
+      } else if (data.method === 'subscription') {
+        // Assinatura recorrente criada - redirecionar para página de aprovação
+        console.log(`[Checkout] ✅ Assinatura criada com sucesso! Subscription ID: ${data.subscriptionId}`);
+        
+        // Salvar subscriptionId no Firestore
+        await addDoc(collection(db, 'pagamentos'), {
+          autopecaId: userData.id,
+          autopecaNome: userData.nome,
+          plano,
+          valor,
+          metodoPagamento: 'cartao',
+          statusPagamento: 'pendente',
+          mercadoPagoId: String(data.subscriptionId),
+          subscriptionId: String(data.subscriptionId),
+          external_reference: `${userData.id}|${plano}`,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+
+        // Redirecionar para página de aprovação da assinatura
+        const initPoint = data.init_point || data.sandbox_init_point;
+        if (initPoint) {
+          window.location.href = initPoint;
+          return;
+        } else {
+          toast.error('Erro: Link de aprovação não encontrado');
+        }
       } else {
         const link = data.init_point || data.sandbox_init_point;
         setLinkPagamento(link);
@@ -119,27 +253,29 @@ export default function CheckoutPage() {
         
         // Abrir automaticamente o checkout em nova aba
         try { window.open(link, '_blank'); } catch {}
+        
+        // Criar assinatura para checkout tradicional (pagamento único)
+        const dataInicio = new Date();
+        const dataFim = new Date();
+        dataFim.setMonth(dataFim.getMonth() + 1);
+
+        await addDoc(collection(db, 'assinaturas'), {
+          autopecaId: userData.id,
+          autopecaNome: userData.nome,
+          plano,
+          valor,
+          status: 'pendente',
+          dataInicio: Timestamp.fromDate(dataInicio),
+          dataFim: Timestamp.fromDate(dataFim),
+          renovacaoAutomatica: false, // Checkout tradicional não é automático
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+
+        toast.success('Aguardando confirmação do pagamento...');
       }
 
-      // Criar assinatura
-      const dataInicio = new Date();
-      const dataFim = new Date();
-      dataFim.setMonth(dataFim.getMonth() + 1);
-
-      await addDoc(collection(db, 'assinaturas'), {
-        autopecaId: userData.id,
-        autopecaNome: userData.nome,
-        plano,
-        valor,
-        status: 'pendente',
-        dataInicio: Timestamp.fromDate(dataInicio),
-        dataFim: Timestamp.fromDate(dataFim),
-        renovacaoAutomatica: true,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
-
-      toast.success('Aguardando confirmação do pagamento...');
+      // Para subscriptions, a assinatura será criada após aprovação via webhook
       // Importante: a ativação do plano acontecerá somente após a confirmação real
       // do pagamento (via webhook do Mercado Pago atualizando o status no Firestore).
       

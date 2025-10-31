@@ -5,12 +5,15 @@ import { PRECOS_PLANOS, PlanoAssinatura } from '@/types';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { metodo, plano, autopecaId, autopecaNome, email } = body as {
+    const { metodo, plano, autopecaId, autopecaNome, email, firstName, lastName, deviceId } = body as {
       metodo: 'pix' | 'cartao';
       plano: PlanoAssinatura;
       autopecaId: string;
       autopecaNome: string;
       email: string;
+      firstName?: string;
+      lastName?: string;
+      deviceId?: string;
     };
 
     if (!autopecaId || !plano || !metodo) {
@@ -44,10 +47,15 @@ export async function POST(request: Request) {
           transaction_amount: amount,
           description: `Assinatura plano ${plano}`,
           payment_method_id: 'pix',
-          payer: { email: email || `${autopecaId}@example.com` },
+          payer: { 
+            email: email || `${autopecaId}@example.com`,
+            ...(firstName && { first_name: firstName }),
+            ...(lastName && { last_name: lastName }),
+          },
           notification_url,
           external_reference,
           binary_mode: true,
+          ...(deviceId && { device_id: deviceId }),
         }),
       });
 
@@ -61,7 +69,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, method: 'pix', qr, paymentId });
     }
 
-    // Preferência de checkout (cartão) - MP mostrará os métodos
+    // Para cartão: criar assinatura recorrente (Preapproval)
+    if (metodo === 'cartao') {
+      const preapprovalResp = await fetch('https://api.mercadopago.com/preapproval', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: `Assinatura ${plano} - Grupão das Autopeças`,
+          auto_recurring: {
+            frequency: 1,
+            frequency_type: 'months',
+            transaction_amount: amount,
+            currency_id: 'BRL',
+            // start_date será definido automaticamente pelo MP quando a assinatura for autorizada
+            end_date: null, // Sem data de término (renovação infinita)
+          },
+          payer_email: email || `${autopecaId}@example.com`,
+          ...(firstName && { payer_first_name: firstName }),
+          ...(lastName && { payer_last_name: lastName }),
+          external_reference,
+          notification_url,
+          back_url: `${fullBase}/dashboard?checkout=success`,
+          status: 'pending',
+          ...(deviceId && { device_id: deviceId }),
+        }),
+      });
+
+      const preapproval = await preapprovalResp.json();
+      
+      if (!preapprovalResp.ok) {
+        console.error('Erro ao criar preapproval:', preapproval);
+        return NextResponse.json({ ok: false, error: 'mp_preapproval_error', details: preapproval }, { status: preapprovalResp.status });
+      }
+
+      // Retornar link de inscrição na assinatura
+      return NextResponse.json({ 
+        ok: true, 
+        method: 'subscription', 
+        subscriptionId: preapproval.id,
+        init_point: preapproval.init_point,
+        sandbox_init_point: preapproval.sandbox_init_point,
+      });
+    }
+
+    // Para outros métodos: Preferência de checkout tradicional (caso não seja PIX nem cartão)
     const prefResp = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
@@ -72,12 +126,18 @@ export async function POST(request: Request) {
         items: [
           {
             title: `Assinatura ${plano}`,
+            description: `Plano de assinatura ${plano} - Grupão das Autopeças`, // Descrição para melhorar aprovação
             quantity: 1,
             unit_price: amount,
             currency_id: 'BRL',
+            category_id: 'subscriptions', // Categoria para melhorar aprovação
           },
         ],
-        payer: { email: email || `${autopecaId}@example.com` },
+        payer: { 
+          email: email || `${autopecaId}@example.com`,
+          ...(firstName && { first_name: firstName }),
+          ...(lastName && { last_name: lastName }),
+        },
         notification_url,
         external_reference,
         back_urls: {
@@ -87,10 +147,6 @@ export async function POST(request: Request) {
         },
         auto_return: 'approved',
         statement_descriptor: 'WRX PARTS',
-        // Personalização conforme método solicitado
-        payment_methods: metodo === 'cartao'
-          ? { default_payment_type_id: 'credit_card' }
-          : undefined,
         binary_mode: true,
       }),
     });

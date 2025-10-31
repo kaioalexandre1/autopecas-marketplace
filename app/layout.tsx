@@ -23,6 +23,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={inter.variable}>
+      <head>
+        {/* MercadoPago.js V2 SDK para Device ID (obrigatório) */}
+        <script src="https://sdk.mercadopago.com/js/v2"></script>
+      </head>
       <body className={`${inter.className} antialiased`}>
         <AuthProvider>
           {children}

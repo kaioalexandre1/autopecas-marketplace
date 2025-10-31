@@ -8,7 +8,7 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User, UserType } from '@/types';
 import toast from 'react-hot-toast';
@@ -46,7 +46,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const data = { id: user.uid, ...userDoc.data() } as User;
-          setUserData(data);
+          
+          // Verificar vencimento do plano e ativar básico se necessário
+          if (data.tipo === 'autopeca' && data.plano && data.plano !== 'basico' && data.dataProximoPagamento && data.assinaturaAtiva) {
+            try {
+              let dataVencimento: Date;
+              if (data.dataProximoPagamento instanceof Date) {
+                dataVencimento = data.dataProximoPagamento;
+              } else if ((data.dataProximoPagamento as any)?.toDate) {
+                dataVencimento = (data.dataProximoPagamento as any).toDate();
+              } else if ((data.dataProximoPagamento as any)?.seconds) {
+                dataVencimento = new Date((data.dataProximoPagamento as any).seconds * 1000);
+              } else {
+                dataVencimento = null as any;
+              }
+
+              if (dataVencimento) {
+                const hoje = new Date();
+                hoje.setHours(0, 0, 0, 0);
+                const vencimento = new Date(dataVencimento);
+                vencimento.setHours(0, 0, 0, 0);
+
+                // Se o plano venceu, ativar plano básico
+                if (vencimento < hoje) {
+                  const mesAtual = new Date().toISOString().slice(0, 7);
+                  
+                  await updateDoc(doc(db, 'users', user.uid), {
+                    plano: 'basico',
+                    assinaturaAtiva: true,
+                    ofertasUsadas: 0,
+                    mesReferenciaOfertas: mesAtual,
+                    dataProximoPagamento: null,
+                  });
+
+                  // Recarregar dados atualizados
+                  const updatedDoc = await getDoc(doc(db, 'users', user.uid));
+                  if (updatedDoc.exists()) {
+                    const updatedData = { id: user.uid, ...updatedDoc.data() } as User;
+                    setUserData(updatedData);
+                    toast.error('Seu plano expirou e foi automaticamente convertido para o plano Básico.');
+                  } else {
+                    setUserData(data);
+                  }
+                } else {
+                  setUserData(data);
+                }
+              } else {
+                setUserData(data);
+              }
+            } catch (error) {
+              console.error('Erro ao verificar vencimento:', error);
+              setUserData(data);
+            }
+          } else {
+            setUserData(data);
+          }
           
           // Aplicar tema dark se estiver ativado
           if (data.temaDark) {

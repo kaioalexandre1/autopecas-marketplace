@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Settings, Moon, Sun, Save, ArrowLeft, Store, User, Phone, MapPin, FileText } from 'lucide-react';
+import { Settings, Moon, Sun, Save, ArrowLeft, Store, User, Phone, MapPin, FileText, Edit2, X, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -13,8 +13,15 @@ export default function ConfiguracoesPage() {
   const router = useRouter();
   const [temaDark, setTemaDark] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  
+  // Estados para edição inline
+  const [editandoTelefone, setEditandoTelefone] = useState(false);
+  const [editandoNomeLoja, setEditandoNomeLoja] = useState(false);
+  const [novoTelefone, setNovoTelefone] = useState('');
+  const [novoNomeLoja, setNovoNomeLoja] = useState('');
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
 
-  // Carregar configurações do usuário
+  // Carregar configurações do usuário (SEM aplicar tema automaticamente)
   useEffect(() => {
     if (userData) {
       const carregarConfiguracoes = async () => {
@@ -22,13 +29,7 @@ export default function ConfiguracoesPage() {
           const userDoc = await getDoc(doc(db, 'users', userData.id));
           const data = userDoc.data();
           setTemaDark(data?.temaDark || false);
-          
-          // Aplicar tema imediatamente se já estiver salvo
-          if (data?.temaDark) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+          // NÃO aplicar tema aqui - apenas carregar o valor
         } catch (error) {
           console.error('Erro ao carregar configurações:', error);
         }
@@ -36,15 +37,6 @@ export default function ConfiguracoesPage() {
       carregarConfiguracoes();
     }
   }, [userData]);
-
-  // Aplicar tema quando mudar
-  useEffect(() => {
-    if (temaDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [temaDark]);
 
   const salvarConfiguracoes = async () => {
     if (!userData) return;
@@ -56,12 +48,87 @@ export default function ConfiguracoesPage() {
         configuracoesAtualizadasEm: new Date(),
       });
 
+      // Aplicar tema apenas quando salvar
+      if (temaDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+
       toast.success('Configurações salvas com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
       toast.error('Erro ao salvar configurações');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const iniciarEdicaoTelefone = () => {
+    setNovoTelefone(userData?.telefone || '');
+    setEditandoTelefone(true);
+  };
+
+  const cancelarEdicaoTelefone = () => {
+    setEditandoTelefone(false);
+    setNovoTelefone('');
+  };
+
+  const salvarTelefone = async () => {
+    if (!userData || !novoTelefone.trim()) {
+      toast.error('Telefone não pode estar vazio');
+      return;
+    }
+
+    setSalvandoEdicao(true);
+    try {
+      await updateDoc(doc(db, 'users', userData.id), {
+        telefone: novoTelefone.trim(),
+      });
+      
+      setEditandoTelefone(false);
+      toast.success('Telefone atualizado com sucesso!');
+      
+      // A página será atualizada automaticamente pelo AuthContext no próximo refresh
+    } catch (error) {
+      console.error('Erro ao salvar telefone:', error);
+      toast.error('Erro ao salvar telefone');
+    } finally {
+      setSalvandoEdicao(false);
+    }
+  };
+
+  const iniciarEdicaoNomeLoja = () => {
+    setNovoNomeLoja(userData?.nomeLoja || userData?.nome || '');
+    setEditandoNomeLoja(true);
+  };
+
+  const cancelarEdicaoNomeLoja = () => {
+    setEditandoNomeLoja(false);
+    setNovoNomeLoja('');
+  };
+
+  const salvarNomeLoja = async () => {
+    if (!userData || !novoNomeLoja.trim()) {
+      toast.error('Nome da loja não pode estar vazio');
+      return;
+    }
+
+    setSalvandoEdicao(true);
+    try {
+      await updateDoc(doc(db, 'users', userData.id), {
+        nomeLoja: novoNomeLoja.trim(),
+      });
+      
+      setEditandoNomeLoja(false);
+      toast.success('Nome da loja atualizado com sucesso!');
+      
+      // A página será atualizada automaticamente pelo AuthContext no próximo refresh
+    } catch (error) {
+      console.error('Erro ao salvar nome da loja:', error);
+      toast.error('Erro ao salvar nome da loja');
+    } finally {
+      setSalvandoEdicao(false);
     }
   };
 
@@ -141,11 +208,51 @@ export default function ConfiguracoesPage() {
                 
                 <div className="flex items-start gap-3">
                   <Store size={20} className="text-gray-700 dark:text-gray-300 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1">Nome da Loja</div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {userData?.nomeLoja || userData?.nome || 'Não informado'}
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1 flex items-center justify-between">
+                      <span>Nome da Loja</span>
+                      {!editandoNomeLoja && (
+                        <button
+                          onClick={iniciarEdicaoNomeLoja}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                          title="Editar nome da loja"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      )}
                     </div>
+                    {editandoNomeLoja ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={novoNomeLoja}
+                          onChange={(e) => setNovoNomeLoja(e.target.value)}
+                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Nome da loja"
+                          disabled={salvandoEdicao}
+                        />
+                        <button
+                          onClick={salvarNomeLoja}
+                          disabled={salvandoEdicao}
+                          className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors disabled:opacity-50"
+                          title="Salvar"
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button
+                          onClick={cancelarEdicaoNomeLoja}
+                          disabled={salvandoEdicao}
+                          className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                          title="Cancelar"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {userData?.nomeLoja || userData?.nome || 'Não informado'}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -161,11 +268,51 @@ export default function ConfiguracoesPage() {
 
                 <div className="flex items-start gap-3">
                   <Phone size={20} className="text-gray-700 dark:text-gray-300 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1">Telefone</div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {userData?.telefone || 'Não informado'}
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-900 dark:text-gray-300 font-medium mb-1 flex items-center justify-between">
+                      <span>Telefone</span>
+                      {!editandoTelefone && (
+                        <button
+                          onClick={iniciarEdicaoTelefone}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                          title="Editar telefone"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      )}
                     </div>
+                    {editandoTelefone ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={novoTelefone}
+                          onChange={(e) => setNovoTelefone(e.target.value)}
+                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Telefone"
+                          disabled={salvandoEdicao}
+                        />
+                        <button
+                          onClick={salvarTelefone}
+                          disabled={salvandoEdicao}
+                          className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors disabled:opacity-50"
+                          title="Salvar"
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button
+                          onClick={cancelarEdicaoTelefone}
+                          disabled={salvandoEdicao}
+                          className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                          title="Cancelar"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {userData?.telefone || 'Não informado'}
+                      </div>
+                    )}
                   </div>
                 </div>
 

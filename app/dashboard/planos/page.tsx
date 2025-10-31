@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlanoAssinatura, LIMITES_PLANOS, PRECOS_PLANOS } from '@/types';
-import { Check, Zap, Crown, Gem, ArrowRight, Loader } from 'lucide-react';
-import { doc, updateDoc, Timestamp, addDoc, collection } from 'firebase/firestore';
+import { Check, Zap, Crown, Gem, ArrowRight, Loader, Calendar, AlertTriangle } from 'lucide-react';
+import { doc, updateDoc, Timestamp, addDoc, collection, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function PlanosPage() {
   const { userData } = useAuth();
@@ -152,46 +154,183 @@ export default function PlanosPage() {
     return LIMITES_PLANOS[userData.plano];
   };
 
+  // Verificar vencimento do plano e ativar básico se necessário
+  useEffect(() => {
+    const verificarVencimento = async () => {
+      if (!userData || userData.tipo !== 'autopeca') return;
+      
+      // Se for plano básico, não precisa verificar vencimento
+      if (userData.plano === 'basico' || !userData.plano) return;
+      
+      // Se não tiver data de próximo pagamento, não há o que verificar
+      if (!userData.dataProximoPagamento) return;
+
+      try {
+        const userDoc = await getDoc(doc(db, 'users', userData.id));
+        const data = userDoc.data();
+        
+        if (!data?.dataProximoPagamento) return;
+
+        // Converter Timestamp do Firestore para Date
+        let dataVencimento: Date;
+        if (data.dataProximoPagamento instanceof Date) {
+          dataVencimento = data.dataProximoPagamento;
+        } else if (data.dataProximoPagamento?.toDate) {
+          dataVencimento = data.dataProximoPagamento.toDate();
+        } else if (data.dataProximoPagamento?.seconds) {
+          dataVencimento = new Date(data.dataProximoPagamento.seconds * 1000);
+        } else {
+          return;
+        }
+
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const vencimento = new Date(dataVencimento);
+        vencimento.setHours(0, 0, 0, 0);
+
+        // Se o plano venceu, ativar plano básico
+        if (vencimento < hoje && data.assinaturaAtiva && data.plano !== 'basico') {
+          const mesAtual = new Date().toISOString().slice(0, 7);
+          
+          await updateDoc(doc(db, 'users', userData.id), {
+            plano: 'basico',
+            assinaturaAtiva: true,
+            ofertasUsadas: 0,
+            mesReferenciaOfertas: mesAtual,
+            dataProximoPagamento: null,
+          });
+
+          toast.error('Seu plano expirou e foi automaticamente convertido para o plano Básico.');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar vencimento:', error);
+      }
+    };
+
+    verificarVencimento();
+    // Verificar a cada 5 minutos
+    const interval = setInterval(verificarVencimento, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [userData]);
+
+  // Função para formatar data de vencimento
+  const getDataVencimento = () => {
+    if (!userData?.dataProximoPagamento) return null;
+    
+    let dataVencimento: Date;
+    if (userData.dataProximoPagamento instanceof Date) {
+      dataVencimento = userData.dataProximoPagamento;
+    } else if ((userData.dataProximoPagamento as any)?.toDate) {
+      dataVencimento = (userData.dataProximoPagamento as any).toDate();
+    } else if ((userData.dataProximoPagamento as any)?.seconds) {
+      dataVencimento = new Date((userData.dataProximoPagamento as any).seconds * 1000);
+    } else {
+      return null;
+    }
+
+    return dataVencimento;
+  };
+
+  // Verificar se está próximo de vencer (menos de 7 dias)
+  const isProximoDeVencer = () => {
+    const dataVenc = getDataVencimento();
+    if (!dataVenc) return false;
+
+    const hoje = new Date();
+    const diasRestantes = Math.ceil((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return diasRestantes <= 7 && diasRestantes > 0;
+  };
+
+  // Verificar se já venceu
+  const isVencido = () => {
+    const dataVenc = getDataVencimento();
+    if (!dataVenc) return false;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const vencimento = new Date(dataVenc);
+    vencimento.setHours(0, 0, 0, 0);
+
+    return vencimento < hoje;
+  };
+
   if (!userData || userData.tipo !== 'autopeca') {
     return null;
   }
 
   return (
-    <div className="min-h-screen relative py-12 px-4 overflow-hidden">
-      {/* Fundo azul claro com flares neon */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400">
-        {/* Flare neon 1 - Diagonal superior esquerda */}
-        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-cyan-400 opacity-30 blur-[120px] transform rotate-45 -translate-x-1/3 -translate-y-1/3"></div>
-        
-        {/* Flare neon 2 - Diagonal centro */}
-        <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] bg-blue-400 opacity-25 blur-[100px] transform rotate-45 -translate-x-1/2 -translate-y-1/2"></div>
-        
-        {/* Flare neon 3 - Diagonal inferior direita */}
-        <div className="absolute bottom-0 right-0 w-[700px] h-[700px] bg-cyan-300 opacity-20 blur-[140px] transform rotate-45 translate-x-1/3 translate-y-1/3"></div>
-        
-        {/* Flare neon 4 - Diagonal superior direita */}
-        <div className="absolute top-20 right-20 w-[400px] h-[400px] bg-blue-300 opacity-25 blur-[90px] transform rotate-12"></div>
-        
-        {/* Flare neon 5 - Diagonal inferior esquerda */}
-        <div className="absolute bottom-20 left-20 w-[450px] h-[450px] bg-cyan-500 opacity-20 blur-[110px] transform -rotate-12"></div>
-      </div>
-      
-      <div className="max-w-7xl mx-auto relative z-10">
+    <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-black text-white mb-4 drop-shadow-lg">
+          <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">
             Escolha seu Plano
           </h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto drop-shadow-md">
+          <p className="text-xl text-gray-600 dark:text-gray-200 max-w-2xl mx-auto">
             Potencialize suas vendas com o plano ideal para o seu negócio
           </p>
           
           {userData.plano && (
-            <div className="mt-6 inline-block px-6 py-3 bg-green-100/95 border-2 border-green-500 rounded-full backdrop-blur-sm">
-              <p className="text-green-800 font-bold">
-                Plano Atual: {planosConfig.find(p => p.id === userData.plano)?.nome} • 
-                {getLimiteAtual() === -1 ? ' Ilimitado' : ` ${getOfertasUsadas()}/${getLimiteAtual()} ofertas usadas`}
-              </p>
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <div className={`inline-block px-6 py-3 border-2 rounded-full ${
+                isVencido() 
+                  ? 'bg-red-100 border-red-500'
+                  : isProximoDeVencer()
+                  ? 'bg-yellow-100 border-yellow-500'
+                  : 'bg-green-100 border-green-500'
+              }`}>
+                <p className={`font-bold ${
+                  isVencido()
+                    ? 'text-red-800'
+                    : isProximoDeVencer()
+                    ? 'text-yellow-800'
+                    : 'text-green-800'
+                }`}>
+                  Plano Atual: {planosConfig.find(p => p.id === userData.plano)?.nome} • 
+                  {getLimiteAtual() === -1 ? ' Ilimitado' : ` ${getOfertasUsadas()}/${getLimiteAtual()} ofertas usadas`}
+                </p>
+              </div>
+              
+              {/* Exibir data de vencimento apenas para planos pagos */}
+              {userData.plano !== 'basico' && userData.dataProximoPagamento && (
+                <div className={`inline-flex items-center gap-2 px-6 py-2 rounded-full ${
+                  isVencido()
+                    ? 'bg-red-50 border-2 border-red-300'
+                    : isProximoDeVencer()
+                    ? 'bg-yellow-50 border-2 border-yellow-300'
+                    : 'bg-blue-50 border-2 border-blue-300'
+                }`}>
+                  <Calendar size={18} className={
+                    isVencido()
+                      ? 'text-red-600'
+                      : isProximoDeVencer()
+                      ? 'text-yellow-600'
+                      : 'text-blue-600'
+                  } />
+                  <span className={`text-sm font-semibold ${
+                    isVencido()
+                      ? 'text-red-700'
+                      : isProximoDeVencer()
+                      ? 'text-yellow-700'
+                      : 'text-blue-700'
+                  }`}>
+                    {isVencido() ? (
+                      <>
+                        <AlertTriangle size={16} className="inline mr-1" />
+                        Vencido em {format(getDataVencimento()!, 'dd/MM/yyyy', { locale: ptBR })}
+                      </>
+                    ) : isProximoDeVencer() ? (
+                      <>
+                        <AlertTriangle size={16} className="inline mr-1" />
+                        Vence em {format(getDataVencimento()!, 'dd/MM/yyyy', { locale: ptBR })}
+                      </>
+                    ) : (
+                      `Vence em ${format(getDataVencimento()!, 'dd/MM/yyyy', { locale: ptBR })}`
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -285,7 +424,14 @@ export default function PlanosPage() {
           <div className="space-y-4">
             <div>
               <h3 className="font-bold text-gray-900 dark:text-white mb-2">🔄 Como funciona a cobrança?</h3>
-              <p className="text-gray-600 dark:text-gray-200">A cobrança é mensal e renovada automaticamente. Você pode cancelar a qualquer momento.</p>
+              <p className="text-gray-600 dark:text-gray-200">
+                <strong>Para pagamento via cartão de crédito:</strong> A renovação é totalmente automática! 
+                Você aprova a assinatura uma vez e a cobrança é feita automaticamente todo mês no mesmo dia. 
+                Não precisa se preocupar em renovar manualmente. <strong>Para pagamento via PIX:</strong> 
+                Cada mês você precisa realizar um novo pagamento manualmente. <strong>Quando o plano vencer:</strong> 
+                Ele será automaticamente convertido para o plano Básico (gratuito) com limite de 20 ofertas/mês. 
+                Você pode cancelar sua assinatura a qualquer momento nas configurações.
+              </p>
             </div>
             
             <div>

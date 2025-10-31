@@ -149,7 +149,91 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, mode: 'test', message: 'Plano ativado (teste)' });
     }
 
-    // 4) Fluxo real: buscar pagamento na API MP e ativar se aprovado
+    // 4) Processar eventos de assinatura (Preapproval)
+    if (body?.type === 'subscription_preapproval' || body?.action === 'subscription_preapproval.updated') {
+      let preapprovalId: string | null = null;
+      
+      if (body?.data?.id) {
+        preapprovalId = String(body.data.id);
+      } else if (body?.id) {
+        preapprovalId = String(body.id);
+      }
+
+      if (preapprovalId) {
+        const accessToken = process.env.MP_ACCESS_TOKEN || '';
+        if (!accessToken) {
+          return NextResponse.json({ ok: false, error: 'missing_access_token' }, { status: 500 });
+        }
+
+        try {
+          const resp = await fetch(`https://api.mercadopago.com/preapproval/${preapprovalId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            cache: 'no-store',
+          });
+
+          if (!resp.ok) {
+            console.error('Erro ao buscar preapproval:', resp.status, await resp.text());
+            return NextResponse.json({ ok: false, error: 'mp_fetch_failed' }, { status: resp.status });
+          }
+
+          const preapproval = await resp.json();
+          const status = preapproval?.status;
+          const external_reference = preapproval?.external_reference;
+
+          console.log(`Webhook Preapproval - ID: ${preapprovalId}, Status: ${status}, External Ref: ${external_reference}`);
+
+          // Status possíveis: pending, authorized, paused, cancelled
+          if (status && external_reference) {
+            const parts = external_reference.split('|');
+            if (parts.length >= 2) {
+              const [autopecaId, plano] = parts;
+
+              if (status === 'authorized') {
+                // Assinatura autorizada - ativar plano
+                const mesAtual = new Date().toISOString().slice(0, 7);
+                const dataFim = new Date();
+                dataFim.setMonth(dataFim.getMonth() + 1);
+
+                await adminDb.collection('users').doc(autopecaId).update({
+                  plano,
+                  assinaturaAtiva: true,
+                  ofertasUsadas: 0,
+                  mesReferenciaOfertas: mesAtual,
+                  dataProximoPagamento: Timestamp.fromDate(dataFim),
+                  subscriptionId: preapprovalId,
+                });
+
+                console.log(`Assinatura ${preapprovalId} autorizada - Plano ${plano} ativado para usuário ${autopecaId}`);
+              } else if (status === 'cancelled' || status === 'paused') {
+                // Assinatura cancelada/pausada - reverter para plano básico
+                const mesAtual = new Date().toISOString().slice(0, 7);
+                
+                await adminDb.collection('users').doc(autopecaId).update({
+                  plano: 'basico',
+                  assinaturaAtiva: true,
+                  ofertasUsadas: 0,
+                  mesReferenciaOfertas: mesAtual,
+                  dataProximoPagamento: null,
+                  subscriptionId: null,
+                });
+
+                console.log(`Assinatura ${preapprovalId} ${status} - Usuário ${autopecaId} revertido para plano básico`);
+              }
+            }
+          }
+
+          return NextResponse.json({ ok: true, type: 'preapproval', status, preapprovalId });
+        } catch (error: any) {
+          console.error('Erro ao processar webhook preapproval:', error);
+          return NextResponse.json({ ok: false, error: error?.message || 'unknown' }, { status: 500 });
+        }
+      }
+    }
+
+    // 5) Fluxo real: buscar pagamento na API MP e ativar se aprovado
     // A MP pode enviar diferentes formatos:
     // - { type: 'payment', data: { id: '123' } }
     // - { action: 'payment.updated', data: { id: '123' } }
@@ -206,20 +290,48 @@ export async function POST(request: Request) {
             const dataFim = new Date();
             dataFim.setMonth(dataFim.getMonth() + 1);
 
-            // Verificar se o plano já está ativo para evitar atualizações desnecessárias
+            // Verificar se este pagamento é parte de uma assinatura recorrente
+            const preapprovalId = payment?.subscription_id || payment?.preapproval_id;
+            
+            // Buscar usuário para verificar se já tem subscription e status atual
             const userDoc = await adminDb.collection('users').doc(autopecaId).get();
             const userData = userDoc.data();
+            const temSubscription = !!userData?.subscriptionId;
+            const isRenovacao = temSubscription && preapprovalId && String(userData.subscriptionId) === String(preapprovalId);
             
-            if (!userData?.assinaturaAtiva || userData?.plano !== plano) {
-              await adminDb.collection('users').doc(autopecaId).update({
-                plano,
-                assinaturaAtiva: true,
-                ofertasUsadas: 0,
-                mesReferenciaOfertas: mesAtual,
-                dataProximoPagamento: Timestamp.fromDate(dataFim),
-              });
+            const updateData: any = {
+              plano,
+              assinaturaAtiva: true,
+              mesReferenciaOfertas: mesAtual,
+              dataProximoPagamento: Timestamp.fromDate(dataFim),
+            };
 
-              console.log(`Plano ${plano} ativado para usuário ${autopecaId}`);
+            // Se for renovação de assinatura, manter subscriptionId e resetar ofertas
+            if (isRenovacao) {
+              updateData.ofertasUsadas = 0;
+              updateData.subscriptionId = String(preapprovalId);
+              console.log(`🔄 Renovação automática da assinatura ${preapprovalId} - Plano ${plano} renovado para usuário ${autopecaId}`);
+            } else {
+              // Primeira ativação ou pagamento único
+              updateData.ofertasUsadas = 0;
+              
+              // Se for pagamento de uma assinatura, salvar o subscriptionId
+              if (preapprovalId) {
+                updateData.subscriptionId = String(preapprovalId);
+                console.log(`✅ Primeira cobrança da assinatura ${preapprovalId} - Plano ${plano} ativado para usuário ${autopecaId}`);
+              } else {
+                console.log(`✅ Pagamento único aprovado - Plano ${plano} ativado para usuário ${autopecaId}`);
+              }
+            }
+
+            // Atualizar apenas se necessário
+            if (!userData?.assinaturaAtiva || userData?.plano !== plano || isRenovacao) {
+              await adminDb.collection('users').doc(autopecaId).update(updateData);
+            } else if (preapprovalId && userData.subscriptionId !== String(preapprovalId)) {
+              // Atualizar subscriptionId se mudou
+              await adminDb.collection('users').doc(autopecaId).update({
+                subscriptionId: String(preapprovalId),
+              });
             }
 
             // Atualizar documento em pagamentos, se existir

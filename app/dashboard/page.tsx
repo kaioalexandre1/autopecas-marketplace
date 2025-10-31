@@ -234,7 +234,7 @@ export default function DashboardPage() {
   const [observacaoOferta, setObservacaoOferta] = useState('');
 
   // Filtro de condição da peça
-  const [filtroCondicao, setFiltroCondicao] = useState<'todas' | 'Nova' | 'Usada' | 'Nova ou Usada'>('todas');
+  const [filtroCondicao, setFiltroCondicao] = useState<'todas' | 'Nova' | 'Usada'>('todas');
   const [modoResumido, setModoResumido] = useState(true);
   const [pedidosExpandidos, setPedidosExpandidos] = useState<string[]>([]);
   const [mostrarDropdownFiltros, setMostrarDropdownFiltros] = useState(false);
@@ -1160,28 +1160,6 @@ export default function DashboardPage() {
                       <span className="text-lg">🔄</span>
                       Peças Usadas
                     </button>
-                    
-                    <button
-                      onClick={() => {
-                        setFiltroCondicao('Nova ou Usada');
-                        setMostrarDropdownFiltros(false);
-                      }}
-                      className={`w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                        filtroCondicao === 'Nova ou Usada'
-                          ? 'shadow-md text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
-                      }`}
-                      style={
-                        filtroCondicao === 'Nova ou Usada'
-                          ? {
-                              background: 'linear-gradient(135deg, #10b981 0%, #10b981 45%, #f97316 55%, #f97316 100%)'
-                            }
-                          : undefined
-                      }
-                    >
-                      <span className="text-lg">✨🔄</span>
-                      Nova ou Usada
-                    </button>
                   </div>
 
                   <div className="border-t border-gray-200 my-2"></div>
@@ -1407,24 +1385,17 @@ export default function DashboardPage() {
                 return (
             <div
               key={pedido.id}
-              className={`rounded-xl transition-all duration-300 ease-in-out p-4 border-2 ${
+              className={`bg-white dark:bg-gray-100 rounded-xl transition-all duration-300 ease-in-out p-4 border-2 ${
                 !modoResumido && 'animate-slide-in'
               } ${modoResumido && isExpandido ? 'col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-2' : ''} ${
                 pedido.condicaoPeca === 'Nova' 
-                  ? 'bg-green-50 dark:bg-green-100 border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.5)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)]'
+                  ? 'border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.5)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)]'
                   : pedido.condicaoPeca === 'Usada'
-                  ? 'bg-orange-50 dark:bg-orange-100 border-orange-500 dark:border-orange-600 shadow-[0_0_15px_3px_rgba(249,115,22,0.5)] dark:shadow-[0_0_15px_3px_rgba(249,115,22,0.4)] hover:border-orange-600 dark:hover:border-orange-500 hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.6)]'
+                  ? 'border-orange-500 dark:border-orange-600 shadow-[0_0_15px_3px_rgba(249,115,22,0.5)] dark:shadow-[0_0_15px_3px_rgba(249,115,22,0.4)] hover:border-orange-600 dark:hover:border-orange-500 hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.6)]'
                   : pedido.condicaoPeca === 'Nova ou Usada'
                   ? 'border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.3)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.5)]'
-                  : 'bg-white dark:bg-gray-100 border-blue-800 dark:border-blue-600 shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:border-blue-900 dark:hover:border-blue-500 hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)]'
+                  : 'border-blue-800 dark:border-blue-600 shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:border-blue-900 dark:hover:border-blue-500 hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)]'
               }`}
-              style={
-                pedido.condicaoPeca === 'Nova ou Usada'
-                  ? {
-                      background: 'linear-gradient(135deg, rgba(209, 250, 229, 0.8) 0%, rgba(209, 250, 229, 0.8) 45%, rgba(254, 243, 199, 0.8) 55%, rgba(254, 243, 199, 0.8) 100%)',
-                    }
-                  : undefined
-              }
             >
               {/* Botões no canto superior direito */}
               <div className="float-right flex gap-2">
