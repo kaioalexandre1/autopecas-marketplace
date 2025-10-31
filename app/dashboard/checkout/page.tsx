@@ -16,7 +16,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [pagamentoAprovado, setPagamentoAprovado] = useState(false);
-  const [metodoPagamento, setMetodoPagamento] = useState<'pix' | 'cartao' | 'boleto'>('pix');
+  const [metodoPagamento, setMetodoPagamento] = useState<'pix' | 'cartao'>('pix');
   const [linkPagamento, setLinkPagamento] = useState('');
   const [pixCopiaECola, setPixCopiaECola] = useState('');
   const [paymentId, setPaymentId] = useState<string | null>(null);
@@ -545,20 +545,6 @@ export default function CheckoutPage() {
                     </div>
                   </button>
 
-                  <button
-                    onClick={() => setMetodoPagamento('boleto')}
-                    className={`w-full p-4 rounded-xl border-2 font-semibold flex items-center gap-3 transition-all ${
-                      metodoPagamento === 'boleto'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    <CreditCard size={24} />
-                    <div className="text-left">
-                      <div>Boleto Bancário</div>
-                      <div className="text-xs text-gray-500">Vencimento em 3 dias</div>
-                    </div>
-                  </button>
                 </div>
 
                 <button
@@ -620,11 +606,11 @@ export default function CheckoutPage() {
 
                 <div className="text-center space-y-4">
                   <Loader size={32} className="animate-spin text-blue-500 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm font-semibold text-gray-700">
                     Aguardando confirmação do pagamento...
                   </p>
-                  <p className="text-xs text-gray-500">
-                    O sistema verifica automaticamente a cada 5 segundos
+                  <p className="text-xs text-gray-500 mb-4">
+                    Após realizar o pagamento PIX, clique no botão abaixo para confirmar
                   </p>
                   <button
                     onClick={async () => {
@@ -647,7 +633,7 @@ export default function CheckoutPage() {
                             toast.error('Pagamento aprovado, mas plano ainda não foi ativado. Aguarde alguns segundos.', { id: 'check-payment' });
                           }
                         } else if (data.status === 'pending') {
-                          toast('Pagamento ainda pendente. Continue aguardando...', { id: 'check-payment', icon: '⏳' });
+                          toast('⏳ Pagamento ainda pendente. Verifique se o PIX foi pago e tente novamente.', { id: 'check-payment', icon: '⏳', duration: 4000 });
                         } else {
                           toast.error(`Status: ${data.status || 'desconhecido'}`, { id: 'check-payment' });
                         }
@@ -656,10 +642,13 @@ export default function CheckoutPage() {
                         toast.error('Erro ao verificar pagamento', { id: 'check-payment' });
                       }
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-semibold"
+                    className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    Verificar Status Manualmente
+                    ✓ Já Paguei o PIX - Confirmar Pagamento
                   </button>
+                  <p className="text-xs text-gray-400 mt-2">
+                    O sistema também verifica automaticamente, mas você pode confirmar manualmente
+                  </p>
                 </div>
               </div>
             )}

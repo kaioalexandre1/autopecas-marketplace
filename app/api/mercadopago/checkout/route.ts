@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { metodo, plano, autopecaId, autopecaNome, email } = body as {
-      metodo: 'pix' | 'cartao' | 'boleto';
+      metodo: 'pix' | 'cartao';
       plano: PlanoAssinatura;
       autopecaId: string;
       autopecaNome: string;
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, method: 'pix', qr, paymentId });
     }
 
-    // Preferência de checkout (cartão/boleto/PIX completo) - MP mostrará os métodos
+    // Preferência de checkout (cartão) - MP mostrará os métodos
     const prefResp = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
@@ -88,12 +88,7 @@ export async function POST(request: Request) {
         auto_return: 'approved',
         statement_descriptor: 'WRX PARTS',
         // Personalização conforme método solicitado
-        payment_methods: metodo === 'boleto'
-          ? {
-              default_payment_type_id: 'ticket',
-              excluded_payment_types: [{ id: 'atm' }],
-            }
-          : metodo === 'cartao'
+        payment_methods: metodo === 'cartao'
           ? { default_payment_type_id: 'credit_card' }
           : undefined,
         binary_mode: true,
