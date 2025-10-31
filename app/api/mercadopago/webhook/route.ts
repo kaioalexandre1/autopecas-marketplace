@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebaseAdmin';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // Webhook do Mercado Pago (versão simplificada para testes)
 // URL sugerida na MP: https://SEU_DOMINIO/api/mercadopago/webhook?secret=SEU_TOKEN
@@ -9,8 +9,36 @@ import { doc, updateDoc, Timestamp, collection, query, where, getDocs } from 'fi
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET(_request: Request) {
-  // Permite validação manual/automática da URL (evita 404/405 em testes)
+export async function GET(request: Request) {
+  // Validação de vida do endpoint
+  const { searchParams } = new URL(request.url);
+  const secret = searchParams.get('secret');
+  const expected = process.env.MP_WEBHOOK_SECRET || 'dev-secret';
+  if (!secret || secret !== expected) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+  }
+
+  // Modo de teste via querystring para executar sem CORS: ?test=1&autopecaId=...&plano=premium
+  const test = searchParams.get('test');
+  if (test === '1') {
+    const autopecaId = searchParams.get('autopecaId') || '';
+    const plano = (searchParams.get('plano') as any) || 'premium';
+    if (!autopecaId) {
+      return NextResponse.json({ ok: false, error: 'missing_autopecaId' }, { status: 400 });
+    }
+    const mesAtual = new Date().toISOString().slice(0, 7);
+    const dataFim = new Date();
+    dataFim.setMonth(dataFim.getMonth() + 1);
+    await adminDb.collection('users').doc(autopecaId).update({
+      plano,
+      assinaturaAtiva: true,
+      ofertasUsadas: 0,
+      mesReferenciaOfertas: mesAtual,
+      dataProximoPagamento: Timestamp.fromDate(dataFim),
+    });
+    return NextResponse.json({ ok: true, mode: 'test', message: 'Plano ativado (teste)' });
+  }
+
   return NextResponse.json({ ok: true, message: 'Webhook OK' });
 }
 
@@ -56,7 +84,7 @@ export async function POST(request: Request) {
       const dataFim = new Date();
       dataFim.setMonth(dataFim.getMonth() + 1);
 
-      await updateDoc(doc(db, 'users', body.autopecaId), {
+      await adminDb.collection('users').doc(body.autopecaId).update({
         plano: body.plano,
         assinaturaAtiva: true,
         ofertasUsadas: 0,
@@ -101,7 +129,7 @@ export async function POST(request: Request) {
         const dataFim = new Date();
         dataFim.setMonth(dataFim.getMonth() + 1);
 
-        await updateDoc(doc(db, 'users', autopecaId), {
+        await adminDb.collection('users').doc(autopecaId).update({
           plano,
           assinaturaAtiva: true,
           ofertasUsadas: 0,
@@ -110,10 +138,9 @@ export async function POST(request: Request) {
         });
 
         // Atualizar documento em pagamentos, se existir
-        const pagamentosRef = collection(db, 'pagamentos');
-        const snap = await getDocs(query(pagamentosRef, where('external_reference', '==', external_reference)));
+        const snap = await adminDb.collection('pagamentos').where('external_reference', '==', external_reference).get();
         for (const d of snap.docs) {
-          await updateDoc(doc(db, 'pagamentos', d.id), {
+          await adminDb.collection('pagamentos').doc(d.id).update({
             statusPagamento: 'aprovado',
             updatedAt: Timestamp.now(),
             mercadoPagoId: String(payment.id),
