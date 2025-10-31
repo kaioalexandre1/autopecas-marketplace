@@ -16,6 +16,8 @@ export interface User {
   numero?: string;
   complemento?: string;
   role?: 'admin' | 'user'; // Permissão de administrador
+  nomeLoja?: string; // Nome da loja/estabelecimento
+  temaDark?: boolean; // Tema dark ativado
   
   // Campos de Assinatura (apenas para autopeças)
   plano?: PlanoAssinatura; // Plano de assinatura

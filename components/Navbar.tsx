@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown } from 'lucide-react';
+import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store } from 'lucide-react';
 
 // Estrutura hierárquica: Brasil > Estados > Cidades (TODOS OS 27 ESTADOS)
 const estruturaBrasil = {
@@ -716,7 +716,7 @@ export default function Navbar() {
           </div>
 
           {/* User Info - Desktop */}
-          <div className="hidden lg:flex items-center space-x-4" style={{ opacity: 1 }}>
+          <div className="hidden lg:flex items-center space-x-3" style={{ opacity: 1 }}>
             {/* Contador de Ofertas (apenas para autopeças) */}
             {ofertasInfo && (
               <Link
@@ -744,16 +744,33 @@ export default function Navbar() {
               </Link>
             )}
             
-            <div className="text-right" style={{ opacity: 1 }}>
-              <div className="text-sm font-bold text-white" style={{ opacity: 1, color: 'rgb(255, 255, 255)' }}>{userData?.nome}</div>
-              <div className={`text-xs px-3 py-1 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`} style={{ opacity: 1 }}>
-                {getTipoLabel()}
+            {/* Nome da Loja em Quadradinho */}
+            <div className="bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl px-4 py-2.5 shadow-lg">
+              <div className="flex items-center gap-2">
+                <Store size={18} className="text-yellow-400" />
+                <div className="text-right">
+                  <div className="text-xs text-white/80 font-medium">Loja</div>
+                  <div className="text-sm font-bold text-white whitespace-nowrap">
+                    {userData?.nomeLoja || userData?.nome || 'Minha Loja'}
+                  </div>
+                </div>
               </div>
             </div>
             
+            {/* Botão de Configurações */}
+            <button
+              onClick={() => router.push('/dashboard/configuracoes')}
+              className="p-2.5 text-white rounded-lg border-2 border-white hover:bg-white/20 transition-all"
+              style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
+              title="Configurações"
+            >
+              <Settings size={22} />
+            </button>
+            
+            {/* Botão de Sair */}
             <button
               onClick={handleLogout}
-              className="p-2.5 text-white rounded-lg border-2 border-white"
+              className="p-2.5 text-white rounded-lg border-2 border-white hover:bg-white/20 transition-all"
               style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
               title="Sair"
             >
@@ -780,6 +797,19 @@ export default function Navbar() {
                 <div className="text-base font-bold text-white mb-2">{userData?.nome}</div>
                 <div className={`text-sm px-3 py-1.5 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`}>
                   {getTipoLabel()}
+                </div>
+                
+                {/* Nome da Loja Mobile */}
+                <div className="bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl px-3 py-2 mt-3">
+                  <div className="flex items-center gap-2">
+                    <Store size={16} className="text-yellow-400" />
+                    <div>
+                      <div className="text-xs text-white/80 font-medium">Loja</div>
+                      <div className="text-sm font-bold text-white">
+                        {userData?.nomeLoja || userData?.nome || 'Minha Loja'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 {/* Contador de Ofertas Mobile (apenas para autopeças) */}
@@ -839,10 +869,20 @@ export default function Navbar() {
                 })}
               </div>
 
+              {/* Configurações Button Mobile */}
+              <Link
+                href="/dashboard/configuracoes"
+                onClick={() => setMenuMobileAberto(false)}
+                className="w-full flex items-center px-4 py-3.5 mt-4 bg-blue-700 text-white rounded-lg font-semibold text-base"
+              >
+                <Settings size={24} className="mr-3" />
+                Configurações
+              </Link>
+
               {/* Logout Button Mobile */}
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center px-4 py-3.5 mt-4 text-white bg-red-600 rounded-lg font-semibold text-base"
+                className="w-full flex items-center justify-center px-4 py-3.5 mt-2 text-white bg-red-600 rounded-lg font-semibold text-base"
               >
                 <LogOut size={24} className="mr-3" />
                 Sair da Conta

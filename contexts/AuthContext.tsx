@@ -45,10 +45,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Buscar dados do usuário no Firestore
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
-          setUserData({ id: user.uid, ...userDoc.data() } as User);
+          const data = { id: user.uid, ...userDoc.data() } as User;
+          setUserData(data);
+          
+          // Aplicar tema dark se estiver ativado
+          if (data.temaDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
         }
       } else {
         setUserData(null);
+        // Remover tema dark ao fazer logout
+        document.documentElement.classList.remove('dark');
       }
       
       setLoading(false);
