@@ -177,10 +177,48 @@ export default function AdminPage() {
     }
   };
 
-  // Alterar plano de uma autopeça (força/benefício dado pelo admin)
+  // Alterar plano de uma autopeça (admin pode fazer upgrade ou downgrade)
   const alterarPlanoAutopeca = async (autopecaId: string, novoPlano: PlanoAssinatura) => {
     try {
-      const confirmar = window.confirm(`Confirmar alteração do plano para "${novoPlano.toUpperCase()}"?`);
+      const autopeca = usuarios.find(u => u.id === autopecaId);
+      const planoAtual = autopeca?.plano || 'basico';
+      
+      // Verificar se é downgrade
+      const ordemPlanos: Record<PlanoAssinatura, number> = {
+        basico: 0,
+        premium: 1,
+        gold: 2,
+        platinum: 3,
+      };
+      
+      const isDowngrade = ordemPlanos[novoPlano] < ordemPlanos[planoAtual as PlanoAssinatura];
+      
+      const planoNome = {
+        basico: 'Básico (Grátis)',
+        premium: 'Premium',
+        gold: 'Gold',
+        platinum: 'Platinum'
+      }[novoPlano];
+      
+      const planoAtualNome = {
+        basico: 'Básico (Grátis)',
+        premium: 'Premium',
+        gold: 'Gold',
+        platinum: 'Platinum'
+      }[planoAtual as PlanoAssinatura];
+
+      let mensagemConfirmacao = `Confirmar alteração do plano?\n\n`;
+      mensagemConfirmacao += `Plano Atual: ${planoAtualNome}\n`;
+      mensagemConfirmacao += `Novo Plano: ${planoNome}\n\n`;
+      
+      if (isDowngrade) {
+        mensagemConfirmacao += `⚠️ ATENÇÃO: Você está fazendo um DOWNGRADE (redução) de plano.\n`;
+        mensagemConfirmacao += `O usuário perderá benefícios do plano superior.\n\n`;
+      }
+      
+      mensagemConfirmacao += `Como administrador, você tem permissão para fazer esta alteração.`;
+      
+      const confirmar = window.confirm(mensagemConfirmacao);
       if (!confirmar) return;
 
       const agora = new Date();
@@ -196,7 +234,7 @@ export default function AdminPage() {
         dataProximoPagamento: novoPlano === 'basico' ? null : Timestamp.fromDate(dataFim),
       });
 
-      toast.success('Plano atualizado com sucesso!');
+      toast.success(`Plano alterado para ${planoNome}${isDowngrade ? ' (Downgrade realizado)' : ''}!`);
       carregarDados();
     } catch (error) {
       console.error('Erro ao alterar plano:', error);

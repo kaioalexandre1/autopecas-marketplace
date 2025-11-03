@@ -108,8 +108,31 @@ export default function PlanosPage() {
     },
   ];
 
+  // Função para verificar se um plano é inferior ao atual
+  const isPlanoInferior = (plano: PlanoAssinatura): boolean => {
+    if (!userData?.plano || userData.plano === 'basico') return false;
+    
+    const ordemPlanos: Record<PlanoAssinatura, number> = {
+      basico: 0,
+      premium: 1,
+      gold: 2,
+      platinum: 3,
+    };
+
+    const planoAtual = ordemPlanos[userData.plano];
+    const planoSelecionado = ordemPlanos[plano];
+
+    return planoSelecionado < planoAtual;
+  };
+
   const handleSelecionarPlano = async (plano: PlanoAssinatura) => {
     if (!userData) return;
+
+    // Bloquear seleção de planos inferiores
+    if (isPlanoInferior(plano)) {
+      toast.error('Não é possível fazer downgrade para um plano inferior. Entre em contato com o suporte se deseja cancelar seu plano atual.', { duration: 5000 });
+      return;
+    }
 
     // Se for plano básico (grátis), ativar imediatamente
     if (plano === 'basico') {
@@ -260,77 +283,145 @@ export default function PlanosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">
+          <h1 className="text-5xl font-black text-white mb-4">
             Escolha seu Plano
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-200 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Potencialize suas vendas com o plano ideal para o seu negócio
           </p>
           
           {userData.plano && (
-            <div className="mt-6 flex flex-col items-center gap-3">
-              <div className={`inline-block px-6 py-3 border-2 rounded-full ${
-                isVencido() 
-                  ? 'bg-red-100 border-red-500'
-                  : isProximoDeVencer()
-                  ? 'bg-yellow-100 border-yellow-500'
-                  : 'bg-green-100 border-green-500'
-              }`}>
-                <p className={`font-bold ${
-                  isVencido()
-                    ? 'text-red-800'
-                    : isProximoDeVencer()
-                    ? 'text-yellow-800'
-                    : 'text-green-800'
-                }`}>
-                  Plano Atual: {planosConfig.find(p => p.id === userData.plano)?.nome} • 
-                  {getLimiteAtual() === -1 ? ' Ilimitado' : ` ${getOfertasUsadas()}/${getLimiteAtual()} ofertas usadas`}
-                </p>
-              </div>
-              
-              {/* Exibir data de vencimento apenas para planos pagos */}
-              {userData.plano !== 'basico' && userData.dataProximoPagamento && (
-                <div className={`inline-flex items-center gap-2 px-6 py-2 rounded-full ${
-                  isVencido()
-                    ? 'bg-red-50 border-2 border-red-300'
-                    : isProximoDeVencer()
-                    ? 'bg-yellow-50 border-2 border-yellow-300'
-                    : 'bg-blue-50 border-2 border-blue-300'
-                }`}>
-                  <Calendar size={18} className={
-                    isVencido()
-                      ? 'text-red-600'
+            <div className="mt-8 flex flex-col items-center gap-6 max-w-2xl mx-auto">
+              {/* Card de Informações do Plano */}
+              <div className="w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-6">
+                {/* Título do Plano */}
+                <div className="flex items-center justify-center gap-3 mb-6">
+                  <div className={`p-3 rounded-xl ${
+                    isVencido() 
+                      ? 'bg-red-500/20 border border-red-500/50'
                       : isProximoDeVencer()
-                      ? 'text-yellow-600'
-                      : 'text-blue-600'
-                  } />
-                  <span className={`text-sm font-semibold ${
-                    isVencido()
-                      ? 'text-red-700'
-                      : isProximoDeVencer()
-                      ? 'text-yellow-700'
-                      : 'text-blue-700'
+                      ? 'bg-yellow-500/20 border border-yellow-500/50'
+                      : 'bg-green-500/20 border border-green-500/50'
                   }`}>
-                    {isVencido() ? (
-                      <>
-                        <AlertTriangle size={16} className="inline mr-1" />
-                        Vencido em {format(getDataVencimento()!, 'dd/MM/yyyy', { locale: ptBR })}
-                      </>
-                    ) : isProximoDeVencer() ? (
-                      <>
-                        <AlertTriangle size={16} className="inline mr-1" />
-                        Vence em {format(getDataVencimento()!, 'dd/MM/yyyy', { locale: ptBR })}
-                      </>
-                    ) : (
-                      `Vence em ${format(getDataVencimento()!, 'dd/MM/yyyy', { locale: ptBR })}`
-                    )}
-                  </span>
+                    <Crown size={24} className={
+                      isVencido()
+                        ? 'text-red-400'
+                        : isProximoDeVencer()
+                        ? 'text-yellow-400'
+                        : 'text-green-400'
+                    } />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-gray-400 font-medium">Plano Atual</p>
+                    <h3 className={`text-2xl font-black ${
+                      isVencido()
+                        ? 'text-red-400'
+                        : isProximoDeVencer()
+                        ? 'text-yellow-400'
+                        : 'text-green-400'
+                    }`}>
+                      {planosConfig.find(p => p.id === userData.plano)?.nome}
+                    </h3>
+                  </div>
                 </div>
-              )}
+
+                {/* Barra de Progresso de Ofertas */}
+                {getLimiteAtual() !== -1 && (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-gray-300">Ofertas Utilizadas</span>
+                      <span className="text-sm font-bold text-white">
+                        {getOfertasUsadas()} / {getLimiteAtual()}
+                      </span>
+                    </div>
+                    <div className="relative w-full h-4 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
+                      <div 
+                        className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${
+                          (getOfertasUsadas() / getLimiteAtual()) >= 0.9
+                            ? 'bg-gradient-to-r from-red-500 to-red-600'
+                            : (getOfertasUsadas() / getLimiteAtual()) >= 0.7
+                            ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                            : 'bg-gradient-to-r from-green-500 to-green-600'
+                        }`}
+                        style={{ 
+                          width: `${Math.min((getOfertasUsadas() / getLimiteAtual()) * 100, 100)}%`,
+                          boxShadow: `0 0 10px ${
+                            (getOfertasUsadas() / getLimiteAtual()) >= 0.9
+                              ? 'rgba(239, 68, 68, 0.5)'
+                              : (getOfertasUsadas() / getLimiteAtual()) >= 0.7
+                              ? 'rgba(234, 179, 8, 0.5)'
+                              : 'rgba(34, 197, 94, 0.5)'
+                          }`
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" style={{ width: '50%' }}></div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2 text-center">
+                      {getLimiteAtual() - getOfertasUsadas()} ofertas restantes este mês
+                    </p>
+                  </div>
+                )}
+
+                {getLimiteAtual() === -1 && (
+                  <div className="mb-6 text-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/50 rounded-full">
+                      <Zap size={18} className="text-purple-400" />
+                      <span className="text-sm font-bold text-purple-300">Ofertas Ilimitadas</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Data de Vencimento */}
+                {userData.plano !== 'basico' && userData.dataProximoPagamento && (
+                  <div className={`flex items-center justify-center gap-3 px-4 py-3 rounded-xl border-2 ${
+                    isVencido()
+                      ? 'bg-red-500/10 border-red-500/50'
+                      : isProximoDeVencer()
+                      ? 'bg-yellow-500/10 border-yellow-500/50'
+                      : 'bg-blue-500/10 border-blue-500/50'
+                  }`}>
+                    <Calendar size={20} className={
+                      isVencido()
+                        ? 'text-red-400'
+                        : isProximoDeVencer()
+                        ? 'text-yellow-400'
+                        : 'text-blue-400'
+                    } />
+                    <div className="flex-1">
+                      <p className={`text-xs font-medium ${
+                        isVencido()
+                          ? 'text-red-400'
+                          : isProximoDeVencer()
+                          ? 'text-yellow-400'
+                          : 'text-blue-400'
+                      }`}>
+                        {isVencido() ? 'Vencido em' : isProximoDeVencer() ? 'Vence em breve' : 'Próximo vencimento'}
+                      </p>
+                      <p className={`text-sm font-bold ${
+                        isVencido()
+                          ? 'text-red-300'
+                          : isProximoDeVencer()
+                          ? 'text-yellow-300'
+                          : 'text-blue-300'
+                      }`}>
+                        {isVencido() ? (
+                          <>
+                            <AlertTriangle size={14} className="inline mr-1" />
+                            {format(getDataVencimento()!, 'dd/MM/yyyy', { locale: ptBR })}
+                          </>
+                        ) : (
+                          format(getDataVencimento()!, 'dd/MM/yyyy', { locale: ptBR })
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -340,22 +431,32 @@ export default function PlanosPage() {
           {planosConfig.map((plano) => {
             const Icon = plano.icone;
             const isPlanoAtual = userData.plano === plano.id;
+            const isInferior = isPlanoInferior(plano);
             
             return (
               <div
                 key={plano.id}
-                className={`relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-105 ${
+                className={`relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 ${
+                  isInferior 
+                    ? 'opacity-60 cursor-not-allowed' 
+                    : 'hover:scale-105'
+                } ${
                   plano.destaque ? `ring-4 ${plano.corBorda} scale-105` : ''
                 } ${isPlanoAtual ? 'ring-4 ring-green-500' : ''}`}
               >
-                {plano.destaque && (
-                  <div className={`absolute top-0 right-0 bg-gradient-to-r ${plano.cor} text-white px-4 py-1 text-xs font-bold rounded-bl-lg`}>
+                {isInferior && (
+                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 text-xs font-bold text-center z-20">
+                    PLANO INFERIOR - INDISPONÍVEL
+                  </div>
+                )}
+                {plano.destaque && !isInferior && (
+                  <div className={`absolute top-0 right-0 bg-gradient-to-r ${plano.cor} text-white px-4 py-1 text-xs font-bold rounded-bl-lg z-10`}>
                     MAIS POPULAR
                   </div>
                 )}
                 
-                {isPlanoAtual && (
-                  <div className="absolute top-0 left-0 bg-gradient-to-r from-green-500 to-green-700 text-white px-4 py-1 text-xs font-bold rounded-br-lg">
+                {isPlanoAtual && !isInferior && (
+                  <div className="absolute top-0 left-0 bg-gradient-to-r from-green-500 to-green-700 text-white px-4 py-1 text-xs font-bold rounded-br-lg z-10">
                     PLANO ATUAL
                   </div>
                 )}
@@ -391,17 +492,25 @@ export default function PlanosPage() {
 
                   <button
                     onClick={() => handleSelecionarPlano(plano.id)}
-                    disabled={loading || isPlanoAtual}
+                    disabled={loading || isPlanoAtual || isInferior}
                     className={`w-full py-3 px-6 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${
                       isPlanoAtual
                         ? 'bg-gray-400 cursor-not-allowed'
+                        : isInferior
+                        ? 'bg-gray-500 cursor-not-allowed opacity-50'
                         : `bg-gradient-to-r ${plano.cor} hover:shadow-2xl transform hover:-translate-y-1`
                     }`}
+                    title={isInferior ? 'Não é possível fazer downgrade para um plano inferior' : ''}
                   >
                     {loading ? (
                       <Loader size={20} className="animate-spin" />
                     ) : isPlanoAtual ? (
                       'Plano Ativo'
+                    ) : isInferior ? (
+                      <>
+                        <span className="line-through">Indisponível</span>
+                        <AlertTriangle size={16} />
+                      </>
                     ) : (
                       <>
                         {plano.preco === 0 ? 'Ativar Grátis' : 'Assinar Agora'}
@@ -416,15 +525,15 @@ export default function PlanosPage() {
         </div>
 
         {/* FAQ */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-6 text-center">
+        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-3xl shadow-xl p-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl font-black text-white mb-6 text-center">
             Perguntas Frequentes
           </h2>
           
           <div className="space-y-4">
             <div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-2">🔄 Como funciona a cobrança?</h3>
-              <p className="text-gray-600 dark:text-gray-200">
+              <h3 className="font-bold text-white mb-2">🔄 Como funciona a cobrança?</h3>
+              <p className="text-gray-300">
                 <strong>Para pagamento via cartão de crédito:</strong> A renovação é totalmente automática! 
                 Você aprova a assinatura uma vez e a cobrança é feita automaticamente todo mês no mesmo dia. 
                 Não precisa se preocupar em renovar manualmente. <strong>Para pagamento via PIX:</strong> 
@@ -435,18 +544,18 @@ export default function PlanosPage() {
             </div>
             
             <div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-2">📊 O que acontece se eu exceder o limite?</h3>
-              <p className="text-gray-600 dark:text-gray-200">Você não poderá fazer novas ofertas até o próximo mês ou até fazer upgrade do plano.</p>
+              <h3 className="font-bold text-white mb-2">📊 O que acontece se eu exceder o limite?</h3>
+              <p className="text-gray-300">Você não poderá fazer novas ofertas até o próximo mês ou até fazer upgrade do plano.</p>
             </div>
             
             <div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-2">💳 Quais formas de pagamento aceitam?</h3>
-              <p className="text-gray-600 dark:text-gray-200">Aceitamos cartão de crédito, PIX e boleto através do Mercado Pago.</p>
+              <h3 className="font-bold text-white mb-2">💳 Quais formas de pagamento aceitam?</h3>
+              <p className="text-gray-300">Aceitamos cartão de crédito, PIX e boleto através do Mercado Pago.</p>
             </div>
             
             <div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-2">🔼 Posso fazer upgrade a qualquer momento?</h3>
-              <p className="text-gray-600 dark:text-gray-200">Sim! Você pode fazer upgrade imediatamente e o valor será proporcional.</p>
+              <h3 className="font-bold text-white mb-2">🔼 Posso fazer upgrade a qualquer momento?</h3>
+              <p className="text-gray-300">Sim! Você pode fazer upgrade imediatamente e o valor será proporcional.</p>
             </div>
           </div>
         </div>
