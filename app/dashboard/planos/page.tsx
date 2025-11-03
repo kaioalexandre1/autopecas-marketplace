@@ -336,34 +336,147 @@ export default function PlanosPage() {
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 
-            className="text-5xl md:text-6xl font-black text-white mb-6 uppercase tracking-wider relative inline-block animate-neonGlow"
-            style={{
-              textShadow: `
-                0 0 10px rgba(59, 130, 246, 0.8),
-                0 0 20px rgba(59, 130, 246, 0.8),
-                0 0 30px rgba(59, 130, 246, 0.6),
-                0 0 40px rgba(59, 130, 246, 0.4),
-                0 0 50px rgba(59, 130, 246, 0.3)
-              `,
-              WebkitTextStroke: '1px rgba(59, 130, 246, 0.5)',
-            }}
-          >
-            ESCOLHA SEU PLANO
-          </h1>
-          <p 
-            className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto uppercase tracking-wide font-bold"
-            style={{
-              textShadow: '0 0 10px rgba(59, 130, 246, 0.4), 0 0 20px rgba(59, 130, 246, 0.2)',
-            }}
-          >
-            POTENCIALIZE SUAS VENDAS COM O PLANO IDEAL PARA O SEU NEGÓCIO
-          </p>
-          
-          {userData.plano && (
-            <div className="mt-8 flex flex-col items-center gap-6 max-w-2xl mx-auto">
-              {/* Card de Informações do Plano */}
-              <div className="w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-6">
+          <div className="max-w-4xl mx-auto bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-md border-2 border-cyan-500/50 rounded-3xl shadow-2xl p-8 md:p-12 relative overflow-hidden">
+            {/* Efeito de brilho neon nas bordas */}
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-500/20 opacity-50 animate-pulse"></div>
+            <div className="absolute -top-1 -left-1 w-32 h-32 bg-cyan-400 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+            <div className="absolute -bottom-1 -right-1 w-32 h-32 bg-blue-400 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+            
+            <div className="relative z-10">
+              <h1 
+                className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 uppercase tracking-wider animate-neonGlow"
+                style={{
+                  textShadow: `
+                    0 0 10px rgba(59, 130, 246, 0.8),
+                    0 0 20px rgba(59, 130, 246, 0.8),
+                    0 0 30px rgba(59, 130, 246, 0.6),
+                    0 0 40px rgba(59, 130, 246, 0.4),
+                    0 0 50px rgba(59, 130, 246, 0.3)
+                  `,
+                  WebkitTextStroke: '1px rgba(59, 130, 246, 0.5)',
+                }}
+              >
+                ESCOLHA SEU PLANO
+              </h1>
+              <div className="h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent my-6 mx-auto max-w-2xl"></div>
+              <p 
+                className="text-lg md:text-2xl lg:text-3xl text-gray-200 max-w-3xl mx-auto uppercase tracking-wide font-bold leading-tight"
+                style={{
+                  textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)',
+                }}
+              >
+                POTENCIALIZE SUAS VENDAS COM O PLANO IDEAL PARA O SEU NEGÓCIO
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Cards de Planos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {planosConfig.map((plano) => {
+            const Icon = plano.icone;
+            const isPlanoAtual = userData.plano === plano.id;
+            const isInferior = isPlanoInferior(plano);
+            
+            return (
+              <div
+                key={plano.id}
+                className={`relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 ${
+                  isInferior 
+                    ? 'opacity-60 cursor-not-allowed' 
+                    : 'hover:scale-105'
+                } ${
+                  plano.destaque ? `ring-4 ${plano.corBorda} scale-105` : ''
+                } ${isPlanoAtual ? 'ring-4 ring-green-500' : ''}`}
+              >
+                {isInferior && (
+                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 text-xs font-bold text-center z-20">
+                    PLANO INFERIOR - INDISPONÍVEL
+                  </div>
+                )}
+                {plano.destaque && !isInferior && (
+                  <div className={`absolute top-0 right-0 bg-gradient-to-r ${plano.cor} text-white px-4 py-1 text-xs font-bold rounded-bl-lg z-10`}>
+                    MAIS POPULAR
+                  </div>
+                )}
+                
+                {isPlanoAtual && !isInferior && (
+                  <div className="absolute top-0 left-0 bg-gradient-to-r from-green-500 to-green-700 text-white px-4 py-1 text-xs font-bold rounded-br-lg z-10">
+                    PLANO ATUAL
+                  </div>
+                )}
+
+                <div className={`h-32 bg-gradient-to-br ${plano.cor} flex items-center justify-center`}>
+                  <Icon size={64} className="text-white" />
+                </div>
+
+                <div className={`p-6 ${plano.corFundoInterno}`}>
+                  <h3 className={`text-2xl font-black ${plano.corTexto} mb-2`}>{plano.nome}</h3>
+                  
+                  <div className="mb-6">
+                    <span className={`text-4xl font-black ${plano.corTexto}`}>
+                      R$ {plano.preco.toFixed(2).replace('.', ',')}
+                    </span>
+                    <span className={plano.corTexto}>/mês</span>
+                  </div>
+
+                  <div className={`mb-6 px-4 py-2 ${plano.corBg} rounded-lg`}>
+                    <p className={`text-sm font-bold ${plano.corTexto}`}>
+                      {plano.limite === -1 ? 'Ofertas Ilimitadas' : `Até ${plano.limite} ofertas/mês`}
+                    </p>
+                  </div>
+
+                  <ul className="space-y-3 mb-6">
+                    {plano.features.map((feature, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <Check size={20} className="text-green-500 flex-shrink-0 mt-0.5" />
+                        <span className={`text-sm ${plano.corTexto}`}>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => handleSelecionarPlano(plano.id)}
+                    disabled={loading || isPlanoAtual || isInferior}
+                    className={`w-full py-3 px-6 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${
+                      isPlanoAtual
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : isInferior
+                        ? 'bg-gray-500 cursor-not-allowed opacity-50'
+                        : `bg-gradient-to-r ${plano.cor} hover:shadow-2xl transform hover:-translate-y-1`
+                    }`}
+                    title={isInferior ? 'Não é possível fazer downgrade para um plano inferior' : ''}
+                  >
+                    {loading ? (
+                      <Loader size={20} className="animate-spin" />
+                    ) : isPlanoAtual ? (
+                      'Plano Ativo'
+                    ) : isInferior ? (
+                      <>
+                        <span className="line-through">Indisponível</span>
+                        <AlertTriangle size={16} />
+                      </>
+                    ) : (
+                      <>
+                        {plano.preco === 0 ? 'Ativar Grátis' : 'Assinar Agora'}
+                        <ArrowRight size={20} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Card de Informações do Plano Atual - Abaixo dos Cards */}
+        {userData.plano && (
+          <div className="mb-12 flex flex-col items-center gap-6 max-w-2xl mx-auto">
+            <div className="w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-2 border-cyan-500/30 rounded-2xl shadow-2xl p-6 relative overflow-hidden">
+              {/* Efeitos de brilho */}
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-cyan-500/10 opacity-50"></div>
+              
+              <div className="relative z-10">
                 {/* Título do Plano */}
                 <div className="flex items-center justify-center gap-3 mb-6">
                   <div className={`p-3 rounded-xl ${
@@ -489,106 +602,8 @@ export default function PlanosPage() {
                 )}
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Cards de Planos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {planosConfig.map((plano) => {
-            const Icon = plano.icone;
-            const isPlanoAtual = userData.plano === plano.id;
-            const isInferior = isPlanoInferior(plano);
-            
-            return (
-              <div
-                key={plano.id}
-                className={`relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden transform transition-all duration-300 ${
-                  isInferior 
-                    ? 'opacity-60 cursor-not-allowed' 
-                    : 'hover:scale-105'
-                } ${
-                  plano.destaque ? `ring-4 ${plano.corBorda} scale-105` : ''
-                } ${isPlanoAtual ? 'ring-4 ring-green-500' : ''}`}
-              >
-                {isInferior && (
-                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 text-xs font-bold text-center z-20">
-                    PLANO INFERIOR - INDISPONÍVEL
-                  </div>
-                )}
-                {plano.destaque && !isInferior && (
-                  <div className={`absolute top-0 right-0 bg-gradient-to-r ${plano.cor} text-white px-4 py-1 text-xs font-bold rounded-bl-lg z-10`}>
-                    MAIS POPULAR
-                  </div>
-                )}
-                
-                {isPlanoAtual && !isInferior && (
-                  <div className="absolute top-0 left-0 bg-gradient-to-r from-green-500 to-green-700 text-white px-4 py-1 text-xs font-bold rounded-br-lg z-10">
-                    PLANO ATUAL
-                  </div>
-                )}
-
-                <div className={`h-32 bg-gradient-to-br ${plano.cor} flex items-center justify-center`}>
-                  <Icon size={64} className="text-white" />
-                </div>
-
-                <div className={`p-6 ${plano.corFundoInterno}`}>
-                  <h3 className={`text-2xl font-black ${plano.corTexto} mb-2`}>{plano.nome}</h3>
-                  
-                  <div className="mb-6">
-                    <span className={`text-4xl font-black ${plano.corTexto}`}>
-                      R$ {plano.preco.toFixed(2).replace('.', ',')}
-                    </span>
-                    <span className={plano.corTexto}>/mês</span>
-                  </div>
-
-                  <div className={`mb-6 px-4 py-2 ${plano.corBg} rounded-lg`}>
-                    <p className={`text-sm font-bold ${plano.corTexto}`}>
-                      {plano.limite === -1 ? 'Ofertas Ilimitadas' : `Até ${plano.limite} ofertas/mês`}
-                    </p>
-                  </div>
-
-                  <ul className="space-y-3 mb-6">
-                    {plano.features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <Check size={20} className="text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className={`text-sm ${plano.corTexto}`}>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button
-                    onClick={() => handleSelecionarPlano(plano.id)}
-                    disabled={loading || isPlanoAtual || isInferior}
-                    className={`w-full py-3 px-6 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${
-                      isPlanoAtual
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : isInferior
-                        ? 'bg-gray-500 cursor-not-allowed opacity-50'
-                        : `bg-gradient-to-r ${plano.cor} hover:shadow-2xl transform hover:-translate-y-1`
-                    }`}
-                    title={isInferior ? 'Não é possível fazer downgrade para um plano inferior' : ''}
-                  >
-                    {loading ? (
-                      <Loader size={20} className="animate-spin" />
-                    ) : isPlanoAtual ? (
-                      'Plano Ativo'
-                    ) : isInferior ? (
-                      <>
-                        <span className="line-through">Indisponível</span>
-                        <AlertTriangle size={16} />
-                      </>
-                    ) : (
-                      <>
-                        {plano.preco === 0 ? 'Ativar Grátis' : 'Assinar Agora'}
-                        <ArrowRight size={20} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          </div>
+        )}
 
         {/* FAQ */}
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-3xl shadow-xl p-8 max-w-4xl mx-auto">
