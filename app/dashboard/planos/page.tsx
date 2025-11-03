@@ -335,8 +335,8 @@ export default function PlanosPage() {
       
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-16">
-          <div className="max-w-4xl mx-auto bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-md border-2 border-cyan-500/50 rounded-3xl shadow-2xl p-8 md:p-12 relative overflow-hidden">
+        <div className="text-center mb-12">
+          <div className="max-w-7xl mx-auto bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-md border-2 border-cyan-500/50 rounded-3xl shadow-2xl px-8 md:px-16 py-6 md:py-8 relative overflow-hidden">
             {/* Efeito de brilho neon nas bordas */}
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-500/20 opacity-50 animate-pulse"></div>
             <div className="absolute -top-1 -left-1 w-32 h-32 bg-cyan-400 rounded-full blur-3xl opacity-30 animate-pulse"></div>
@@ -344,7 +344,7 @@ export default function PlanosPage() {
             
             <div className="relative z-10">
               <h1 
-                className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 uppercase tracking-wider animate-neonGlow"
+                className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-4 uppercase tracking-wider animate-neonGlow"
                 style={{
                   textShadow: `
                     0 0 10px rgba(59, 130, 246, 0.8),
@@ -358,9 +358,9 @@ export default function PlanosPage() {
               >
                 ESCOLHA SEU PLANO
               </h1>
-              <div className="h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent my-6 mx-auto max-w-2xl"></div>
+              <div className="h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent my-4 mx-auto max-w-4xl"></div>
               <p 
-                className="text-lg md:text-2xl lg:text-3xl text-gray-200 max-w-3xl mx-auto uppercase tracking-wide font-bold leading-tight"
+                className="text-base md:text-xl lg:text-2xl text-gray-200 max-w-5xl mx-auto uppercase tracking-wide font-bold leading-tight"
                 style={{
                   textShadow: '0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)',
                 }}
