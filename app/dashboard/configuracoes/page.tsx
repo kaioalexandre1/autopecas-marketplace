@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Settings, Moon, Sun, Save, ArrowLeft, Store, User, Phone, MapPin, FileText, Edit2, X, Check } from 'lucide-react';
+import { Settings, Moon, Sun, Save, ArrowLeft, Store, User, Phone, MapPin, FileText, Edit2, X, Check, Car } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
+import { RamoVeiculo } from '@/types';
 
 export default function ConfiguracoesPage() {
   const { userData } = useAuth();
@@ -17,8 +18,10 @@ export default function ConfiguracoesPage() {
   // Estados para edição inline
   const [editandoTelefone, setEditandoTelefone] = useState(false);
   const [editandoNomeLoja, setEditandoNomeLoja] = useState(false);
+  const [editandoRamo, setEditandoRamo] = useState(false);
   const [novoTelefone, setNovoTelefone] = useState('');
   const [novoNomeLoja, setNovoNomeLoja] = useState('');
+  const [novoRamo, setNovoRamo] = useState<RamoVeiculo>('CARRO');
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
 
   // Carregar configurações do usuário (SEM aplicar tema automaticamente)
@@ -132,6 +135,57 @@ export default function ConfiguracoesPage() {
     }
   };
 
+  const iniciarEdicaoRamo = () => {
+    setNovoRamo(userData?.ramo || 'CARRO');
+    setEditandoRamo(true);
+  };
+
+  const cancelarEdicaoRamo = () => {
+    setEditandoRamo(false);
+    setNovoRamo(userData?.ramo || 'CARRO');
+  };
+
+  const salvarRamo = async () => {
+    if (!userData) {
+      toast.error('Erro ao salvar ramo');
+      return;
+    }
+
+    setSalvandoEdicao(true);
+    try {
+      await updateDoc(doc(db, 'users', userData.id), {
+        ramo: novoRamo,
+      });
+      
+      setEditandoRamo(false);
+      toast.success('Ramo de trabalho atualizado com sucesso!');
+      
+      // Recarregar a página após um pequeno delay para garantir que o toast seja exibido
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+      console.error('Erro ao salvar ramo:', error);
+      toast.error('Erro ao salvar ramo de trabalho');
+      setSalvandoEdicao(false);
+    }
+  };
+
+  const getRamoLabel = (ramo: RamoVeiculo) => {
+    switch (ramo) {
+      case 'CARRO':
+        return '🚗 Carro';
+      case 'MOTO':
+        return '🏍️ Moto';
+      case 'CAMINHÃO':
+        return '🚛 Caminhão';
+      case 'ÔNIBUS':
+        return '🚌 Ônibus';
+      default:
+        return ramo;
+    }
+  };
+
   const getTipoLabel = () => {
     switch (userData?.tipo) {
       case 'oficina':
@@ -196,6 +250,7 @@ export default function ConfiguracoesPage() {
                 Informações da Loja
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Nome */}
                 <div className="flex items-start gap-3">
                   <User size={20} className="text-gray-700 dark:text-gray-400 mt-0.5 flex-shrink-0" />
                   <div>
@@ -335,6 +390,118 @@ export default function ConfiguracoesPage() {
                     <div className={`text-xs px-3 py-1 rounded-full inline-block font-semibold border ${getTipoBadgeColor()}`}>
                       {getTipoLabel()}
                     </div>
+                  </div>
+                </div>
+
+                {/* Ramo de Trabalho - Campo para editar o ramo cadastrado */}
+                <div className="flex items-start gap-3 md:col-span-2 mt-4 pt-4 border-t-2 border-gray-300 dark:border-gray-600">
+                  <Car size={20} className="text-gray-700 dark:text-gray-300 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 w-full">
+                    <div className="text-sm text-gray-900 dark:text-gray-300 font-bold mb-2 flex items-center justify-between">
+                      <span>Ramo de Trabalho</span>
+                      {!editandoRamo && userData && (
+                        <button
+                          onClick={iniciarEdicaoRamo}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                          title="Editar ramo de trabalho"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                    {editandoRamo ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setNovoRamo('CARRO')}
+                            disabled={salvandoEdicao}
+                            className={`p-4 border-2 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                              novoRamo === 'CARRO'
+                                ? 'border-blue-500 bg-blue-100 dark:bg-blue-900 shadow-lg shadow-blue-500/50'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-blue-400'
+                            }`}
+                          >
+                            <span className="text-2xl mb-1">🚗</span>
+                            <span className={`text-xs font-bold ${novoRamo === 'CARRO' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                              Carro
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setNovoRamo('MOTO')}
+                            disabled={salvandoEdicao}
+                            className={`p-4 border-2 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                              novoRamo === 'MOTO'
+                                ? 'border-purple-500 bg-purple-100 dark:bg-purple-900 shadow-lg shadow-purple-500/50'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-purple-400'
+                            }`}
+                          >
+                            <span className="text-2xl mb-1">🏍️</span>
+                            <span className={`text-xs font-bold ${novoRamo === 'MOTO' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                              Moto
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setNovoRamo('CAMINHÃO')}
+                            disabled={salvandoEdicao}
+                            className={`p-4 border-2 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                              novoRamo === 'CAMINHÃO'
+                                ? 'border-orange-500 bg-orange-100 dark:bg-orange-900 shadow-lg shadow-orange-500/50'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-orange-400'
+                            }`}
+                          >
+                            <span className="text-2xl mb-1">🚚</span>
+                            <span className={`text-xs font-bold ${novoRamo === 'CAMINHÃO' ? 'text-orange-700 dark:text-orange-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                              Caminhão
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setNovoRamo('ÔNIBUS')}
+                            disabled={salvandoEdicao}
+                            className={`p-4 border-2 rounded-xl flex flex-col items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                              novoRamo === 'ÔNIBUS'
+                                ? 'border-green-500 bg-green-100 dark:bg-green-900 shadow-lg shadow-green-500/50'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-green-400'
+                            }`}
+                          >
+                            <span className="text-2xl mb-1">🚌</span>
+                            <span className={`text-xs font-bold ${novoRamo === 'ÔNIBUS' ? 'text-green-700 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                              Ônibus
+                            </span>
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2 justify-end">
+                          <button
+                            onClick={salvarRamo}
+                            disabled={salvandoEdicao}
+                            className="flex items-center gap-2 px-4 py-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-50 font-medium"
+                            title="Salvar"
+                          >
+                            <Check size={18} />
+                            Salvar
+                          </button>
+                          <button
+                            onClick={cancelarEdicaoRamo}
+                            disabled={salvandoEdicao}
+                            className="flex items-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 font-medium"
+                            title="Cancelar"
+                          >
+                            <X size={18} />
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {userData?.ramo ? getRamoLabel(userData.ramo) : 'Não informado'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

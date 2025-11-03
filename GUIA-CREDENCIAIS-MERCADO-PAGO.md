@@ -192,3 +192,6 @@ Antes de testar pagamentos:
 **🎉 Pronto! Agora você pode receber pagamentos!**
 
 
+
+
+
