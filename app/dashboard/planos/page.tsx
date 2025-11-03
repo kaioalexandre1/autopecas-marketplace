@@ -472,7 +472,7 @@ export default function PlanosPage() {
 
         {/* Card de Informações do Plano Atual - Abaixo dos Cards */}
         {userData.plano && (
-          <div className="mb-12 flex flex-col items-center gap-6 max-w-2xl mx-auto">
+          <div className="mb-12 flex flex-col items-center gap-6 max-w-7xl mx-auto">
             <div className="w-full bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-2 border-cyan-500/30 rounded-2xl shadow-2xl p-6 relative overflow-hidden">
               {/* Efeitos de brilho */}
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-cyan-500/10 opacity-50"></div>
