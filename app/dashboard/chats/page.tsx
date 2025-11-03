@@ -865,14 +865,14 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Mensagens */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-50 dark:to-gray-100" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
                   {chatSelecionado.encerrado && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r-lg">
+                    <div className="bg-yellow-50 dark:bg-yellow-950/50 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 mb-4 rounded-r-lg">
                       <div className="flex items-center">
-                        <AlertCircle className="text-yellow-600 mr-3" size={24} />
+                        <AlertCircle className="text-yellow-600 dark:text-yellow-400 mr-3" size={24} />
                         <div>
-                          <p className="font-medium text-yellow-800">Chat Encerrado</p>
-                          <p className="text-sm text-yellow-700 mt-1">
+                          <p className="font-medium text-yellow-800 dark:text-yellow-200">Chat Encerrado</p>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                             Esta negociação foi finalizada em{' '}
                             {chatSelecionado.encerradoEm && 
                               formatDistanceToNow(chatSelecionado.encerradoEm, { addSuffix: true, locale: ptBR })}
@@ -883,10 +883,10 @@ export default function ChatsPage() {
                   )}
                   
                   {chatSelecionado.mensagens.length === 0 ? (
-                    <div className="text-center text-gray-900 dark:text-white py-12">
-                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-600 dark:text-gray-400" />
-                      <p className="text-lg font-medium text-gray-900 dark:text-white">Nenhuma mensagem ainda</p>
-                      <p className="text-sm text-gray-900 mt-2 dark:text-gray-200">Envie a primeira mensagem para iniciar a conversa!</p>
+                    <div className="text-center text-gray-900 dark:text-gray-100 py-12">
+                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-600 dark:text-gray-300" />
+                      <p className="text-lg font-medium text-gray-900 dark:text-gray-100">Nenhuma mensagem ainda</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">Envie a primeira mensagem para iniciar a conversa!</p>
                     </div>
                   ) : (
                     chatSelecionado.mensagens.map((msg) => {
@@ -901,7 +901,7 @@ export default function ChatsPage() {
                             className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-md ${
                               isMinha
                                 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                                : 'bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 border border-gray-200 dark:border-gray-300'
+                                : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
                             }`}
                           >
                             {msg.imagemUrl && (
@@ -915,7 +915,7 @@ export default function ChatsPage() {
                             {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
                             <span
                               className={`text-xs mt-2 block ${
-                                isMinha ? 'text-blue-100' : 'text-gray-900 dark:text-gray-900'
+                                isMinha ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300'
                               }`}
                             >
                               {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
@@ -929,19 +929,19 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Input de Mensagem */}
-                <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-300 bg-gray-50 dark:bg-gray-100 flex-shrink-0">
+                <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
                   {chatSelecionado.encerrado ? (
-                    <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
                       <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-700 dark:text-gray-300" />
-                      <p className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg">Chat Encerrado</p>
-                      <p className="text-xs sm:text-sm text-gray-900 mt-1 dark:text-gray-200">Este chat foi finalizado e não aceita mais mensagens.</p>
+                      <p className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">Chat Encerrado</p>
+                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-1">Este chat foi finalizado e não aceita mais mensagens.</p>
                     </div>
                   ) : (
                     <>
                       {imagemUpload && (
-                        <div className="mb-2 sm:mb-3 flex items-center justify-between bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">
-                          <span className="text-xs sm:text-sm text-gray-700 truncate flex items-center">
-                            <ImageIcon size={16} className="mr-2 text-blue-600" />
+                        <div className="mb-2 sm:mb-3 flex items-center justify-between bg-blue-50 dark:bg-blue-950/40 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700">
+                          <span className="text-xs sm:text-sm text-gray-700 dark:text-blue-200 truncate flex items-center">
+                            <ImageIcon size={16} className="mr-2 text-blue-600 dark:text-blue-400" />
                             <span className="font-medium">{imagemUpload.name}</span>
                           </span>
                           <button
@@ -981,7 +981,7 @@ export default function ChatsPage() {
                           value={mensagem}
                           onChange={(e) => setMensagem(e.target.value)}
                           placeholder="Digite sua mensagem..."
-                          className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 placeholder-gray-500 dark:placeholder-gray-500"
+                          className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                         />
                         
                         <button
@@ -1008,59 +1008,59 @@ export default function ChatsPage() {
                   <p className="text-xl font-bold text-gray-900 dark:text-white mb-4">Selecione uma conversa</p>
                   
                   <div className="max-w-2xl mx-auto px-4 space-y-6">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                      <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2">💬 Sobre os Chats</h3>
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-r-lg">
+                      <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2 text-base">💬 Sobre os Chats</h3>
+                      <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
                         Os chats são criados automaticamente quando uma autopeça faz uma oferta em um pedido que você criou, 
                         ou quando você faz uma oferta em um pedido. Use esta área para negociar diretamente com seus parceiros de negócio.
                       </p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded-r-lg">
-                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
-                          <Phone size={18} />
+                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r-lg">
+                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2 text-sm">
+                          <Phone size={16} />
                           WhatsApp
                         </h4>
-                        <p className="text-sm text-green-800 dark:text-green-200">
+                        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
                           Abra uma conversa no WhatsApp com o número cadastrado do outro usuário, já com uma mensagem pré-formatada pronta para enviar.
                         </p>
                       </div>
 
-                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded-r-lg">
-                        <h4 className="font-bold text-yellow-900 dark:text-yellow-100 mb-2 flex items-center gap-2">
-                          <Truck size={18} />
+                      <div className="bg-yellow-50 dark:bg-yellow-950/40 border-l-4 border-yellow-500 dark:border-yellow-400 p-4 rounded-r-lg">
+                        <h4 className="font-bold text-yellow-900 dark:text-yellow-100 mb-2 flex items-center gap-2 text-sm">
+                          <Truck size={16} />
                           Entregador
                         </h4>
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <p className="text-xs text-yellow-800 dark:text-yellow-200 leading-relaxed">
                           Solicite um entregador para buscar ou entregar a peça. Você pode escolher entre os entregadores disponíveis na sua região.
                         </p>
                       </div>
 
-                      <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded-r-lg">
-                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
-                          <CheckCircle size={18} />
+                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r-lg">
+                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2 text-sm">
+                          <CheckCircle size={16} />
                           Negócio Fechado
                         </h4>
-                        <p className="text-sm text-green-800 dark:text-green-200">
+                        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
                           Marque o chat como "Negócio Fechado" quando a negociação for finalizada com sucesso. Isso encerra o chat e registra o negócio.
                         </p>
                       </div>
 
-                      <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-lg">
-                        <h4 className="font-bold text-red-900 dark:text-red-100 mb-2 flex items-center gap-2">
-                          <XCircle size={18} />
+                      <div className="bg-red-50 dark:bg-red-950/40 border-l-4 border-red-500 dark:border-red-400 p-4 rounded-r-lg">
+                        <h4 className="font-bold text-red-900 dark:text-red-100 mb-2 flex items-center gap-2 text-sm">
+                          <XCircle size={16} />
                           Cancelar
                         </h4>
-                        <p className="text-sm text-red-800 dark:text-red-200">
+                        <p className="text-xs text-red-800 dark:text-red-200 leading-relaxed">
                           Cancele e exclua o chat se a negociação não for adiante. Esta ação não pode ser desfeita.
                         </p>
                       </div>
                     </div>
 
-                    <div className="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-4 rounded-r-lg">
-                      <h4 className="font-bold text-purple-900 dark:text-purple-100 mb-2">📋 Dica</h4>
-                      <p className="text-sm text-purple-800 dark:text-purple-200">
+                    <div className="bg-purple-50 dark:bg-purple-950/40 border-l-4 border-purple-500 dark:border-purple-400 p-4 rounded-r-lg">
+                      <h4 className="font-bold text-purple-900 dark:text-purple-100 mb-2 text-sm">📋 Dica</h4>
+                      <p className="text-xs text-purple-800 dark:text-purple-200 leading-relaxed">
                         Chats encerrados podem ser excluídos usando o botão "Excluir Encerrados" na lista de conversas. 
                         Uma barra verde vertical indica chats ativos, facilitando a identificação das negociações em andamento.
                       </p>
