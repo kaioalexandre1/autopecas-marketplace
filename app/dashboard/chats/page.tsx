@@ -677,10 +677,10 @@ export default function ChatsPage() {
         {/* Desktop: Mostrar ambos lado a lado */}
         <div className={`grid lg:grid-cols-3 gap-3 sm:gap-6 ${chatSelecionado ? 'h-[calc(100vh-80px)] lg:h-[calc(100vh-140px)]' : 'h-[calc(100vh-140px)]'}`}>
           {/* Lista de Chats */}
-          <div className={`lg:col-span-1 bg-white dark:bg-gray-100 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-300 ${
+          <div className={`lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 ${
             chatSelecionado ? 'hidden lg:block' : 'block'
           }`}>
-            <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+            <div className="p-3 sm:p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-indigo-600">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                 <div>
                   <h2 className="font-semibold text-white text-base sm:text-lg">Suas Conversas</h2>
@@ -703,10 +703,10 @@ export default function ChatsPage() {
             
             <div className="overflow-y-auto" style={{ height: 'calc(100% - 90px)' }}>
               {chats.length === 0 ? (
-                <div className="p-8 text-center text-gray-900 dark:text-white">
+                <div className="p-8 text-center text-gray-900 dark:text-gray-100">
                   <MessageSquare size={56} className="mx-auto mb-4 text-gray-600 dark:text-gray-400" />
-                  <p className="font-medium text-gray-900 dark:text-white">Nenhuma conversa ainda</p>
-                  <p className="text-sm text-gray-900 mt-2 dark:text-gray-200">
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Nenhuma conversa ainda</p>
+                  <p className="text-sm text-gray-700 mt-2 dark:text-gray-300">
                     {userData?.tipo === 'autopeca' 
                       ? 'Faça uma oferta para iniciar uma conversa'
                       : 'Aguarde ofertas em seus pedidos'}
@@ -724,27 +724,27 @@ export default function ChatsPage() {
                         setChatSelecionado(chat);
                         marcarComoLido(chat);
                       }}
-                      className={`relative p-4 border-b border-gray-100 dark:border-gray-300 cursor-pointer transition-all ${
+                      className={`relative p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${
                         chatSelecionado?.id === chat.id 
-                          ? 'bg-green-100 dark:bg-green-900 border-l-4 border-l-green-600 dark:border-l-green-500' 
+                          ? 'bg-green-100 dark:bg-green-900/50 border-l-4 border-l-green-600 dark:border-l-green-500' 
                           : chat.encerrado
-                          ? 'bg-gray-100 dark:bg-gray-50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-100'
-                          : 'bg-white dark:bg-gray-50 hover:bg-green-50 dark:hover:bg-green-100 border-l-4 border-l-green-500 dark:border-l-green-400'
+                          ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700'
+                          : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center flex-wrap gap-2">
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-900 text-sm">
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                             {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
                           </h3>
                           {naoLidas && quantidadeNaoLidas > 0 && (
-                            <span className="text-xs font-semibold text-red-600 dark:text-red-500 whitespace-nowrap">
+                            <span className="text-xs font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
                               {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
                             </span>
                           )}
                         </div>
                         {chat.mensagens.length > 0 && (
-                          <span className="text-xs text-gray-900 dark:text-gray-900">
+                          <span className="text-xs text-gray-600 dark:text-gray-300">
                             {formatDistanceToNow(
                               chat.mensagens[chat.mensagens.length - 1].createdAt,
                               { addSuffix: true, locale: ptBR }
@@ -753,16 +753,16 @@ export default function ChatsPage() {
                         )}
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-900 dark:text-gray-900 mb-1">
+                      <div className="flex items-center text-sm text-gray-900 dark:text-gray-200 mb-1">
                         <span className="font-medium">{chat.nomePeca}</span>
                         {chat.encerrado && (
-                          <span className="ml-2 px-2 py-0.5 bg-gray-200 dark:bg-gray-300 text-gray-700 dark:text-gray-900 rounded text-xs">
+                          <span className="ml-2 px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-xs">
                             Encerrado
                           </span>
                         )}
                       </div>
                       
-                      <p className="text-xs text-gray-900 dark:text-gray-900">
+                      <p className="text-xs text-gray-700 dark:text-gray-300">
                         {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
                       </p>
                       
@@ -783,13 +783,13 @@ export default function ChatsPage() {
           </div>
 
           {/* Área do Chat */}
-          <div className={`lg:col-span-2 bg-white dark:bg-gray-100 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-300 overflow-hidden ${
+          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden ${
             chatSelecionado ? 'block' : 'hidden lg:block'
           }`}>
             {chatSelecionado ? (
               <>
                 {/* Header do Chat */}
-                <div className="p-3 sm:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 flex-shrink-0">
+                <div className="p-3 sm:p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-indigo-600 flex-shrink-0">
                   <div className="flex items-start gap-2 sm:gap-0">
                     {/* Botão Voltar - Apenas no Mobile */}
                     <button
@@ -1002,10 +1002,10 @@ export default function ChatsPage() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-white">
+              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-gray-100">
                 <div className="text-center">
                   <MessageSquare size={80} className="mx-auto mb-6 text-gray-600 dark:text-gray-400" />
-                  <p className="text-xl font-bold text-gray-900 dark:text-white mb-4">Selecione uma conversa</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Selecione uma conversa</p>
                   
                   <div className="max-w-2xl mx-auto px-4 space-y-6">
                     <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-r-lg">
