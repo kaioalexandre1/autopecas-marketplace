@@ -353,7 +353,8 @@ export default function PlanosPage() {
                     0 0 40px rgba(59, 130, 246, 0.4),
                     0 0 50px rgba(59, 130, 246, 0.3)
                   `,
-                  WebkitTextStroke: '1px rgba(59, 130, 246, 0.5)',
+                  WebkitTextFillColor: 'white',
+                  WebkitTextStroke: 'none',
                 }}
               >
                 ESCOLHA SEU PLANO
