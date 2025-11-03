@@ -570,12 +570,7 @@ export default function DashboardPage() {
         updatedAt: Timestamp.now(),
       });
 
-      console.log('Pedido atualizado, criando chat...');
-      
-      // Criar chat automaticamente se não existir
-      await criarChatSeNaoExistir(pedidoSelecionado);
-
-      console.log('Sucesso! Oferta criada e chat criado.');
+      console.log('Pedido atualizado com sucesso.');
       
       // Atualizar contador de ofertas para autopeças
       if (userData.tipo === 'autopeca') {
@@ -588,7 +583,7 @@ export default function DashboardPage() {
         });
       }
       
-      toast.success('Oferta enviada com sucesso! Chat criado.');
+      toast.success('Oferta enviada com sucesso!');
       setMostrarModalOferta(false);
       setPedidoSelecionado(null);
       setPreco('');
@@ -601,27 +596,40 @@ export default function DashboardPage() {
     }
   };
 
-  const criarChatSeNaoExistir = async (pedido: Pedido) => {
-    if (!userData) return;
+  const abrirModalOferta = (pedido: Pedido) => {
+    setPedidoSelecionado(pedido);
+    setMostrarModalOferta(true);
+  };
 
+  const abrirChat = async (pedido: Pedido, oferta: Oferta) => {
+    if (!userData) return;
+    
+    console.log('🚀 Abrindo chat:', {
+      pedidoId: pedido.id,
+      autopecaId: oferta.autopecaId,
+    });
+    
     try {
       // Verificar se já existe um chat entre esta oficina e autopeça para este pedido
       const q = query(
         collection(db, 'chats'),
         where('pedidoId', '==', pedido.id),
-        where('autopecaId', '==', userData.id)
+        where('autopecaId', '==', oferta.autopecaId)
       );
 
       const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
-        // Criar novo chat
+        // Criar novo chat quando o botão "Negociar" for clicado
+        const autopecaDoc = await getDoc(doc(db, 'users', oferta.autopecaId));
+        const autopecaNome = autopecaDoc.exists() ? autopecaDoc.data().nome : 'Autopeça';
+        
         await addDoc(collection(db, 'chats'), {
           pedidoId: pedido.id,
           oficinaId: pedido.oficinaId,
-          autopecaId: userData.id,
+          autopecaId: oferta.autopecaId,
           oficinaNome: pedido.oficinaNome,
-          autopecaNome: userData.nome,
+          autopecaNome: autopecaNome,
           nomePeca: pedido.nomePeca,
           marcaCarro: pedido.marcaCarro,
           modeloCarro: pedido.modeloCarro,
@@ -630,27 +638,20 @@ export default function DashboardPage() {
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         });
+        
+        console.log('✅ Chat criado ao clicar em Negociar');
       }
+      
+      // Aguardar um pouco para o chat ser criado antes de redirecionar
+      setTimeout(() => {
+        router.push(`/dashboard/chats?pedidoId=${pedido.id}&autopecaId=${oferta.autopecaId}`);
+      }, 500);
     } catch (error) {
-      console.error('Erro ao criar chat:', error);
-      // Não mostra erro ao usuário pois o chat não é crítico neste momento
+      console.error('Erro ao criar/abrir chat:', error);
+      toast.error('Erro ao abrir chat');
+      // Mesmo assim, tentar redirecionar
+      router.push(`/dashboard/chats?pedidoId=${pedido.id}&autopecaId=${oferta.autopecaId}`);
     }
-  };
-
-  const abrirModalOferta = (pedido: Pedido) => {
-    setPedidoSelecionado(pedido);
-    setMostrarModalOferta(true);
-  };
-
-  const abrirChat = (pedido: Pedido, oferta: Oferta) => {
-    console.log('🚀 Abrindo chat:', {
-      pedidoId: pedido.id,
-      autopecaId: oferta.autopecaId,
-      url: `/dashboard/chats?pedidoId=${pedido.id}&autopecaId=${oferta.autopecaId}`
-    });
-    
-    // Redirecionar para a página de chats com o chat específico
-    router.push(`/dashboard/chats?pedidoId=${pedido.id}&autopecaId=${oferta.autopecaId}`);
   };
 
   const abrirModalFrete = (pedido: Pedido) => {
