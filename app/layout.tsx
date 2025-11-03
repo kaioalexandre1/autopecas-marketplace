@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from 'react-hot-toast';
+import MercadoPagoSDKChecker from '@/components/MercadoPagoSDKChecker';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -24,10 +25,15 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={inter.variable}>
       <head>
-        {/* MercadoPago.js V2 SDK para Device ID (obrigatório) */}
-        <script src="https://sdk.mercadopago.com/js/v2"></script>
+        {/* MercadoPago.js V2 SDK - SDK do Frontend (obrigatório para ganhar pontos) */}
+        <script 
+          src="https://sdk.mercadopago.com/js/v2" 
+          async
+          defer
+        ></script>
       </head>
       <body className={`${inter.className} antialiased`}>
+        <MercadoPagoSDKChecker />
         <AuthProvider>
           {children}
           <Toaster 

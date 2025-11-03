@@ -105,6 +105,7 @@ export async function POST(request: Request) {
           transaction_amount: parseFloat(amount.toFixed(2)),
           currency_id: 'BRL',
           start_date: startDate.toISOString(),
+          statement_descriptor: 'GRUPAO AUTOPECAS', // Descrição na fatura do cartão (10 pontos)
         },
         payer_email: email || `${autopecaId}@example.com`,
         external_reference,
@@ -139,21 +140,7 @@ export async function POST(request: Request) {
       if (!preapprovalResp.ok) {
         console.error('❌ Erro ao criar preapproval:', JSON.stringify(preapproval, null, 2));
         console.error('Status:', preapprovalResp.status);
-        console.error('Request body enviado:', JSON.stringify({
-          reason: `Assinatura ${plano} - Grupão das Autopeças`,
-          auto_recurring: {
-            frequency: 1,
-            frequency_type: 'months',
-            transaction_amount: amount,
-            currency_id: 'BRL',
-            end_date: null,
-          },
-          payer_email: email || `${autopecaId}@example.com`,
-          external_reference,
-          notification_url,
-          back_url: `${fullBase}/dashboard?checkout=success`,
-          status: 'pending',
-        }, null, 2));
+        console.error('Request body enviado:', JSON.stringify(preapprovalBody, null, 2));
         return NextResponse.json({ 
           ok: false, 
           error: 'mp_preapproval_error', 

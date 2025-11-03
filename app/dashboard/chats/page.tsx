@@ -677,7 +677,7 @@ export default function ChatsPage() {
         {/* Desktop: Mostrar ambos lado a lado */}
         <div className={`grid lg:grid-cols-3 gap-3 sm:gap-6 ${chatSelecionado ? 'h-[calc(100vh-80px)] lg:h-[calc(100vh-140px)]' : 'h-[calc(100vh-140px)]'}`}>
           {/* Lista de Chats */}
-          <div className={`lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 ${
+          <div className={`lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 ${
             chatSelecionado ? 'hidden lg:block' : 'block'
           }`}>
             <div className="p-3 sm:p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-indigo-600">
@@ -783,7 +783,7 @@ export default function ChatsPage() {
           </div>
 
           {/* Área do Chat */}
-          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden ${
+          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 overflow-hidden ${
             chatSelecionado ? 'block' : 'hidden lg:block'
           }`}>
             {chatSelecionado ? (

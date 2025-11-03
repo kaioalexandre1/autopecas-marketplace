@@ -44,6 +44,10 @@ export default function DashboardPage() {
   const [estadosExpandidos, setEstadosExpandidos] = useState<string[]>([]);
   const [brasilSelecionado, setBrasilSelecionado] = useState(false);
   const [planosAutopecas, setPlanosAutopecas] = useState<{[key: string]: string}>({});
+  
+  // Filtro de pedidos para oficinas
+  const [filtroPedidos, setFiltroPedidos] = useState<'meus' | 'todos'>('todos');
+  const [mostrarDropdownFiltroPedidos, setMostrarDropdownFiltroPedidos] = useState(false);
 
   // Banco de emojis de peças de carro
   const emojisAutopecas = ['🔧', '⚙️', '🔩', '⛽', '🛞', '🔋', '💡', '🪛', '🛠️', '🔌'];
@@ -327,9 +331,16 @@ export default function DashboardPage() {
         return b.createdAt.getTime() - a.createdAt.getTime(); // Mais recente primeiro
       });
 
-      setPedidos(pedidosData);
+      // Aplicar filtro de pedidos para oficinas
+      let pedidosFiltrados = pedidosData;
+      if (userData?.tipo === 'oficina' && filtroPedidos === 'meus') {
+        // Filtrar apenas os pedidos da própria oficina (ignorando filtro de cidade)
+        pedidosFiltrados = pedidosData.filter(pedido => pedido.oficinaId === userData.id);
+      }
+
+      setPedidos(pedidosFiltrados);
       
-      // Buscar planos das autopeças que fizeram ofertas
+      // Buscar planos das autopeças que fizeram ofertas (usar pedidosData, não filtrados)
       const autopecaIds = new Set<string>();
       pedidosData.forEach(pedido => {
         pedido.ofertas?.forEach(oferta => {
@@ -374,7 +385,7 @@ export default function DashboardPage() {
     });
 
     return () => unsubscribe();
-  }, [cidadesSelecionadas, userData]);
+  }, [cidadesSelecionadas, userData, filtroPedidos]);
 
   const criarPedido = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -765,7 +776,7 @@ export default function DashboardPage() {
             
             {/* Conteúdo */}
             <div className="relative z-10 flex flex-col justify-center h-full">
-              <div className="flex items-center gap-1.5 mb-1.5">
+              <div className="flex items-center justify-between gap-1.5 mb-1.5">
                 {/* Badge LIVE */}
                 <div className="flex items-center gap-1.5 bg-red-500 px-2 py-0.5 rounded-full shadow-md">
                   <Radio className="text-white" size={12} strokeWidth={3} />
@@ -773,6 +784,60 @@ export default function DashboardPage() {
                     AO VIVO
                   </span>
                 </div>
+                
+                {/* Dropdown de Filtro para Oficinas */}
+                {userData?.tipo === 'oficina' && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setMostrarDropdownFiltroPedidos(!mostrarDropdownFiltroPedidos)}
+                      className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/30 flex items-center gap-1 transition-all"
+                      title="Filtrar pedidos"
+                    >
+                      <span className="text-white text-[10px] font-bold">
+                        {filtroPedidos === 'meus' ? 'Meus Pedidos' : 'Todos os Pedidos'}
+                      </span>
+                      <ChevronDown size={12} className="text-white" />
+                    </button>
+                    
+                    {mostrarDropdownFiltroPedidos && (
+                      <>
+                        {/* Overlay para fechar ao clicar fora */}
+                        <div 
+                          className="fixed inset-0 z-40" 
+                          onClick={() => setMostrarDropdownFiltroPedidos(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[160px]">
+                          <button
+                            onClick={() => {
+                              setFiltroPedidos('meus');
+                              setMostrarDropdownFiltroPedidos(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                              filtroPedidos === 'meus' 
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold' 
+                                : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            Meus Pedidos
+                          </button>
+                          <button
+                            onClick={() => {
+                              setFiltroPedidos('todos');
+                              setMostrarDropdownFiltroPedidos(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                              filtroPedidos === 'todos' 
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold' 
+                                : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            Todos os Pedidos
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
               
               <h1 className="text-base sm:text-lg font-black text-white mb-1 leading-tight">
@@ -782,7 +847,9 @@ export default function DashboardPage() {
               <p className="text-xs text-white font-medium mb-2 leading-tight line-clamp-2">
                 {userData?.tipo === 'autopeca' 
                   ? 'Para ver mais pedidos selecione mais localizações para ter acesso aos pedidos de outros locais'
-                  : 'Seu pedido já está sendo divulgado ao vivo e você logo receberá ofertas!'}
+                  : filtroPedidos === 'meus'
+                  ? 'Visualizando apenas seus pedidos'
+                  : 'Visualizando todos os pedidos da sua cidade'}
               </p>
               
               <div className="flex items-center gap-1.5">

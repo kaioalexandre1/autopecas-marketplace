@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
-import { Send, MessageSquare } from 'lucide-react';
+import { Send, MessageSquare, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -25,6 +25,7 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
   const [chat, setChat] = useState<any>(null);
   const [mensagem, setMensagem] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [telefoneUsuario, setTelefoneUsuario] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,6 +56,26 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat?.mensagens]);
+
+  // Buscar telefone do usuário que pediu suporte
+  useEffect(() => {
+    if (!chat?.usuarioId) return;
+
+    const buscarTelefone = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', chat.usuarioId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setTelefoneUsuario(userData.telefone || null);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar telefone do usuário:', error);
+        setTelefoneUsuario(null);
+      }
+    };
+
+    buscarTelefone();
+  }, [chat?.usuarioId]);
 
   const enviarMensagem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +123,25 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
     }
   };
 
+  // Função para formatar telefone para o link do WhatsApp
+  const formatarTelefoneParaWhatsApp = (telefone: string) => {
+    return telefone.replace(/\D/g, ''); // Remove tudo que não é número
+  };
+
+  // Função para abrir WhatsApp
+  const abrirWhatsApp = () => {
+    if (!telefoneUsuario) {
+      toast.error('Telefone não disponível');
+      return;
+    }
+
+    const telefoneFormatado = formatarTelefoneParaWhatsApp(telefoneUsuario);
+    const mensagem = encodeURIComponent(`Olá ${chat.usuarioNome}, estou entrando em contato referente ao seu pedido de suporte.`);
+    const url = `https://api.whatsapp.com/send/?phone=${telefoneFormatado}&text=${mensagem}&type=phone_number&app_absent=0`;
+    
+    window.open(url, '_blank');
+  };
+
   if (!chat) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -115,20 +155,32 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
       {/* Header do Chat */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30">
         <div className="flex items-center justify-between mb-2">
-          <div>
+          <div className="flex-1">
             <h3 className="font-bold text-gray-900 dark:text-white">{chat.usuarioNome}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300">{chat.motivoLabel}</p>
           </div>
-          <select
-            value={chat.status}
-            onChange={(e) => atualizarStatus(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            <option value="aberto">Aberto</option>
-            <option value="em_andamento">Em Andamento</option>
-            <option value="resolvido">Resolvido</option>
-            <option value="fechado">Fechado</option>
-          </select>
+          <div className="flex items-center gap-2">
+            {telefoneUsuario && (
+              <button
+                onClick={abrirWhatsApp}
+                className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center gap-2 transition-colors shadow-md hover:shadow-lg text-sm"
+                title="Abrir WhatsApp"
+              >
+                <Phone size={16} />
+                <span className="hidden sm:inline">WhatsApp</span>
+              </button>
+            )}
+            <select
+              value={chat.status}
+              onChange={(e) => atualizarStatus(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            >
+              <option value="aberto">Aberto</option>
+              <option value="em_andamento">Em Andamento</option>
+              <option value="resolvido">Resolvido</option>
+              <option value="fechado">Fechado</option>
+            </select>
+          </div>
         </div>
       </div>
 
