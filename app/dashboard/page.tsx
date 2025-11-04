@@ -1368,11 +1368,16 @@ export default function DashboardPage() {
                 
                 // MODO RESUMIDO - Cards compactos em formato quadrado com estilo completo
                 if (modoResumido && !isExpandido) {
+                  // Verificar se é pedido da oficina atual (quando está em "todos os pedidos")
+                  const isMeuPedido = userData?.tipo === 'oficina' && filtroPedidos === 'todos' && pedido.oficinaId === userData.id;
+                  
                   return (
                     <div
                       key={pedido.id}
                       className={`bg-white dark:bg-gray-100 rounded-lg transition-all duration-300 ease-in-out p-1.5 border-2 cursor-pointer aspect-square flex flex-col justify-between min-h-0 relative ${
-                        pedido.condicaoPeca === 'Nova' 
+                        isMeuPedido
+                          ? 'border-yellow-400 dark:border-yellow-500 shadow-[0_0_15px_4px_rgba(234,179,8,0.6)] dark:shadow-[0_0_15px_4px_rgba(234,179,8,0.5)] ring-4 ring-yellow-300 dark:ring-yellow-400/50'
+                          : pedido.condicaoPeca === 'Nova' 
                           ? 'border-green-500 dark:border-green-600 shadow-[0_0_10px_2px_rgba(16,185,129,0.4)] dark:shadow-[0_0_10px_2px_rgba(16,185,129,0.3)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_15px_3px_rgba(16,185,129,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(16,185,129,0.5)]'
                           : pedido.condicaoPeca === 'Usada'
                           ? 'border-orange-500 dark:border-orange-600 shadow-[0_0_10px_2px_rgba(249,115,22,0.4)] dark:shadow-[0_0_10px_2px_rgba(249,115,22,0.3)] hover:border-orange-600 dark:hover:border-orange-500 hover:shadow-[0_0_15px_3px_rgba(249,115,22,0.7)] dark:hover:shadow-[0_0_15px_3px_rgba(249,115,22,0.5)]'
@@ -1382,6 +1387,13 @@ export default function DashboardPage() {
                       }`}
                       onClick={() => toggleExpansaoPedido(pedido.id)}
                     >
+                      {/* Badge "MEU PEDIDO" no topo quando for pedido da oficina em "todos os pedidos" */}
+                      {isMeuPedido && (
+                        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-1.5 py-0.5 text-[7px] font-black text-center uppercase tracking-wider z-30 rounded-t-lg">
+                          ⭐ MEU PEDIDO
+                        </div>
+                      )}
+                      
                       {/* Botão de cancelar (canto superior direito) */}
                       {userData?.tipo === 'oficina' && userData?.id === pedido.oficinaId && (
                         <button
@@ -1389,7 +1401,7 @@ export default function DashboardPage() {
                             e.stopPropagation();
                             cancelarPedido(pedido.id);
                           }}
-                          className="absolute top-1 right-1 bg-red-100 text-red-600 hover:bg-red-200 rounded-full p-1 transition-colors z-10"
+                          className={`absolute ${isMeuPedido ? 'top-6' : 'top-1'} right-1 bg-red-100 text-red-600 hover:bg-red-200 rounded-full p-1 transition-colors z-20`}
                           title="Cancelar pedido"
                         >
                           <Trash2 size={14} />
@@ -1397,7 +1409,7 @@ export default function DashboardPage() {
                       )}
                       
                       {/* Nome da Oficina no topo */}
-                      <div className="text-center mb-0.5">
+                      <div className={`text-center mb-0.5 ${isMeuPedido ? 'mt-6' : ''}`}>
                         <p className="text-base font-black text-blue-600 uppercase tracking-tight line-clamp-1 px-0.5">
                           {(() => {
                             // Se for oficina ou entregador, não mostrar nome
