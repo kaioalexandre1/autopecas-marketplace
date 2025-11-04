@@ -33,7 +33,8 @@ import {
   AlertCircle,
   ArrowLeft,
   Phone,
-  MapPin
+  MapPin,
+  ChevronDown
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -64,6 +65,7 @@ export default function ChatsPage() {
     cep?: string;
     telefone: string;
   } | null>(null);
+  const [mostrarMenuMaisInfo, setMostrarMenuMaisInfo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1043,22 +1045,22 @@ export default function ChatsPage() {
                           </p>
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                        {/* Desktop: Botões em coluna */}
+                        <div className="hidden sm:flex flex-col gap-1.5 sm:gap-2 w-full sm:w-auto">
                           {/* Botão Endereço da loja */}
                           <button
                             onClick={abrirModalEndereco}
-                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm justify-center"
                             title="Ver endereço e telefone"
                           >
                             <MapPin size={16} className="mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Endereço da loja</span>
-                            <span className="sm:hidden">Endereço</span>
+                            <span>Endereço da loja</span>
                           </button>
 
                           {telefoneOutroUsuario && (
                             <button
                               onClick={abrirWhatsApp}
-                              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm justify-center"
                               title="Abrir WhatsApp"
                             >
                               <Phone size={16} className="mr-1 sm:mr-2" />
@@ -1068,36 +1070,117 @@ export default function ChatsPage() {
                           
                           <button
                             onClick={() => setMostrarEntregadores(true)}
-                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm justify-center"
                             title="Solicitar entregador"
                           >
                             <Truck size={16} className="mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Entregador</span>
-                            <span className="sm:hidden">Entreg.</span>
+                            <span>Entregador</span>
                           </button>
                           
                           {!chatSelecionado.encerrado && (
                             <button
                               onClick={finalizarNegociacao}
-                              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm justify-center"
                               title="Marcar como negócio fechado"
                             >
                               <CheckCircle size={16} className="mr-1 sm:mr-2" />
-                              <span className="hidden lg:inline">Negócio Fechado</span>
-                              <span className="lg:hidden">Fechado</span>
+                              <span>Negócio Fechado</span>
                             </button>
                           )}
                           
                           <button
                             onClick={excluirChat}
                             disabled={excluindo}
-                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-xs sm:text-sm justify-center"
                             title="Cancelar pedido"
                           >
                             <XCircle size={16} className="mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Cancelar</span>
-                            <span className="sm:hidden">X</span>
+                            <span>Cancelar</span>
                           </button>
+                        </div>
+
+                        {/* Mobile: Botão "Mais Informações" */}
+                        <div className="sm:hidden relative w-full">
+                          <button
+                            onClick={() => setMostrarMenuMaisInfo(!mostrarMenuMaisInfo)}
+                            className="w-full px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center justify-center transition-all shadow-lg hover:shadow-xl text-sm"
+                            title="Mais informações"
+                          >
+                            <span className="mr-2">Mais informações</span>
+                            <ChevronDown size={18} className={`transition-transform ${mostrarMenuMaisInfo ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {/* Menu Dropdown */}
+                          {mostrarMenuMaisInfo && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-10" 
+                                onClick={() => setMostrarMenuMaisInfo(false)}
+                              />
+                              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                                {/* Botão Endereço da loja */}
+                                <button
+                                  onClick={() => {
+                                    abrirModalEndereco();
+                                    setMostrarMenuMaisInfo(false);
+                                  }}
+                                  className="w-full px-4 py-3 bg-blue-500 text-white hover:bg-blue-600 font-medium flex items-center transition-all text-sm"
+                                >
+                                  <MapPin size={18} className="mr-2" />
+                                  <span>Endereço da loja</span>
+                                </button>
+
+                                {telefoneOutroUsuario && (
+                                  <button
+                                    onClick={() => {
+                                      abrirWhatsApp();
+                                      setMostrarMenuMaisInfo(false);
+                                    }}
+                                    className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
+                                  >
+                                    <Phone size={18} className="mr-2" />
+                                    <span>WhatsApp</span>
+                                  </button>
+                                )}
+                                
+                                <button
+                                  onClick={() => {
+                                    setMostrarEntregadores(true);
+                                    setMostrarMenuMaisInfo(false);
+                                  }}
+                                  className="w-full px-4 py-3 bg-yellow-500 text-white hover:bg-yellow-600 font-medium flex items-center transition-all text-sm"
+                                >
+                                  <Truck size={18} className="mr-2" />
+                                  <span>Entregador</span>
+                                </button>
+                                
+                                {!chatSelecionado.encerrado && (
+                                  <button
+                                    onClick={() => {
+                                      finalizarNegociacao();
+                                      setMostrarMenuMaisInfo(false);
+                                    }}
+                                    className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
+                                  >
+                                    <CheckCircle size={18} className="mr-2" />
+                                    <span>Negócio Fechado</span>
+                                  </button>
+                                )}
+                                
+                                <button
+                                  onClick={() => {
+                                    excluirChat();
+                                    setMostrarMenuMaisInfo(false);
+                                  }}
+                                  disabled={excluindo}
+                                  className="w-full px-4 py-3 bg-red-500 text-white hover:bg-red-600 font-medium flex items-center transition-all disabled:opacity-50 text-sm"
+                                >
+                                  <XCircle size={18} className="mr-2" />
+                                  <span>Cancelar</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
