@@ -349,7 +349,7 @@ export default function DashboardPage() {
           }
         });
       });
-      
+
       // Buscar planos de autopeças que ainda não estão no cache
       const novosPlanos: {[key: string]: string} = {};
       const promessasPlanos = Array.from(autopecaIds).map(async (autopecaId) => {
@@ -386,6 +386,7 @@ export default function DashboardPage() {
 
     return () => unsubscribe();
   }, [cidadesSelecionadas, userData, filtroPedidos]);
+
 
   const criarPedido = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1367,7 +1368,23 @@ export default function DashboardPage() {
                       {/* Nome da Oficina no topo */}
                       <div className="text-center mb-0.5">
                         <p className="text-base font-black text-blue-600 uppercase tracking-tight line-clamp-1 px-0.5">
-                          {pedido.oficinaNome}
+                          {(() => {
+                            // Se for oficina ou entregador, não mostrar nome
+                            if (userData?.tipo === 'oficina' || userData?.tipo === 'entregador') {
+                              return 'Oficina';
+                            }
+                            // Se for autopeça, verificar plano
+                            if (userData?.tipo === 'autopeca') {
+                              const plano = userData.plano || 'basico';
+                              // Apenas plano Platinum vê o nome, outros veem "Oficina"
+                              if (plano === 'platinum') {
+                                return pedido.oficinaNome;
+                              }
+                              return 'Oficina';
+                            }
+                            // Fallback
+                            return 'Oficina';
+                          })()}
                         </p>
                       </div>
 
@@ -1508,7 +1525,25 @@ export default function DashboardPage() {
                       })
                     : 'Agora'}
                 </p>
-                <p className="text-xl font-black text-blue-600 dark:text-blue-400 uppercase tracking-wide">{pedido.oficinaNome}</p>
+                <p className="text-xl font-black text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                  {(() => {
+                    // Se for oficina ou entregador, não mostrar nome
+                    if (userData?.tipo === 'oficina' || userData?.tipo === 'entregador') {
+                      return 'Oficina';
+                    }
+                    // Se for autopeça, verificar plano
+                    if (userData?.tipo === 'autopeca') {
+                      const plano = userData.plano || 'basico';
+                      // Apenas plano Platinum vê o nome, outros veem "Oficina"
+                      if (plano === 'platinum') {
+                        return pedido.oficinaNome;
+                      }
+                      return 'Oficina';
+                    }
+                    // Fallback
+                    return 'Oficina';
+                  })()}
+                </p>
               </div>
 
               {/* Retângulo com Nome da Peça */}
@@ -1802,7 +1837,25 @@ export default function DashboardPage() {
                       <div className="text-blue-700">
                         <div className="flex items-center mb-1">
                           <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-                          <span className="font-medium">Oficina: {pedido.oficinaNome}</span>
+                          <span className="font-medium">
+                            Oficina: {(() => {
+                              // Se for oficina ou entregador, não mostrar nome
+                              if (userData?.tipo === 'oficina' || userData?.tipo === 'entregador') {
+                                return 'Oficina';
+                              }
+                              // Se for autopeça, verificar plano
+                              if (userData?.tipo === 'autopeca') {
+                                const plano = userData.plano || 'basico';
+                                // Apenas plano Platinum vê o nome, outros veem "Oficina"
+                                if (plano === 'platinum') {
+                                  return pedido.oficinaNome;
+                                }
+                                return 'Oficina';
+                              }
+                              // Fallback
+                              return 'Oficina';
+                            })()}
+                          </span>
                         </div>
                         {enderecos[pedido.id]?.oficina && (
                           <div className="ml-4 text-xs text-blue-600">
