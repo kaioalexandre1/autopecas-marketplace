@@ -9,6 +9,7 @@ import { doc, updateDoc, addDoc, collection, Timestamp, onSnapshot, getDoc } fro
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import SecureCardForm from '@/components/SecureCardForm';
+import { getMercadoPagoInstance, getDeviceId } from '@/lib/mercadopago';
 
 export default function CheckoutPage() {
   const { userData } = useAuth();
@@ -46,67 +47,16 @@ export default function CheckoutPage() {
   const [mpInstance, setMpInstance] = useState<any>(null);
 
   // Inicializar MercadoPago SDK V2 quando o componente carregar
+  // Usar o utilitário global para garantir inicialização correta
   useEffect(() => {
-    const inicializarSDK = () => {
-      if (typeof window === 'undefined') return;
-      
-      // Verificar se o SDK está disponível
-      if ((window as any).MercadoPago) {
-        try {
-          // Obter public key da variável de ambiente
-          const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
-          
-          if (!publicKey) {
-            console.warn('⚠️ NEXT_PUBLIC_MP_PUBLIC_KEY não configurada. Configure a chave pública no .env.local');
-            return;
-          }
-          
-          // Inicializar SDK do Mercado Pago V2 com public key
-          // Esta é a forma recomendada pelo Mercado Pago para ganhar os pontos
-          const mp = new (window as any).MercadoPago(publicKey, {
-            locale: 'pt-BR',
-            advancedFraudPrevention: true, // Ativa coleta automática do device_id para segurança
-          });
-          
-          setMpInstance(mp);
-          console.log('✅ MercadoPago.JS V2 SDK inicializado com sucesso');
-          console.log('✅ SDK configurado corretamente para coleta de device_id e segurança');
-        } catch (error) {
-          console.error('❌ Erro ao inicializar MercadoPago SDK:', error);
-        }
-      } else {
-        // Aguardar SDK carregar (retry com intervalo)
-        const checkInterval = setInterval(() => {
-          if ((window as any).MercadoPago) {
-            clearInterval(checkInterval);
-            inicializarSDK();
-          }
-        }, 100);
-        
-        // Timeout após 5 segundos
-        setTimeout(() => {
-          clearInterval(checkInterval);
-          if (!(window as any).MercadoPago) {
-            console.error('❌ MercadoPago SDK não carregou após 5 segundos');
-          }
-        }, 5000);
-        
-        return () => clearInterval(checkInterval);
-      }
-    };
-    
-    // Aguardar DOM estar pronto
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      inicializarSDK();
-    } else {
-      window.addEventListener('DOMContentLoaded', inicializarSDK);
-      window.addEventListener('load', inicializarSDK);
-    }
-    
-    return () => {
-      window.removeEventListener('DOMContentLoaded', inicializarSDK);
-      window.removeEventListener('load', inicializarSDK);
-    };
+    getMercadoPagoInstance()
+      .then((instance) => {
+        setMpInstance(instance);
+        console.log('✅ MercadoPago.JS V2 SDK inicializado com sucesso no checkout');
+      })
+      .catch((error) => {
+        console.error('❌ Erro ao inicializar MercadoPago SDK:', error);
+      });
   }, []);
 
   const simularPagamentoPix = async () => {
@@ -125,50 +75,13 @@ export default function CheckoutPage() {
   };
 
   // Função para obter Device ID do MercadoPago SDK V2
-  // O SDK MercadoPago.JS V2 coleta automaticamente o device_id quando inicializado com advancedFraudPrevention
-  // O device_id ajuda na prevenção de fraudes e é necessário para ganhar os pontos do Mercado Pago
-  const obterDeviceId = (): string | null => {
+  // Usar o utilitário global para garantir coleta correta do device_id
+  const obterDeviceId = async (): Promise<string | null> => {
     try {
-      if (typeof window === 'undefined') return null;
-      
-      // Forma 1: Obter da instância do MercadoPago (método recomendado)
-      if (mpInstance) {
-        // Tentar método getDeviceId() se disponível
-        if (typeof mpInstance.getDeviceId === 'function') {
-          try {
-            const deviceId = mpInstance.getDeviceId();
-            if (deviceId) {
-              console.log('✅ Device ID obtido da instância MercadoPago:', deviceId);
-              return deviceId;
-            }
-          } catch (e) {
-            // Método pode não estar disponível em todas as versões
-          }
-        }
-        
-        // Tentar acessar device_id diretamente da instância
-        if (mpInstance.device_id) {
-          console.log('✅ Device ID obtido da propriedade device_id:', mpInstance.device_id);
-          return mpInstance.device_id;
-        }
-      }
-      
-      // Forma 2: Verificar objeto global do MercadoPago
-      if ((window as any).MercadoPago) {
-        if ((window as any).MercadoPago.device_id) {
-          const deviceId = (window as any).MercadoPago.device_id;
-          console.log('✅ Device ID obtido do objeto global MercadoPago:', deviceId);
-          return deviceId;
-        }
-      }
-      
-      // O device_id será coletado automaticamente pelo backend quando o SDK estiver inicializado
-      // O Mercado Pago consegue coletar via headers HTTP quando o SDK V2 está ativo
-      console.log('ℹ️ Device ID será coletado automaticamente pelo SDK V2 via headers HTTP');
-      return null;
+      const deviceId = await getDeviceId();
+      return deviceId;
     } catch (error) {
       console.error('Erro ao obter device_id:', error);
-      // Retornar null não é crítico, o SDK V2 coleta automaticamente via headers
       return null;
     }
   };
@@ -275,9 +188,9 @@ export default function CheckoutPage() {
       console.log('[Checkout] Plano:', plano);
       console.log('[Checkout] User ID:', userData.id);
       
-      // Obter device_id do SDK MercadoPago
-      const deviceId = obterDeviceId();
-      console.log('[Checkout] Device ID:', deviceId || 'não disponível');
+      // Obter device_id do SDK MercadoPago (agora é async)
+      const deviceId = await obterDeviceId();
+      console.log('[Checkout] Device ID:', deviceId || 'será coletado automaticamente pelo SDK V2');
       
       // Extrair primeiro e último nome
       const { firstName, lastName } = extrairNomeCompleto(userData.nome);
@@ -867,8 +780,8 @@ export default function CheckoutPage() {
                       setProcessandoSecureFields(true);
                       
                       try {
-                        // Obter device_id
-                        const deviceId = obterDeviceId();
+                        // Obter device_id (agora é async)
+                        const deviceId = await obterDeviceId();
                         
                         // Extrair nome completo
                         const { firstName, lastName } = extrairNomeCompleto(userData.nome);
