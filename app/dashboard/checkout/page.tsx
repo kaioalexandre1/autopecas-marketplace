@@ -203,6 +203,73 @@ export default function CheckoutPage() {
     pollInterval = setInterval(verificarPagamento, 5000);
   };
 
+  // Função para verificar pagamento de ofertas extras
+  const iniciarVerificacaoOfertasExtras = (paymentIdToCheck: string) => {
+    if (!userData || escutandoAtivacao) return;
+    setEscutandoAtivacao(true);
+    toastAprovadoRef.current = false;
+
+    let pollInterval: NodeJS.Timeout;
+    let attempts = 0;
+    const maxAttempts = 120; // 10 minutos
+
+    console.log(`[Checkout] 🚀 Iniciando verificação de ofertas extras para paymentId: ${paymentIdToCheck}`);
+
+    const verificarPagamento = async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(pollInterval);
+        toast.error('Tempo de espera excedido. Verifique o status do pagamento manualmente.');
+        setEscutandoAtivacao(false);
+        return;
+      }
+
+      try {
+        const resp = await fetch(`/api/mercadopago/status?paymentId=${paymentIdToCheck}&autopecaId=${userData.id}&tipo=ofertas_extras`);
+        if (!resp.ok) {
+          console.log(`[Checkout] ⏳ Pagamento ainda pendente... (tentativa ${attempts}/${maxAttempts})`);
+          return;
+        }
+
+        const data = await resp.json();
+        console.log(`[Checkout] Status do pagamento:`, data);
+        
+        if (data.ok && data.status === 'approved') {
+          clearInterval(pollInterval);
+          
+          // Verificar se as ofertas foram adicionadas (atualizando o documento do usuário)
+          const userDoc = await getDoc(doc(db, 'users', userData.id));
+          const userDataCheck: any = userDoc.data();
+          
+          if (userDataCheck) {
+            const mesAtual = new Date().toISOString().slice(0, 7);
+            const ofertasUsadasAtual = userDataCheck.mesReferenciaOfertas === mesAtual ? (userDataCheck.ofertasUsadas || 0) : 0;
+            console.log(`[Checkout] ✅ Ofertas atualizadas. Ofertas usadas: ${ofertasUsadasAtual}`);
+          }
+          
+          toast.success('✅ Pagamento aprovado! +10 ofertas adicionadas!', { id: 'ofertas-extras-aprovado' });
+          
+          // Refresh forçado após 1 segundo
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+          setEscutandoAtivacao(false);
+        } else if (data.status === 'rejected' || data.status === 'cancelled') {
+          clearInterval(pollInterval);
+          toast.error('Pagamento foi rejeitado ou cancelado.');
+          setEscutandoAtivacao(false);
+        } else {
+          console.log(`[Checkout] ⏳ Pagamento ainda pendente... (tentativa ${attempts}/${maxAttempts})`);
+        }
+      } catch (error) {
+        console.error('[Checkout] Erro ao verificar pagamento:', error);
+      }
+    };
+
+    verificarPagamento();
+    pollInterval = setInterval(verificarPagamento, 5000);
+  };
+
   const handleConfirmarPagamento = async () => {
     if (!userData) return;
 
@@ -433,9 +500,10 @@ export default function CheckoutPage() {
   };
 
   // Polling para verificar status do pagamento (fallback do webhook)
+  // IMPORTANTE: Não executar para ofertas extras (usa função específica)
   useEffect(() => {
-    if (!paymentId || !userData || escutandoAtivacao) {
-      if (paymentId && userData) {
+    if (!paymentId || !userData || escutandoAtivacao || isOfertasExtras) {
+      if (paymentId && userData && !isOfertasExtras) {
         console.log(`[Checkout] ⚠️ Polling não iniciado - paymentId: ${paymentId}, userData: ${userData?.id}, escutandoAtivacao: ${escutandoAtivacao}`);
       }
       return;
@@ -683,7 +751,7 @@ export default function CheckoutPage() {
       if (listenerUnsub) listenerUnsub();
       if (checkInterval) clearInterval(checkInterval);
     };
-  }, [paymentId, userData, plano, escutandoAtivacao, router]);
+  }, [paymentId, userData, plano, escutandoAtivacao, router, isOfertasExtras]);
 
   if (!userData || userData.tipo !== 'autopeca') {
     return null;
