@@ -16,8 +16,10 @@
 }
 
 /* Estilos para Secure Fields do Mercado Pago */
+/* IMPORTANTE: Não interferir nos iframes do Mercado Pago */
 .mercadopago-input-container {
   width: 100%;
+  position: relative;
 }
 
 .mercadopago-input {
@@ -28,7 +30,6 @@
   background-color: white;
   color: #111827;
   font-size: 1rem;
-  font-family: 'Inter', sans-serif;
 }
 
 .dark .mercadopago-input {
@@ -50,6 +51,33 @@
 
 .mercadopago-input-valid {
   border-color: #10b981 !important;
+}
+
+/* Permitir que os iframes do Mercado Pago funcionem corretamente */
+#cardNumber iframe,
+#expirationDate iframe,
+#securityCode iframe,
+[id^="cardNumber"] iframe,
+[id^="expirationDate"] iframe,
+[id^="securityCode"] iframe {
+  width: 100% !important;
+  height: 42px !important;
+  border: none !important;
+  pointer-events: auto !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* Garantir que os containers dos Secure Fields sejam clicáveis */
+#cardNumber,
+#expirationDate,
+#securityCode,
+[id^="cardNumber"],
+[id^="expirationDate"],
+[id^="securityCode"] {
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 html, body, div, span, h1, h2, h3, h4, h5, h6, p, a, button, input, textarea, select, label {

@@ -34,50 +34,114 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
 
   // Inicializar Secure Fields quando o SDK estiver pronto
   useEffect(() => {
-    if (!mpInstance || !cardNumberRef.current) return;
-
-    try {
-      // Card Number Field
-      if (cardNumberRef.current && !cardNumberFieldRef.current) {
-        cardNumberFieldRef.current = mpInstance.fields.create('cardNumber', {
-          placeholder: 'Número do cartão',
-        });
-        cardNumberFieldRef.current.mount(cardNumberRef.current);
-        cardNumberFieldRef.current.on('validityChange', (event: any) => {
-          setCardNumberError(event.error ? event.error.message : '');
-        });
-      }
-
-      // Expiration Date Field
-      if (expirationDateRef.current && !expirationDateFieldRef.current) {
-        expirationDateFieldRef.current = mpInstance.fields.create('expirationDate', {
-          placeholder: 'MM/AA',
-        });
-        expirationDateFieldRef.current.mount(expirationDateRef.current);
-        expirationDateFieldRef.current.on('validityChange', (event: any) => {
-          setExpirationDateError(event.error ? event.error.message : '');
-        });
-      }
-
-      // Security Code Field
-      if (securityCodeRef.current && !securityCodeFieldRef.current) {
-        securityCodeFieldRef.current = mpInstance.fields.create('securityCode', {
-          placeholder: 'CVV',
-        });
-        securityCodeFieldRef.current.mount(securityCodeRef.current);
-        securityCodeFieldRef.current.on('validityChange', (event: any) => {
-          setSecurityCodeError(event.error ? event.error.message : '');
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao criar Secure Fields:', error);
+    if (!mpInstance) {
+      console.log('⏳ Aguardando instância do MercadoPago...');
+      return;
     }
+
+    // Aguardar um pouco para garantir que os refs estão montados no DOM
+    const initializeFields = () => {
+      // Verificar se todos os containers estão disponíveis
+      if (!cardNumberRef.current || !expirationDateRef.current || !securityCodeRef.current) {
+        console.log('⏳ Aguardando containers dos campos...');
+        setTimeout(initializeFields, 100);
+        return;
+      }
+
+      try {
+        console.log('🚀 Inicializando Secure Fields...');
+
+        // Limpar campos existentes antes de criar novos
+        if (cardNumberFieldRef.current) {
+          try {
+            cardNumberFieldRef.current.unmount();
+          } catch (e) {
+            // Ignorar erro se já estiver desmontado
+          }
+          cardNumberFieldRef.current = null;
+        }
+        if (expirationDateFieldRef.current) {
+          try {
+            expirationDateFieldRef.current.unmount();
+          } catch (e) {
+            // Ignorar erro se já estiver desmontado
+          }
+          expirationDateFieldRef.current = null;
+        }
+        if (securityCodeFieldRef.current) {
+          try {
+            securityCodeFieldRef.current.unmount();
+          } catch (e) {
+            // Ignorar erro se já estiver desmontado
+          }
+          securityCodeFieldRef.current = null;
+        }
+
+        // Card Number Field
+        if (cardNumberRef.current) {
+          console.log('📝 Criando campo de número do cartão...');
+          cardNumberFieldRef.current = mpInstance.fields.create('cardNumber', {
+            placeholder: 'Número do cartão',
+          });
+          cardNumberFieldRef.current.mount(cardNumberRef.current);
+          cardNumberFieldRef.current.on('validityChange', (event: any) => {
+            setCardNumberError(event.error ? event.error.message : '');
+          });
+          cardNumberFieldRef.current.on('ready', () => {
+            console.log('✅ Campo de número do cartão pronto!');
+          });
+          console.log('✅ Campo de número do cartão criado');
+        }
+
+        // Expiration Date Field
+        if (expirationDateRef.current) {
+          console.log('📅 Criando campo de validade...');
+          expirationDateFieldRef.current = mpInstance.fields.create('expirationDate', {
+            placeholder: 'MM/AA',
+          });
+          expirationDateFieldRef.current.mount(expirationDateRef.current);
+          expirationDateFieldRef.current.on('validityChange', (event: any) => {
+            setExpirationDateError(event.error ? event.error.message : '');
+          });
+          expirationDateFieldRef.current.on('ready', () => {
+            console.log('✅ Campo de validade pronto!');
+          });
+          console.log('✅ Campo de validade criado');
+        }
+
+        // Security Code Field
+        if (securityCodeRef.current) {
+          console.log('🔒 Criando campo de CVV...');
+          securityCodeFieldRef.current = mpInstance.fields.create('securityCode', {
+            placeholder: 'CVV',
+          });
+          securityCodeFieldRef.current.mount(securityCodeRef.current);
+          securityCodeFieldRef.current.on('validityChange', (event: any) => {
+            setSecurityCodeError(event.error ? event.error.message : '');
+          });
+          securityCodeFieldRef.current.on('ready', () => {
+            console.log('✅ Campo de CVV pronto!');
+          });
+          console.log('✅ Campo de CVV criado');
+        }
+
+        console.log('✅ Todos os Secure Fields foram inicializados com sucesso!');
+      } catch (error) {
+        console.error('❌ Erro ao criar Secure Fields:', error);
+        toast.error('Erro ao carregar campos do cartão. Recarregue a página e tente novamente.');
+      }
+    };
+
+    // Aguardar um pouco para garantir que o DOM está pronto
+    const timeoutId = setTimeout(initializeFields, 200);
 
     // Cleanup
     return () => {
+      clearTimeout(timeoutId);
       if (cardNumberFieldRef.current) {
         try {
           cardNumberFieldRef.current.unmount();
+          cardNumberFieldRef.current = null;
         } catch (e) {
           console.error('Erro ao desmontar cardNumber:', e);
         }
@@ -85,6 +149,7 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
       if (expirationDateFieldRef.current) {
         try {
           expirationDateFieldRef.current.unmount();
+          expirationDateFieldRef.current = null;
         } catch (e) {
           console.error('Erro ao desmontar expirationDate:', e);
         }
@@ -92,6 +157,7 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
       if (securityCodeFieldRef.current) {
         try {
           securityCodeFieldRef.current.unmount();
+          securityCodeFieldRef.current = null;
         } catch (e) {
           console.error('Erro ao desmontar securityCode:', e);
         }
@@ -192,8 +258,13 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
           <div
             ref={cardNumberRef}
             id="cardNumber"
-            className="p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-            style={{ minHeight: '42px' }}
+            className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+            style={{ 
+              minHeight: '42px',
+              width: '100%',
+              position: 'relative',
+              zIndex: 1,
+            }}
           />
           {cardNumberError && (
             <p className="mt-1 text-sm text-red-500">{cardNumberError}</p>
@@ -209,8 +280,13 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
             <div
               ref={expirationDateRef}
               id="expirationDate"
-              className="p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-              style={{ minHeight: '42px' }}
+              className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+              style={{ 
+                minHeight: '42px',
+                width: '100%',
+                position: 'relative',
+                zIndex: 1,
+              }}
             />
             {expirationDateError && (
               <p className="mt-1 text-sm text-red-500">{expirationDateError}</p>
@@ -225,8 +301,13 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
             <div
               ref={securityCodeRef}
               id="securityCode"
-              className="p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
-              style={{ minHeight: '42px' }}
+              className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+              style={{ 
+                minHeight: '42px',
+                width: '100%',
+                position: 'relative',
+                zIndex: 1,
+              }}
             />
             {securityCodeError && (
               <p className="mt-1 text-sm text-red-500">{securityCodeError}</p>
