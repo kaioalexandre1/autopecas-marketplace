@@ -175,7 +175,10 @@ export default function PlanosPage() {
   const getOfertasUsadas = () => {
     const mesAtual = new Date().toISOString().slice(0, 7);
     if (userData?.mesReferenciaOfertas === mesAtual) {
-      return userData.ofertasUsadas || 0;
+      const ofertasUsadas = userData.ofertasUsadas || 0;
+      // Se for negativo, significa que há ofertas extras disponíveis
+      // Mas para exibição, mostramos como valor positivo (ofertas realmente usadas)
+      return Math.max(0, ofertasUsadas);
     }
     return 0;
   };
@@ -183,6 +186,22 @@ export default function PlanosPage() {
   const getLimiteAtual = () => {
     if (!userData?.plano) return LIMITES_PLANOS.basico;
     return LIMITES_PLANOS[userData.plano];
+  };
+
+  // Calcular total de ofertas disponíveis (limite + extras)
+  const getTotalOfertasDisponiveis = () => {
+    const limite = getLimiteAtual();
+    if (limite === -1) return -1; // Ilimitado
+    
+    const mesAtual = new Date().toISOString().slice(0, 7);
+    if (userData?.mesReferenciaOfertas === mesAtual) {
+      const ofertasUsadas = userData.ofertasUsadas || 0;
+      // Se ofertasUsadas for negativo, significa que há ofertas extras
+      // Total = limite + ofertas extras (se houver)
+      const ofertasExtras = ofertasUsadas < 0 ? -ofertasUsadas : 0;
+      return limite + ofertasExtras;
+    }
+    return limite;
   };
 
   // Verificar elegibilidade para teste de 30 dias grátis do Platinum
@@ -609,26 +628,26 @@ export default function PlanosPage() {
                 {getLimiteAtual() !== -1 && (
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-gray-300">Ofertas Utilizadas</span>
+                      <span className="text-sm font-semibold text-gray-300">Ofertas Disponíveis</span>
                       <span className="text-sm font-bold text-white">
-                        {getOfertasUsadas()} / {getLimiteAtual()}
+                        {getTotalOfertasDisponiveis() - getOfertasUsadas()} / {getTotalOfertasDisponiveis()}
                       </span>
                     </div>
                     <div className="relative w-full h-4 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
                       <div 
                         className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${
-                          (getOfertasUsadas() / getLimiteAtual()) >= 0.9
+                          (getOfertasUsadas() / getTotalOfertasDisponiveis()) >= 0.9
                             ? 'bg-gradient-to-r from-red-500 to-red-600'
-                            : (getOfertasUsadas() / getLimiteAtual()) >= 0.7
+                            : (getOfertasUsadas() / getTotalOfertasDisponiveis()) >= 0.7
                             ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
                             : 'bg-gradient-to-r from-green-500 to-green-600'
                         }`}
                         style={{ 
-                          width: `${Math.min((getOfertasUsadas() / getLimiteAtual()) * 100, 100)}%`,
+                          width: `${Math.min((getOfertasUsadas() / getTotalOfertasDisponiveis()) * 100, 100)}%`,
                           boxShadow: `0 0 10px ${
-                            (getOfertasUsadas() / getLimiteAtual()) >= 0.9
+                            (getOfertasUsadas() / getTotalOfertasDisponiveis()) >= 0.9
                               ? 'rgba(239, 68, 68, 0.5)'
-                              : (getOfertasUsadas() / getLimiteAtual()) >= 0.7
+                              : (getOfertasUsadas() / getTotalOfertasDisponiveis()) >= 0.7
                               ? 'rgba(234, 179, 8, 0.5)'
                               : 'rgba(34, 197, 94, 0.5)'
                           }`
@@ -638,7 +657,7 @@ export default function PlanosPage() {
                       </div>
                     </div>
                     <p className="text-xs text-gray-400 mt-2 text-center">
-                      {getLimiteAtual() - getOfertasUsadas()} ofertas restantes este mês
+                      {getTotalOfertasDisponiveis() - getOfertasUsadas()} ofertas restantes este mês
                     </p>
                   </div>
                 )}

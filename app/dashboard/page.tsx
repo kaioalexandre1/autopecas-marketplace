@@ -710,10 +710,16 @@ export default function DashboardPage() {
       const plano = userData.plano || 'basico';
       const limite = limites[plano];
       
-      // Se não for ilimitado, verificar o limite
-      if (limite !== -1 && ofertasUsadas >= limite) {
+      // Calcular total de ofertas disponíveis (limite + extras)
+      // Se ofertasUsadas for negativo, significa que há ofertas extras
+      const ofertasExtras = ofertasUsadas < 0 ? -ofertasUsadas : 0;
+      const totalDisponivel = limite === -1 ? -1 : limite + ofertasExtras;
+      const ofertasRealmenteUsadas = Math.max(0, ofertasUsadas);
+      
+      // Se não for ilimitado, verificar o limite total (incluindo extras)
+      if (limite !== -1 && ofertasRealmenteUsadas >= totalDisponivel) {
         toast.error(
-          `Você atingiu o limite de ${limite} ofertas do plano ${plano}. Faça upgrade para continuar fazendo ofertas!`,
+          `Você atingiu o limite de ${totalDisponivel} ofertas disponíveis. Faça upgrade ou compre mais ofertas extras para continuar!`,
           { duration: 5000 }
         );
         setTimeout(() => {

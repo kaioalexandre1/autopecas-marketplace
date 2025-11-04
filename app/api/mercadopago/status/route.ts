@@ -44,8 +44,9 @@ export async function GET(request: Request) {
           const mesAtual = new Date().toISOString().slice(0, 7);
           const ofertasUsadas = userData.mesReferenciaOfertas === mesAtual ? (userData.ofertasUsadas || 0) : 0;
           
-          // Adicionar 10 ofertas extras (reduzir ofertasUsadas em 10)
-          const novasOfertasUsadas = Math.max(0, ofertasUsadas - 10);
+          // Adicionar 10 ofertas extras (reduzir ofertasUsadas em 10, permitindo valores negativos)
+          // Valores negativos representam ofertas extras disponíveis além do limite
+          const novasOfertasUsadas = ofertasUsadas - 10;
           
           await adminDb.collection('users').doc(autopecaId).update({
             ofertasUsadas: novasOfertasUsadas,
@@ -116,6 +117,59 @@ export async function GET(request: Request) {
     const externalRef = payment?.external_reference || '';
     
     console.log(`[Status API] Pagamento ${paymentId}: status=${status}, external_ref=${externalRef}`);
+
+    // IMPORTANTE: Verificar se é ofertas extras antes de processar como plano
+    if (externalRef && externalRef.includes('|ofertas_extras|')) {
+      console.log(`[Status API] ⚠️ Pagamento detectado como ofertas extras, mas tipo não foi especificado. Processando como ofertas extras...`);
+      
+      if (status === 'approved') {
+        const userDoc = await adminDb.collection('users').doc(autopecaId).get();
+        const userData = userDoc.data();
+
+        if (userData) {
+          const mesAtual = new Date().toISOString().slice(0, 7);
+          const ofertasUsadas = userData.mesReferenciaOfertas === mesAtual ? (userData.ofertasUsadas || 0) : 0;
+          
+          // Adicionar 10 ofertas extras (reduzir ofertasUsadas em 10, permitindo valores negativos)
+          // Valores negativos representam ofertas extras disponíveis além do limite
+          const novasOfertasUsadas = ofertasUsadas - 10;
+          
+          await adminDb.collection('users').doc(autopecaId).update({
+            ofertasUsadas: novasOfertasUsadas,
+            mesReferenciaOfertas: mesAtual,
+          });
+
+          console.log(`[Status API] ✅ +10 ofertas adicionadas para usuário ${autopecaId}`);
+
+          // Atualizar registro de pagamento
+          const pagamentosSnap = await adminDb
+            .collection('pagamentos')
+            .where('mercadoPagoId', '==', String(paymentId))
+            .limit(1)
+            .get();
+
+          if (!pagamentosSnap.empty) {
+            await adminDb.collection('pagamentos').doc(pagamentosSnap.docs[0].id).update({
+              statusPagamento: 'aprovado',
+              updatedAt: Timestamp.now(),
+            });
+          }
+        }
+
+        return NextResponse.json({ 
+          ok: true, 
+          status: 'approved',
+          activated: true,
+          message: '+10 ofertas adicionadas'
+        });
+      }
+
+      return NextResponse.json({ 
+        ok: true, 
+        status,
+        activated: false
+      });
+    }
 
     // Se aprovado, ativar o plano se ainda não estiver ativo
     if (status === 'approved') {

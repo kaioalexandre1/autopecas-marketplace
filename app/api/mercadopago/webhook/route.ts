@@ -298,8 +298,9 @@ export async function POST(request: Request) {
               const mesAtual = new Date().toISOString().slice(0, 7);
               const ofertasUsadas = userData.mesReferenciaOfertas === mesAtual ? (userData.ofertasUsadas || 0) : 0;
               
-              // Adicionar 10 ofertas extras (reduzir ofertasUsadas em 10)
-              const novasOfertasUsadas = Math.max(0, ofertasUsadas - 10);
+              // Adicionar 10 ofertas extras (reduzir ofertasUsadas em 10, permitindo valores negativos)
+              // Valores negativos representam ofertas extras disponíveis além do limite
+              const novasOfertasUsadas = ofertasUsadas - 10;
               
               await adminDb.collection('users').doc(autopecaId).update({
                 ofertasUsadas: novasOfertasUsadas,
