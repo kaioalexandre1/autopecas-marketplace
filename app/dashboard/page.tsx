@@ -17,10 +17,11 @@ import {
   deleteDoc,
   getDoc
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pedido, Oferta, RamoVeiculo } from '@/types';
-import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp, Trash2, CheckCircle, ChevronRight } from 'lucide-react';
+import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp, Trash2, CheckCircle, ChevronRight, Image, X } from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { formatarPreco } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import OfertasFreteModal from '@/components/OfertasFreteModal';
@@ -34,6 +35,8 @@ export default function DashboardPage() {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalOferta, setMostrarModalOferta] = useState(false);
   const [mostrarModalFrete, setMostrarModalFrete] = useState(false);
+  const [mostrarModalFotos, setMostrarModalFotos] = useState(false);
+  const [fotosParaVisualizar, setFotosParaVisualizar] = useState<string[]>([]);
   const [pedidoSelecionado, setPedidoSelecionado] = useState<Pedido | null>(null);
   const [loading, setLoading] = useState(true);
   const [enderecos, setEnderecos] = useState<{[key: string]: any}>({});
@@ -232,6 +235,9 @@ export default function DashboardPage() {
   const [especificacaoMotor, setEspecificacaoMotor] = useState('');
   const [notaFiscal, setNotaFiscal] = useState('');
   const [observacao, setObservacao] = useState('');
+  const [fotosProduto, setFotosProduto] = useState<File[]>([]); // Array de arquivos selecionados
+  const [urlsFotosProduto, setUrlsFotosProduto] = useState<string[]>([]); // URLs das fotos após upload
+  const [fazendoUploadFotos, setFazendoUploadFotos] = useState(false);
 
   // Form state - Nova Oferta
   const [preco, setPreco] = useState('');
@@ -400,6 +406,22 @@ export default function DashboardPage() {
     }
 
     try {
+      // Fazer upload das fotos se houver
+      let fotosUrls: string[] = [];
+      if (fotosProduto.length > 0) {
+        setFazendoUploadFotos(true);
+        const uploadPromises = fotosProduto.map(async (foto) => {
+          const timestamp = Date.now();
+          const nomeArquivo = `pedido-${timestamp}-${Math.random().toString(36).substring(7)}`;
+          const storageRef = ref(storage, `pedidos/${userData.id}/${nomeArquivo}`);
+          await uploadBytes(storageRef, foto);
+          const url = await getDownloadURL(storageRef);
+          return url;
+        });
+        fotosUrls = await Promise.all(uploadPromises);
+        setFazendoUploadFotos(false);
+      }
+
       await addDoc(collection(db, 'pedidos'), {
         oficinaId: userData.id,
         oficinaNome: userData.nome,
@@ -412,6 +434,7 @@ export default function DashboardPage() {
         ...(especificacaoMotor && { especificacaoMotor }), // Adiciona apenas se preenchido
         ...(notaFiscal && { notaFiscal }), // Adiciona apenas se preenchido
         ...(observacao && { observacao }), // Adiciona apenas se preenchido
+        ...(fotosUrls.length > 0 && { fotos: fotosUrls }), // Adiciona apenas se houver fotos
         status: 'ativo',
         ofertas: [],
         cidade: userData.cidade, // SEMPRE usar a cidade de cadastro da oficina
@@ -431,10 +454,58 @@ export default function DashboardPage() {
       setEspecificacaoMotor('');
       setNotaFiscal('');
       setObservacao('');
+      setFotosProduto([]);
+      setUrlsFotosProduto([]);
     } catch (error) {
       console.error('Erro ao criar pedido:', error);
+      setFazendoUploadFotos(false);
       toast.error('Erro ao criar pedido. Tente novamente.');
     }
+  };
+
+  // Funções para manipular fotos do produto
+  const handleSelecionarFotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivos = e.target.files;
+    if (!arquivos) return;
+
+    const novosArquivos: File[] = [];
+    for (let i = 0; i < arquivos.length && novosArquivos.length + fotosProduto.length < 2; i++) {
+      const arquivo = arquivos[i];
+      // Validar se é imagem
+      if (arquivo.type.startsWith('image/')) {
+        // Validar tamanho (máximo 5MB)
+        if (arquivo.size <= 5 * 1024 * 1024) {
+          novosArquivos.push(arquivo);
+        } else {
+          toast.error(`A foto "${arquivo.name}" é muito grande. Máximo 5MB.`);
+        }
+      } else {
+        toast.error(`O arquivo "${arquivo.name}" não é uma imagem.`);
+      }
+    }
+
+    if (novosArquivos.length + fotosProduto.length > 2) {
+      toast.error('Você pode enviar no máximo 2 fotos.');
+      return;
+    }
+
+    setFotosProduto([...fotosProduto, ...novosArquivos]);
+    
+    // Criar preview das imagens
+    novosArquivos.forEach((arquivo) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUrlsFotosProduto((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(arquivo);
+    });
+  };
+
+  const handleRemoverFoto = (index: number) => {
+    const novasFotos = fotosProduto.filter((_, i) => i !== index);
+    const novasUrls = urlsFotosProduto.filter((_, i) => i !== index);
+    setFotosProduto(novasFotos);
+    setUrlsFotosProduto(novasUrls);
   };
 
   const cancelarPedido = async (pedidoId: string) => {
@@ -611,6 +682,11 @@ export default function DashboardPage() {
   const abrirModalOferta = (pedido: Pedido) => {
     setPedidoSelecionado(pedido);
     setMostrarModalOferta(true);
+  };
+
+  const abrirModalFotos = (fotos: string[]) => {
+    setFotosParaVisualizar(fotos);
+    setMostrarModalFotos(true);
   };
 
   const abrirChat = async (pedido: Pedido, oferta: Oferta) => {
@@ -1530,8 +1606,15 @@ export default function DashboardPage() {
                   : 'border-blue-800 dark:border-blue-600 shadow-[0_0_15px_3px_rgba(0,51,102,0.5)] dark:shadow-[0_0_15px_3px_rgba(59,130,246,0.4)] hover:border-blue-900 dark:hover:border-blue-500 hover:shadow-[0_0_20px_5px_rgba(0,51,102,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(59,130,246,0.6)]'
               }`}
             >
+              {/* Badge "MEU PEDIDO" no topo quando for pedido da oficina em "todos os pedidos" */}
+              {isMeuPedido && (
+                <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-4 py-2 text-xs font-black text-center uppercase tracking-wider z-10 rounded-t-xl">
+                  ⭐ MEU PEDIDO
+                </div>
+              )}
+
               {/* Botões no canto superior direito */}
-              <div className="float-right flex gap-2">
+              <div className={`absolute top-2 right-2 flex gap-2 z-20 ${isMeuPedido ? 'top-10' : ''}`}>
                 {/* Botão de cancelar pedido (apenas para oficina dona do pedido) */}
                 {userData?.tipo === 'oficina' && userData?.id === pedido.oficinaId && (
                   <button
@@ -1557,13 +1640,6 @@ export default function DashboardPage() {
                   </button>
                 )}
               </div>
-              
-              {/* Badge "MEU PEDIDO" no topo quando for pedido da oficina em "todos os pedidos" */}
-              {isMeuPedido && (
-                <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-4 py-2 text-xs font-black text-center uppercase tracking-wider z-10 rounded-t-xl">
-                  ⭐ MEU PEDIDO
-                </div>
-              )}
 
               {/* Informações Compactas: Dia/Cidade, Horário e Nome da Loja */}
               <div className={`mb-3 text-center ${isMeuPedido ? 'mt-8' : ''}`}>
@@ -1797,6 +1873,17 @@ export default function DashboardPage() {
                     <span className="text-base font-black">{formatarPreco(pedido.menorPreco)}</span>
                   </div>
                 </div>
+              )}
+
+              {/* Botão de Fotos do Produto (apenas para autopeças quando houver fotos) */}
+              {userData?.tipo === 'autopeca' && userData.id !== pedido.oficinaId && pedido.fotos && pedido.fotos.length > 0 && (
+                <button
+                  onClick={() => abrirModalFotos(pedido.fotos || [])}
+                  className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 font-semibold flex items-center justify-center shadow-md hover:shadow-lg transition-all mb-2"
+                >
+                  <Image size={18} className="mr-2" />
+                  Fotos do Produto ({pedido.fotos.length})
+                </button>
               )}
 
               {/* Botão de Ação */}
@@ -2104,6 +2191,56 @@ export default function DashboardPage() {
                       rows={3}
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fotos do Produto (máximo 2)
+                    </label>
+                    <div className="space-y-3">
+                      {/* Input de arquivo */}
+                      <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleSelecionarFotos}
+                          disabled={fotosProduto.length >= 2 || fazendoUploadFotos}
+                          className="hidden"
+                        />
+                        <div className="flex flex-col items-center gap-2">
+                          <Image className="w-6 h-6 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            {fotosProduto.length >= 2 
+                              ? 'Máximo de 2 fotos atingido' 
+                              : `Clique para selecionar ${fotosProduto.length === 0 ? 'até 2 fotos' : 'mais 1 foto'}`}
+                          </span>
+                        </div>
+                      </label>
+
+                      {/* Preview das fotos */}
+                      {urlsFotosProduto.length > 0 && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {urlsFotosProduto.map((url, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={url}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoverFoto(index)}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Remover foto"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2242,6 +2379,36 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Fotos do Produto */}
+      {mostrarModalFotos && fotosParaVisualizar.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setMostrarModalFotos(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Fotos do Produto</h2>
+              <button
+                onClick={() => setMostrarModalFotos(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+                title="Fechar"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {fotosParaVisualizar.map((fotoUrl, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={fotoUrl}
+                    alt={`Foto do produto ${index + 1}`}
+                    className="w-full h-auto rounded-lg border border-gray-300 shadow-md"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

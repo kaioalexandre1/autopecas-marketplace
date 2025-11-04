@@ -48,6 +48,7 @@ export interface Pedido {
   especificacaoMotor?: string; // Opcional: Ex: 1.0, 2.0, 1.6
   notaFiscal?: string; // Opcional: 'com nota' ou 'sem nota'
   observacao?: string; // Opcional: observações extras
+  fotos?: string[]; // Opcional: URLs das fotos do produto (máximo 2)
   status: 'ativo' | 'fechado' | 'cancelado';
   ofertas: Oferta[];
   menorPreco?: number;
