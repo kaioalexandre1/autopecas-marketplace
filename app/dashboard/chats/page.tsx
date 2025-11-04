@@ -884,10 +884,10 @@ export default function ChatsPage() {
                       }`}
                     >
                       {/* Bloco: Nome da Loja */}
-                      <div className="mb-2">
-                        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg px-2 py-1.5 flex justify-between items-center">
-                          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
-                            <h3 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-gray-100 uppercase">
+                      <div className="mb-1.5">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded px-1.5 py-1 flex justify-between items-center">
+                          <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+                            <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
                               {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
                             </h3>
                             {/* Plano da autopeça com coroinha (apenas para oficinas) */}
@@ -945,14 +945,14 @@ export default function ChatsPage() {
                       </div>
 
                       {/* Bloco: Informações do Pedido */}
-                      <div className="mb-2">
-                        <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-gray-100 uppercase">
+                      <div className="mb-1.5">
+                        <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
                               {chat.nomePeca}
                             </span>
                             {chat.encerrado && (
-                              <span className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
+                              <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
                                 Encerrado
                               </span>
                             )}
@@ -1011,9 +1011,9 @@ export default function ChatsPage() {
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                         <div className="flex-1 min-w-0">
                           {/* Bloco: Nome da Loja */}
-                          <div className="bg-white/10 dark:bg-white/5 rounded-lg px-2 py-1.5 mb-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h2 className="font-black text-sm sm:text-base md:text-lg text-white truncate uppercase">
+                          <div className="bg-white/10 dark:bg-white/5 rounded px-1.5 py-1 mb-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase">
                                 {userData?.tipo === 'oficina' 
                                   ? chatSelecionado.autopecaNome 
                                   : chatSelecionado.oficinaNome}
@@ -1051,11 +1051,11 @@ export default function ChatsPage() {
                             </div>
                           </div>
                           {/* Bloco: Informações do Pedido */}
-                          <div className="bg-white/10 dark:bg-white/5 rounded-lg px-2 py-1.5">
-                            <p className="text-blue-100 text-xs sm:text-sm md:text-base font-bold truncate uppercase">
+                          <div className="bg-white/10 dark:bg-white/5 rounded px-1.5 py-1">
+                            <p className="text-blue-100 text-xs font-bold truncate uppercase">
                               {chatSelecionado.nomePeca}
                             </p>
-                            <p className="text-blue-200 text-xs sm:text-sm font-semibold truncate mt-1 uppercase">
+                            <p className="text-blue-200 text-xs font-semibold truncate mt-0.5 uppercase">
                               {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
                             </p>
                           </div>

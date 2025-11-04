@@ -28,9 +28,11 @@ export default function CheckoutPage() {
 
   const planoParam = searchParams?.get('plano') as PlanoAssinatura | null;
   const isTestePlatinum = searchParams?.get('teste') === '1';
+  const isOfertasExtras = searchParams?.get('ofertasExtras') === '1';
   const plano = planoParam || 'premium';
   // Se for teste do Platinum, cobrar R$ 1,00 ao invés de R$ 990,00
-  const valor = isTestePlatinum && plano === 'platinum' ? 1.00 : PRECOS_PLANOS[plano];
+  // Se for ofertas extras, cobrar R$ 29,90
+  const valor = isOfertasExtras ? 29.90 : (isTestePlatinum && plano === 'platinum' ? 1.00 : PRECOS_PLANOS[plano]);
 
   const planosInfo: Record<PlanoAssinatura, { nome: string; limite: string }> = {
     basico: { nome: 'Básico', limite: '20 ofertas/mês' },
@@ -209,6 +211,7 @@ export default function CheckoutPage() {
     try {
       console.log('[Checkout] 🚀 Iniciando processo de pagamento...');
       console.log('[Checkout] Método:', metodoPagamento);
+      console.log('[Checkout] É Ofertas Extras?', isOfertasExtras);
       console.log('[Checkout] Plano:', plano);
       console.log('[Checkout] User ID:', userData.id);
       
@@ -220,7 +223,62 @@ export default function CheckoutPage() {
       const { firstName, lastName } = extrairNomeCompleto(userData.nome);
       console.log('[Checkout] Nome completo:', { firstName, lastName });
       
-      // Chamar API real
+      // Se for ofertas extras, usar API específica
+      if (isOfertasExtras) {
+        console.log('[Checkout] 📤 Enviando requisição para /api/mercadopago/ofertas-extras...');
+        const resp = await fetch('/api/mercadopago/ofertas-extras', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            autopecaId: userData.id,
+            autopecaNome: userData.nome,
+            email: userData?.email || `${userData.id}@example.com`,
+            firstName: firstName || undefined,
+            lastName: lastName || undefined,
+            deviceId: deviceId || undefined,
+          }),
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || !data.ok) {
+          console.error('[Checkout] ❌ Erro ao criar pagamento de ofertas extras:', data);
+          const errorMessage = data?.message || data?.details?.message || data?.error || 'Falha ao criar pagamento';
+          toast.error(errorMessage);
+          setLoading(false);
+          return;
+        }
+
+        console.log('[Checkout] ✅ Pagamento PIX de ofertas extras criado:', data);
+        const paymentIdStr = String(data.paymentId);
+        setPixCopiaECola(data.qr);
+        setPaymentId(paymentIdStr);
+
+        // Criar registro de pagamento
+        await addDoc(collection(db, 'pagamentos'), {
+          autopecaId: userData.id,
+          autopecaNome: userData.nome,
+          tipo: 'ofertas_extras',
+          quantidadeOfertas: 10,
+          valor: 29.90,
+          metodoPagamento: 'pix',
+          statusPagamento: 'pendente',
+          pixCopiaECola: data.qr,
+          mercadoPagoId: paymentIdStr,
+          external_reference: `${userData.id}|ofertas_extras|${Date.now()}`,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+
+        toast.success('PIX gerado! Aguarde a confirmação...');
+        setLoading(false);
+        
+        // Iniciar verificação do pagamento
+        iniciarVerificacaoOfertasExtras(paymentIdStr);
+        return;
+      }
+      
+      // Chamar API real para planos normais
       console.log('[Checkout] 📤 Enviando requisição para /api/mercadopago/checkout...');
       const resp = await fetch('/api/mercadopago/checkout', {
         method: 'POST',
@@ -642,7 +700,7 @@ export default function CheckoutPage() {
             Pagamento Aprovado!
           </h1>
           <p className="text-lg text-gray-600 dark:text-white mb-6">
-            Seu plano {planosInfo[plano].nome} foi ativado com sucesso!
+            {isOfertasExtras ? '+10 ofertas foram adicionadas com sucesso!' : `Seu plano ${planosInfo[plano].nome} foi ativado com sucesso!`}
           </p>
           <p className="text-sm text-gray-900 dark:text-gray-300">
             Redirecionando para o dashboard...
@@ -673,11 +731,13 @@ export default function CheckoutPage() {
 
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-600">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Plano {planosInfo[plano].nome}
+                {isOfertasExtras ? '+10 Ofertas Extras' : `Plano ${planosInfo[plano].nome}`}
               </h3>
-              <p className="text-gray-600 dark:text-white mb-4">{planosInfo[plano].limite}</p>
+              <p className="text-gray-600 dark:text-white mb-4">
+                {isOfertasExtras ? 'Recarga de ofertas para seu plano' : planosInfo[plano].limite}
+              </p>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-white">Valor mensal:</span>
+                <span className="text-gray-600 dark:text-white">{isOfertasExtras ? 'Valor:' : 'Valor mensal:'}</span>
                 <span className="text-3xl font-black text-gray-900 dark:text-white">
                   R$ {valor.toFixed(2).replace('.', ',')}
                 </span>
@@ -685,10 +745,12 @@ export default function CheckoutPage() {
             </div>
 
             <div className="space-y-3 text-sm text-gray-600 dark:text-white">
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} className="text-green-500" />
-                <span>Renovação automática mensal</span>
-              </div>
+              {!isOfertasExtras && (
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-500" />
+                  <span>Renovação automática mensal</span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <CheckCircle size={16} className="text-green-500" />
                 <span>Cancele a qualquer momento</span>
@@ -915,7 +977,7 @@ export default function CheckoutPage() {
                     </div>
                   </button>
 
-                  {mpInstance && (
+                  {mpInstance && !isOfertasExtras && (
                     <button
                       onClick={() => {
                         setMetodoPagamento('cartao');
