@@ -16,7 +16,7 @@ import {
   deleteDoc,
   getDocs
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Chat, Mensagem } from '@/types';
@@ -411,6 +411,42 @@ export default function ChatsPage() {
     }
   };
 
+  // Função para excluir todas as fotos de um pedido do Storage
+  const excluirFotosDoPedido = async (pedidoId: string, oficinaId: string) => {
+    try {
+      // Buscar o pedido para pegar as URLs das fotos
+      const pedidoDoc = await getDoc(doc(db, 'pedidos', pedidoId));
+      
+      if (pedidoDoc.exists()) {
+        const pedidoData = pedidoDoc.data();
+        const fotos = pedidoData.fotos || [];
+        
+        // Excluir cada foto usando a URL
+        const promessasExclusao = fotos.map(async (fotoUrl: string) => {
+          try {
+            // Extrair o caminho do Storage da URL
+            const urlObj = new URL(fotoUrl);
+            const pathMatch = urlObj.pathname.match(/\/o\/(.+)\?/);
+            
+            if (pathMatch) {
+              const caminhoDecodificado = decodeURIComponent(pathMatch[1]);
+              const storageRef = ref(storage, caminhoDecodificado);
+              await deleteObject(storageRef);
+              console.log(`✅ Foto excluída: ${caminhoDecodificado}`);
+            }
+          } catch (fotoError) {
+            console.error(`⚠️ Erro ao excluir foto individual:`, fotoError);
+          }
+        });
+        
+        await Promise.all(promessasExclusao);
+        console.log(`✅ ${fotos.length} foto(s) do pedido ${pedidoId} excluída(s) do Storage`);
+      }
+    } catch (error) {
+      console.error(`❌ Erro ao excluir fotos do pedido ${pedidoId}:`, error);
+    }
+  };
+
   const finalizarNegociacao = async () => {
     if (!chatSelecionado || !userData) return;
 
@@ -428,6 +464,7 @@ export default function ChatsPage() {
 
       const pedidoData = pedidoSnap.data();
       const ofertas = pedidoData.ofertas || [];
+      const oficinaId = pedidoData.oficinaId || chatSelecionado.oficinaId;
       
       // Encontrar a oferta da autopeça deste chat
       const oferta = ofertas.find((o: any) => o.autopecaId === chatSelecionado.autopecaId);
@@ -438,6 +475,14 @@ export default function ChatsPage() {
       }
 
       const valorFinal = oferta.preco;
+
+      // 0. Excluir fotos do Storage antes de fechar o pedido
+      try {
+        await excluirFotosDoPedido(chatSelecionado.pedidoId, oficinaId);
+      } catch (fotoError) {
+        console.error('⚠️ Erro ao excluir fotos do pedido (continuando com fechamento):', fotoError);
+        // Não interromper o fechamento se houver erro ao excluir fotos
+      }
 
       // 1. Criar registro de negócio fechado
       const negocioFechado = {

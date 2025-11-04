@@ -21,7 +21,7 @@ import { db, storage } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pedido, Oferta, RamoVeiculo } from '@/types';
 import { Plus, Search, DollarSign, Car, Radio, MessageCircle, Truck, MapPin, ArrowRight, Filter, ChevronDown, ChevronUp, Trash2, CheckCircle, ChevronRight, Image, X } from 'lucide-react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { formatarPreco } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import OfertasFreteModal from '@/components/OfertasFreteModal';
@@ -245,9 +245,19 @@ export default function DashboardPage() {
 
   // Filtro de condição da peça
   const [filtroCondicao, setFiltroCondicao] = useState<'todas' | 'Nova' | 'Usada'>('todas');
-  const [modoResumido, setModoResumido] = useState(true);
+  // Modo resumido: false para "meus pedidos" (extenso), true para "todos os pedidos" (resumido)
+  const [modoResumido, setModoResumido] = useState(filtroPedidos === 'todos');
   const [pedidosExpandidos, setPedidosExpandidos] = useState<string[]>([]);
   const [mostrarDropdownFiltros, setMostrarDropdownFiltros] = useState(false);
+
+  // Ajustar modo resumido quando o filtro de pedidos mudar
+  useEffect(() => {
+    if (userData?.tipo === 'oficina') {
+      // "meus pedidos" = modo extenso (false), "todos os pedidos" = modo resumido (true)
+      setModoResumido(filtroPedidos === 'todos');
+      setPedidosExpandidos([]); // Resetar expansões ao trocar filtro
+    }
+  }, [filtroPedidos, userData?.tipo]);
 
   useEffect(() => {
     if (cidadesSelecionadas.length === 0) return;
@@ -294,31 +304,35 @@ export default function DashboardPage() {
       if (pedidosExpirados.length > 0) {
         console.log(`⏰ ${pedidosExpirados.length} pedido(s) expirado(s) detectado(s) - excluindo chats relacionados...`);
         
-        // Excluir chats de cada pedido expirado
+        // Excluir chats e fotos de cada pedido expirado
         pedidosExpirados.forEach(async (pedidoId) => {
           try {
+            // Buscar dados do pedido para pegar o oficinaId
+            const pedidoDoc = await getDoc(doc(db, 'pedidos', pedidoId));
+            const pedidoData = pedidoDoc.exists() ? pedidoDoc.data() : null;
+            const oficinaId = pedidoData?.oficinaId || null;
+            
+            // Excluir fotos do Storage
+            if (oficinaId) {
+              try {
+                await excluirFotosDoPedido(pedidoId, oficinaId);
+              } catch (fotoError) {
+                console.error(`⚠️ Erro ao excluir fotos do pedido ${pedidoId}:`, fotoError);
+              }
+            }
+            
+            // Excluir chats
             const chatsExcluidos = await excluirChatsDoPedido(pedidoId);
             if (chatsExcluidos > 0) {
               console.log(`✅ ${chatsExcluidos} chat(s) do pedido ${pedidoId} foram excluídos`);
             }
             
-            // Atualizar status do pedido para 'expirado' ou excluir (conforme necessário)
-            // Por enquanto, apenas excluímos os chats. O pedido pode ser excluído manualmente pelo admin.
+            // Excluir o pedido do Firestore
             try {
-              await updateDoc(doc(db, 'pedidos', pedidoId), {
-                status: 'expirado',
-                updatedAt: Timestamp.now(),
-              });
-              console.log(`✅ Pedido ${pedidoId} marcado como expirado`);
-            } catch (updateError) {
-              console.error(`⚠️ Erro ao atualizar status do pedido ${pedidoId}:`, updateError);
-              // Tentar excluir o pedido diretamente
-              try {
-                await deleteDoc(doc(db, 'pedidos', pedidoId));
-                console.log(`✅ Pedido ${pedidoId} excluído diretamente`);
-              } catch (deleteError) {
-                console.error(`❌ Erro ao excluir pedido ${pedidoId}:`, deleteError);
-              }
+              await deleteDoc(doc(db, 'pedidos', pedidoId));
+              console.log(`✅ Pedido ${pedidoId} excluído (expirado após 24h)`);
+            } catch (deleteError) {
+              console.error(`❌ Erro ao excluir pedido ${pedidoId}:`, deleteError);
             }
           } catch (error) {
             console.error(`❌ Erro ao processar pedido expirado ${pedidoId}:`, error);
@@ -535,6 +549,72 @@ export default function DashboardPage() {
     setUrlsFotosProduto(novasUrls);
   };
 
+  // Função para excluir todas as fotos de um pedido do Storage
+  const excluirFotosDoPedido = async (pedidoId: string, oficinaId: string) => {
+    try {
+      // Buscar o pedido para pegar as URLs das fotos
+      const pedidoDoc = await getDoc(doc(db, 'pedidos', pedidoId));
+      
+      if (pedidoDoc.exists()) {
+        const pedidoData = pedidoDoc.data();
+        const fotos = pedidoData.fotos || [];
+        
+        // Excluir cada foto usando a URL
+        const promessasExclusao = fotos.map(async (fotoUrl: string) => {
+          try {
+            // Extrair o caminho do Storage da URL
+            // Formato: https://firebasestorage.googleapis.com/v0/b/BUCKET/o/pedidos%2FuserId%2FfileName?alt=media&token=...
+            const urlObj = new URL(fotoUrl);
+            const pathMatch = urlObj.pathname.match(/\/o\/(.+)\?/);
+            
+            if (pathMatch) {
+              const caminhoDecodificado = decodeURIComponent(pathMatch[1]);
+              const storageRef = ref(storage, caminhoDecodificado);
+              await deleteObject(storageRef);
+              console.log(`✅ Foto excluída: ${caminhoDecodificado}`);
+            }
+          } catch (fotoError) {
+            console.error(`⚠️ Erro ao excluir foto individual:`, fotoError);
+            // Continua excluindo outras fotos mesmo se uma falhar
+          }
+        });
+        
+        await Promise.all(promessasExclusao);
+        console.log(`✅ ${fotos.length} foto(s) do pedido ${pedidoId} excluída(s) do Storage`);
+      }
+      
+      // Também tentar excluir por pasta (caso haja fotos órfãs)
+      try {
+        const pastaRef = ref(storage, `pedidos/${oficinaId}`);
+        const listaResultado = await listAll(pastaRef);
+        
+        // Filtrar apenas arquivos relacionados ao pedido (pelo nome do arquivo ou timestamp)
+        const arquivosParaExcluir = listaResultado.items.filter(item => {
+          // Verificar se o nome do arquivo contém referência ao pedido
+          // Isso é uma medida de segurança caso as URLs não sejam encontradas
+          return item.name.includes(pedidoId) || item.name.includes('pedido-');
+        });
+        
+        const promessasPasta = arquivosParaExcluir.map(async (arquivoRef) => {
+          try {
+            await deleteObject(arquivoRef);
+            console.log(`✅ Arquivo órfão excluído: ${arquivoRef.fullPath}`);
+          } catch (error) {
+            console.error(`⚠️ Erro ao excluir arquivo órfão:`, error);
+          }
+        });
+        
+        await Promise.all(promessasPasta);
+      } catch (pastaError) {
+        // Não é crítico se não conseguir listar a pasta
+        console.log('ℹ️ Não foi possível verificar pasta para exclusão (pode não existir)');
+      }
+    } catch (error) {
+      console.error(`❌ Erro ao excluir fotos do pedido ${pedidoId}:`, error);
+      // Não interromper o processo de exclusão do pedido se houver erro ao excluir fotos
+    }
+  };
+
   const cancelarPedido = async (pedidoId: string) => {
     if (!userData || userData.tipo !== 'oficina') {
       toast.error('Apenas oficinas podem cancelar pedidos');
@@ -559,7 +639,20 @@ export default function DashboardPage() {
       console.log('User ID:', userData.id);
       console.log('Pedido:', pedido);
       
-      // Primeiro excluir todos os chats relacionados ao pedido
+      // Buscar dados do pedido antes de excluir
+      const pedidoDoc = await getDoc(doc(db, 'pedidos', pedidoId));
+      const pedidoData = pedidoDoc.exists() ? pedidoDoc.data() : null;
+      const oficinaId = pedidoData?.oficinaId || userData.id;
+      
+      // Primeiro excluir todas as fotos do Storage
+      try {
+        await excluirFotosDoPedido(pedidoId, oficinaId);
+      } catch (fotoError) {
+        console.error('⚠️ Erro ao excluir fotos do pedido (continuando com cancelamento):', fotoError);
+        // Não interromper o cancelamento do pedido se houver erro ao excluir fotos
+      }
+      
+      // Excluir todos os chats relacionados ao pedido
       try {
         const chatsExcluidos = await excluirChatsDoPedido(pedidoId);
         if (chatsExcluidos > 0) {
@@ -570,7 +663,7 @@ export default function DashboardPage() {
         // Não interromper o cancelamento do pedido se houver erro ao excluir chats
       }
       
-      // Depois excluir o pedido
+      // Por último, excluir o pedido do Firestore
       await deleteDoc(doc(db, 'pedidos', pedidoId));
       toast.success('Pedido cancelado com sucesso!');
     } catch (error: any) {
@@ -1596,11 +1689,27 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Rodapé com ofertas e seta */}
-                      <div className="flex flex-col items-center gap-0.5">
+                      <div className="flex flex-col items-center gap-1">
                         {pedido.ofertas && pedido.ofertas.length > 0 ? (
-                          <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-base font-bold">
-                            {pedido.ofertas.length} {pedido.ofertas.length === 1 ? 'oferta' : 'ofertas'}
-                          </span>
+                          <>
+                            <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-base font-bold">
+                              {pedido.ofertas.length} {pedido.ofertas.length === 1 ? 'oferta' : 'ofertas'}
+                            </span>
+                            {/* Botão "Ver ofertas" para oficinas */}
+                            {userData?.tipo === 'oficina' && userData?.id === pedido.oficinaId && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpansaoPedido(pedido.id);
+                                }}
+                                className="flex items-center gap-1 px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors text-xs font-semibold"
+                                title="Ver ofertas"
+                              >
+                                <span>👁️</span>
+                                <span>Ver ofertas</span>
+                              </button>
+                            )}
+                          </>
                         ) : (
                           <span className="text-gray-900 dark:text-gray-300 text-base font-black">
                             Sem ofertas
@@ -1724,87 +1833,90 @@ export default function DashboardPage() {
                     : undefined
                 }
               >
-                {/* Nome da Peça */}
-                <div className="mb-3">
-                  <h3 className="font-black text-3xl text-gray-900 tracking-tight uppercase leading-tight text-center">
+                {/* Nome da Peça - Destaque Principal */}
+                <div className="mb-4">
+                  <h3 className="font-black text-4xl sm:text-5xl text-gray-900 tracking-tight uppercase leading-tight text-center mb-3 px-2">
                     {pedido.nomePeca}
                   </h3>
+                  
+                  {/* Badge de Condição da Peça - Centralizado e Destacado */}
+                  {pedido.condicaoPeca && (
+                    <div className="flex items-center justify-center">
+                      {pedido.condicaoPeca === 'Nova ou Usada' ? (
+                        <span 
+                          className="inline-flex items-center justify-center px-4 py-2 rounded-full font-bold text-sm shadow-xl text-white relative overflow-hidden transform hover:scale-105 transition-transform"
+                          style={{
+                            background: 'linear-gradient(135deg, #10b981 0%, #10b981 45%, #f97316 55%, #f97316 100%)'
+                          }}
+                        >
+                          PEÇA NOVO/USADO
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center justify-center px-4 py-2 rounded-full font-bold text-sm shadow-xl text-white transform hover:scale-105 transition-transform ${
+                          pedido.condicaoPeca === 'Nova' 
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                            : 'bg-gradient-to-r from-orange-500 to-amber-600'
+                        }`}>
+                          PEÇA {pedido.condicaoPeca.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {/* Badge de Condição da Peça */}
-                {pedido.condicaoPeca && (
-                  <div className="flex items-center justify-center gap-2">
-                    {pedido.condicaoPeca === 'Nova ou Usada' ? (
-                      <span 
-                        className="inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-lg text-white relative overflow-hidden"
-                        style={{
-                          background: 'linear-gradient(135deg, #10b981 0%, #10b981 45%, #f97316 55%, #f97316 100%)'
-                        }}
-                      >
-                        PEÇA NOVO/USADO
-                      </span>
-                    ) : (
-                      <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full font-bold text-xs shadow-lg ${
-                        pedido.condicaoPeca === 'Nova' 
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
-                          : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
-                      }`}>
-                        PEÇA {pedido.condicaoPeca.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
 
-              {/* Primeiro Retângulo Branco - Informações do Carro */}
-              <div className="bg-white dark:bg-gray-50 rounded-lg p-4 mb-3 shadow-md border border-gray-200 dark:border-gray-300">
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-600 p-2 rounded-md shadow-sm">
-                    <Car size={20} className="text-white" />
+              {/* Informações do Carro - Layout Melhorado */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-5 mb-4 shadow-lg border-2 border-blue-200 dark:border-blue-700">
+                <div className="flex items-start gap-4">
+                  <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-3 rounded-xl shadow-lg flex-shrink-0">
+                    <Car size={24} className="text-white" />
                   </div>
-                  <div className="flex-1">
-                    <div className="font-black text-xl text-gray-900 dark:text-gray-900 uppercase leading-tight tracking-wide">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-2xl sm:text-3xl text-gray-900 dark:text-gray-100 uppercase leading-tight tracking-tight mb-2">
                       {pedido.marcaCarro} {pedido.modeloCarro}
                     </div>
-                    <div className="text-base text-blue-700 dark:text-blue-700 font-bold mt-0.5">
-                      ANO: {pedido.anoCarro}
-                      {pedido.especificacaoMotor && ` | ${pedido.especificacaoMotor}`}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold text-base shadow-md">
+                        {pedido.anoCarro}
+                      </span>
+                      {pedido.especificacaoMotor && (
+                        <span className="inline-flex items-center px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 rounded-lg font-semibold text-sm border-2 border-blue-300 dark:border-blue-600">
+                          ⚙️ {pedido.especificacaoMotor}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
 
-                  {/* Segundo Retângulo Branco - Especificações Adicionais */}
-              {(pedido.especificacaoMotor || pedido.notaFiscal || pedido.observacao) && (
-                <div className="bg-white dark:bg-gray-50 rounded-lg p-4 mb-4 shadow-md border border-gray-200 dark:border-gray-300">
-                  <div className="text-xs font-bold text-gray-900 dark:text-gray-300 uppercase tracking-wider mb-3">
-                    Especificações Adicionais
+              {/* Especificações Adicionais - Layout Melhorado */}
+              {(pedido.notaFiscal || pedido.observacao) && (
+                <div className="bg-white dark:bg-gray-50 rounded-xl p-5 mb-4 shadow-lg border-2 border-gray-200 dark:border-gray-700">
+                  <div className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="text-lg">📋</span>
+                    Informações Complementares
                   </div>
-                  <div className="space-y-2">
-                    {pedido.especificacaoMotor && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">⚙️</span>
-                        <div>
-                          <span className="text-sm font-semibold text-gray-700">Motor:</span>
-                          <span className="text-sm text-gray-600 ml-2">{pedido.especificacaoMotor}</span>
-                        </div>
-                      </div>
-                    )}
+                  <div className="space-y-3">
                     {pedido.notaFiscal && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">📄</span>
-                        <div>
-                          <span className="text-sm font-semibold text-gray-700">Nota Fiscal:</span>
-                          <span className="text-sm text-purple-700 font-semibold ml-2 capitalize">{pedido.notaFiscal}</span>
+                      <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <span className="text-2xl">📄</span>
+                        <div className="flex-1">
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Nota Fiscal:</span>
+                          <span className="text-base text-purple-700 dark:text-purple-400 font-bold ml-2 capitalize">
+                            {pedido.notaFiscal}
+                          </span>
                         </div>
                       </div>
                     )}
                     {pedido.observacao && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">💬</span>
-                        <span className="text-sm font-semibold text-gray-700">Obs:</span>
-                        <p className="flex-1 text-sm text-gray-600 bg-yellow-50 p-2 rounded border border-yellow-200">
-                          {pedido.observacao}
-                        </p>
+                      <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-300 dark:border-yellow-700">
+                        <span className="text-2xl mt-0.5">💬</span>
+                        <div className="flex-1">
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1">Observação:</span>
+                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {pedido.observacao}
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>
