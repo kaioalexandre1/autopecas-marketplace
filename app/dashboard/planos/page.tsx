@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlanoAssinatura, LIMITES_PLANOS, PRECOS_PLANOS } from '@/types';
-import { Check, Zap, Crown, Gem, ArrowRight, Loader, Calendar, AlertTriangle } from 'lucide-react';
+import { Check, Zap, Crown, Gem, ArrowRight, Loader, Calendar, AlertTriangle, QrCode } from 'lucide-react';
 import { doc, updateDoc, Timestamp, addDoc, collection, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
@@ -16,6 +16,9 @@ export default function PlanosPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState<PlanoAssinatura | null>(null);
+  const [processandoOfertasExtras, setProcessandoOfertasExtras] = useState(false);
+  const [pixOfertasExtras, setPixOfertasExtras] = useState('');
+  const [paymentIdOfertasExtras, setPaymentIdOfertasExtras] = useState<string | null>(null);
 
   // Redirecionar se não for autopeça
   useEffect(() => {
@@ -160,8 +163,138 @@ export default function PlanosPage() {
     }
 
     // Para planos pagos, redirecionar para página de pagamento
+    // Se for Platinum e elegível para teste, enviar flag
+    const isTestePlatinum = plano === 'platinum' && podeTestarPlatinum();
     setPlanoSelecionado(plano);
-    router.push(`/dashboard/checkout?plano=${plano}`);
+    router.push(`/dashboard/checkout?plano=${plano}${isTestePlatinum ? '&teste=1' : ''}`);
+  };
+
+  // Função para comprar ofertas extras
+  const handleComprarOfertasExtras = async () => {
+    if (!userData || userData.plano !== 'basico') return;
+
+    setProcessandoOfertasExtras(true);
+    
+    try {
+      // Obter device_id do SDK MercadoPago
+      const deviceId = await (async () => {
+        try {
+          if (typeof window !== 'undefined' && (window as any).MercadoPago) {
+            const { getDeviceId } = await import('@/lib/mercadopago');
+            return await getDeviceId();
+          }
+        } catch (e) {
+          console.warn('Device ID não disponível');
+        }
+        return null;
+      })();
+
+      // Extrair primeiro e último nome
+      const partesNome = userData.nome.trim().split(' ');
+      const firstName = partesNome[0] || '';
+      const lastName = partesNome.slice(1).join(' ') || '';
+
+      // Chamar API para criar pagamento PIX de ofertas extras
+      const resp = await fetch('/api/mercadopago/ofertas-extras', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          autopecaId: userData.id,
+          autopecaNome: userData.nome,
+          email: userData?.email || `${userData.id}@example.com`,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          deviceId: deviceId || undefined,
+        }),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok || !data.ok) {
+        console.error('❌ Erro ao criar pagamento de ofertas extras:', data);
+        const errorMessage = data?.message || data?.details?.message || data?.error || 'Falha ao criar pagamento';
+        toast.error(errorMessage);
+        setProcessandoOfertasExtras(false);
+        return;
+      }
+
+      console.log('✅ Pagamento PIX de ofertas extras criado:', data);
+      setPixOfertasExtras(data.qr);
+      setPaymentIdOfertasExtras(String(data.paymentId));
+
+      // Criar registro de pagamento
+      await addDoc(collection(db, 'pagamentos'), {
+        autopecaId: userData.id,
+        autopecaNome: userData.nome,
+        tipo: 'ofertas_extras',
+        quantidadeOfertas: 10,
+        valor: 29.90,
+        metodoPagamento: 'pix',
+        statusPagamento: 'pendente',
+        pixCopiaECola: data.qr,
+        mercadoPagoId: String(data.paymentId),
+        external_reference: `${userData.id}|ofertas_extras|${Date.now()}`,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+
+      toast.success('PIX gerado! Aguarde a confirmação...');
+      
+      // Iniciar verificação do pagamento
+      iniciarVerificacaoOfertasExtras(String(data.paymentId));
+    } catch (error) {
+      console.error('Erro ao processar compra de ofertas extras:', error);
+      toast.error('Erro ao processar compra. Tente novamente.');
+      setProcessandoOfertasExtras(false);
+    }
+  };
+
+  // Função para verificar pagamento de ofertas extras
+  const iniciarVerificacaoOfertasExtras = (paymentIdToCheck: string) => {
+    if (!userData) return;
+
+    let pollInterval: NodeJS.Timeout;
+    let attempts = 0;
+    const maxAttempts = 120; // 10 minutos
+
+    const verificarPagamento = async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(pollInterval);
+        toast.error('Tempo de espera excedido. Verifique o status do pagamento manualmente.');
+        return;
+      }
+
+      try {
+        const resp = await fetch(`/api/mercadopago/status?paymentId=${paymentIdToCheck}&autopecaId=${userData.id}&tipo=ofertas_extras`);
+        if (!resp.ok) return;
+
+        const data = await resp.json();
+        
+        if (data.ok && data.status === 'approved') {
+          clearInterval(pollInterval);
+          
+          // As ofertas já foram adicionadas pelo webhook/API
+          toast.success('✅ Pagamento aprovado! +10 ofertas adicionadas!', { id: 'ofertas-extras-aprovado' });
+          
+          // Refresh forçado após 1 segundo
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else if (data.status === 'rejected' || data.status === 'cancelled') {
+          clearInterval(pollInterval);
+          toast.error('Pagamento foi rejeitado ou cancelado.');
+          setProcessandoOfertasExtras(false);
+          setPixOfertasExtras('');
+          setPaymentIdOfertasExtras(null);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar pagamento:', error);
+      }
+    };
+
+    verificarPagamento();
+    pollInterval = setInterval(verificarPagamento, 5000);
   };
 
   const getOfertasUsadas = () => {
@@ -175,6 +308,45 @@ export default function PlanosPage() {
   const getLimiteAtual = () => {
     if (!userData?.plano) return LIMITES_PLANOS.basico;
     return LIMITES_PLANOS[userData.plano];
+  };
+
+  // Verificar elegibilidade para teste de 30 dias grátis do Platinum
+  const podeTestarPlatinum = () => {
+    if (!userData) return false;
+    
+    // Já usou o teste
+    if (userData.testePlatinumUsado) return false;
+    
+    // Verificar se cadastrou há menos de 30 dias
+    const dataCadastro = userData.createdAt;
+    let dataCadastroDate: Date;
+    
+    if (dataCadastro instanceof Date) {
+      dataCadastroDate = dataCadastro;
+    } else if ((dataCadastro as any)?.toDate) {
+      dataCadastroDate = (dataCadastro as any).toDate();
+    } else if ((dataCadastro as any)?.seconds) {
+      dataCadastroDate = new Date((dataCadastro as any).seconds * 1000);
+    } else {
+      return false;
+    }
+    
+    const hoje = new Date();
+    const diasDesdeCadastro = Math.floor((hoje.getTime() - dataCadastroDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diasDesdeCadastro > 30) return false;
+    
+    // Verificar se nunca assinou nenhum plano pago (só o básico é permitido)
+    const planosPagos: PlanoAssinatura[] = ['premium', 'gold', 'platinum'];
+    const historicoPlano = userData.plano;
+    
+    // Se está no básico ou nunca teve plano, pode usar o teste
+    if (!historicoPlano || historicoPlano === 'basico') {
+      return true;
+    }
+    
+    // Se já assinou algum plano pago, não pode usar o teste
+    return false;
   };
 
   // Verificar vencimento do plano e ativar básico se necessário
@@ -459,16 +631,103 @@ export default function PlanosPage() {
                       </>
                     ) : (
                       <>
-                        {plano.preco === 0 ? 'Ativar Grátis' : 'Assinar Agora'}
+                        {plano.preco === 0 
+                          ? 'Ativar Grátis' 
+                          : plano.id === 'platinum' && podeTestarPlatinum()
+                          ? 'Testar 30 dias grátis'
+                          : 'Assinar Agora'}
                         <ArrowRight size={20} />
                       </>
                     )}
                   </button>
+                  
+                  {/* Badge de teste disponível para Platinum */}
+                  {plano.id === 'platinum' && podeTestarPlatinum() && (
+                    <div className="mt-2 px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg text-xs font-bold text-center">
+                      🎁 R$ 1,00 por 30 dias, depois R$ 990,00/mês
+                    </div>
+                  )}
+
+                  {/* Botão de Ofertas Extras - apenas para plano básico */}
+                  {plano.id === 'basico' && userData.plano === 'basico' && !pixOfertasExtras && (
+                    <button
+                      onClick={() => handleComprarOfertasExtras()}
+                      disabled={processandoOfertasExtras || loading}
+                      className="w-full mt-3 py-2.5 px-4 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processandoOfertasExtras ? (
+                        <>
+                          <Loader size={18} className="animate-spin" />
+                          <span>Gerando PIX...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>+10 Ofertas Extras</span>
+                          <span className="text-xs bg-white/20 px-2 py-0.5 rounded">R$ 29,90 (PIX)</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {/* Modal PIX para ofertas extras */}
+                  {pixOfertasExtras && (
+                    <div className="mt-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-700 rounded-xl border-2 border-green-500/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <QrCode size={20} className="text-green-600 dark:text-green-400" />
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                          PIX para +10 Ofertas
+                        </span>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 mb-3 border border-gray-200 dark:border-gray-600">
+                        <div className="text-xs text-gray-900 dark:text-gray-100 break-all font-mono">
+                          {pixOfertasExtras}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(pixOfertasExtras);
+                          toast.success('Código PIX copiado!');
+                        }}
+                        className="w-full py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-all text-sm"
+                      >
+                        Copiar código PIX
+                      </button>
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 text-center">
+                        Aguardando confirmação do pagamento...
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+
+        {/* Alert para aprovação de novo Preapproval após trial */}
+        {userData.linkAprovacaoPlatinum && (
+          <div className="mb-6 max-w-7xl mx-auto">
+            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50 rounded-xl p-4 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <AlertTriangle size={24} className="text-yellow-400" />
+                <div className="flex-1">
+                  <h3 className="text-white font-bold mb-1">Aprovação Necessária</h3>
+                  <p className="text-gray-300 text-sm mb-3">
+                    Seu período de teste Platinum terminou. Para continuar com o plano Platinum (R$ 990,00/mês), 
+                    é necessário aprovar a nova assinatura.
+                  </p>
+                  <a
+                    href={userData.linkAprovacaoPlatinum}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg transition-all"
+                  >
+                    Aprovar Nova Assinatura
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Card de Informações do Plano Atual - Abaixo dos Cards */}
         {userData.plano && (

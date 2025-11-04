@@ -11,8 +11,81 @@ export async function GET(request: Request) {
     const paymentId = searchParams.get('paymentId');
     const autopecaId = searchParams.get('autopecaId');
     const plano = searchParams.get('plano');
+    const tipo = searchParams.get('tipo'); // 'ofertas_extras' ou null
 
-    if (!paymentId || !autopecaId || !plano) {
+    if (!paymentId || !autopecaId) {
+      return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 });
+    }
+
+    // Se for ofertas extras, não precisa do parâmetro plano
+    if (tipo === 'ofertas_extras') {
+      // Processar ofertas extras
+      const resp = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+        headers: {
+          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN || ''}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      });
+
+      if (!resp.ok) {
+        return NextResponse.json({ ok: false, error: 'mp_fetch_failed' }, { status: resp.status });
+      }
+
+      const payment = await resp.json();
+      const status: string = payment?.status || 'pending';
+
+      // Se aprovado, adicionar +10 ofertas
+      if (status === 'approved') {
+        const userDoc = await adminDb.collection('users').doc(autopecaId).get();
+        const userData = userDoc.data();
+
+        if (userData) {
+          const mesAtual = new Date().toISOString().slice(0, 7);
+          const ofertasUsadas = userData.mesReferenciaOfertas === mesAtual ? (userData.ofertasUsadas || 0) : 0;
+          
+          // Adicionar 10 ofertas extras (reduzir ofertasUsadas em 10)
+          const novasOfertasUsadas = Math.max(0, ofertasUsadas - 10);
+          
+          await adminDb.collection('users').doc(autopecaId).update({
+            ofertasUsadas: novasOfertasUsadas,
+            mesReferenciaOfertas: mesAtual,
+          });
+
+          console.log(`[Status API] ✅ +10 ofertas adicionadas para usuário ${autopecaId}`);
+
+          // Atualizar registro de pagamento
+          const pagamentosSnap = await adminDb
+            .collection('pagamentos')
+            .where('mercadoPagoId', '==', String(paymentId))
+            .limit(1)
+            .get();
+
+          if (!pagamentosSnap.empty) {
+            await adminDb.collection('pagamentos').doc(pagamentosSnap.docs[0].id).update({
+              statusPagamento: 'aprovado',
+              updatedAt: Timestamp.now(),
+            });
+          }
+        }
+
+        return NextResponse.json({ 
+          ok: true, 
+          status: 'approved',
+          activated: true,
+          message: '+10 ofertas adicionadas'
+        });
+      }
+
+      return NextResponse.json({ 
+        ok: true, 
+        status,
+        activated: false
+      });
+    }
+
+    // Se não for ofertas extras, precisa do plano
+    if (!plano) {
       return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 });
     }
 

@@ -204,6 +204,7 @@ export async function POST(request: Request) {
                   mesReferenciaOfertas: mesAtual,
                   dataProximoPagamento: Timestamp.fromDate(dataFim),
                   subscriptionId: preapprovalId,
+                  linkAprovacaoPlatinum: null, // Limpar link se existir
                 });
 
                 console.log(`Assinatura ${preapprovalId} autorizada - Plano ${plano} ativado para usuário ${autopecaId}`);
@@ -284,6 +285,86 @@ export async function POST(request: Request) {
 
         if (status === 'approved' && external_reference) {
           const parts = external_reference.split('|');
+          
+          // Verificar se é ofertas extras
+          if (parts.length >= 2 && parts[1] === 'ofertas_extras') {
+            const autopecaId = parts[0];
+            console.log(`Processando pagamento de ofertas extras aprovado - Autopeça: ${autopecaId}`);
+
+            const userDoc = await adminDb.collection('users').doc(autopecaId).get();
+            const userData = userDoc.data();
+
+            if (userData) {
+              const mesAtual = new Date().toISOString().slice(0, 7);
+              const ofertasUsadas = userData.mesReferenciaOfertas === mesAtual ? (userData.ofertasUsadas || 0) : 0;
+              
+              // Adicionar 10 ofertas extras (reduzir ofertasUsadas em 10)
+              const novasOfertasUsadas = Math.max(0, ofertasUsadas - 10);
+              
+              await adminDb.collection('users').doc(autopecaId).update({
+                ofertasUsadas: novasOfertasUsadas,
+                mesReferenciaOfertas: mesAtual,
+              });
+
+              console.log(`✅ +10 ofertas adicionadas para autopeça ${autopecaId}`);
+
+              // Atualizar registro de pagamento
+              const snap = await adminDb.collection('pagamentos').where('external_reference', '==', external_reference).get();
+              for (const d of snap.docs) {
+                await adminDb.collection('pagamentos').doc(d.id).update({
+                  statusPagamento: 'aprovado',
+                  updatedAt: Timestamp.now(),
+                  mercadoPagoId: String(payment.id),
+                });
+              }
+            }
+            return NextResponse.json({ ok: true, status, paymentId, tipo: 'ofertas_extras' });
+          }
+          
+          // Verificar se é teste do Platinum
+          if (parts.length >= 3 && parts[2] === 'teste_platinum') {
+            const autopecaId = parts[0];
+            const plano = parts[1] as any;
+            console.log(`Processando teste de 30 dias Platinum aprovado - Autopeça: ${autopecaId}`);
+
+            const userDoc = await adminDb.collection('users').doc(autopecaId).get();
+            const userData = userDoc.data();
+
+            if (userData) {
+              const mesAtual = new Date().toISOString().slice(0, 7);
+              // Data de fim do teste: 30 dias a partir de agora
+              const dataFimTeste = new Date();
+              dataFimTeste.setDate(dataFimTeste.getDate() + 30);
+              // Data do próximo pagamento: após o fim do teste, cobrar valor normal
+              const dataProximoPagamento = new Date(dataFimTeste);
+              dataProximoPagamento.setDate(dataProximoPagamento.getDate() + 1);
+
+              await adminDb.collection('users').doc(autopecaId).update({
+                plano,
+                assinaturaAtiva: true,
+                ofertasUsadas: 0,
+                mesReferenciaOfertas: mesAtual,
+                dataProximoPagamento: Timestamp.fromDate(dataProximoPagamento),
+                testePlatinumUsado: true,
+                dataInicioTestePlatinum: Timestamp.now(),
+              });
+
+              console.log(`✅ Teste Platinum de 30 dias ativado para autopeça ${autopecaId}. Próxima cobrança em ${dataProximoPagamento.toISOString()}`);
+
+              // Atualizar registro de pagamento
+              const snap = await adminDb.collection('pagamentos').where('external_reference', '==', external_reference).get();
+              for (const d of snap.docs) {
+                await adminDb.collection('pagamentos').doc(d.id).update({
+                  statusPagamento: 'aprovado',
+                  updatedAt: Timestamp.now(),
+                  mercadoPagoId: String(payment.id),
+                });
+              }
+            }
+            return NextResponse.json({ ok: true, status, paymentId, tipo: 'teste_platinum' });
+          }
+          
+          // Processamento normal de plano
           if (parts.length >= 2) {
             const [autopecaId, plano] = parts;
             const mesAtual = new Date().toISOString().slice(0, 7);
@@ -299,6 +380,126 @@ export async function POST(request: Request) {
             const temSubscription = !!userData?.subscriptionId;
             const isRenovacao = temSubscription && preapprovalId && String(userData.subscriptionId) === String(preapprovalId);
             
+            // Verificar se é renovação após teste Platinum (precisa atualizar para valor normal)
+            const isTestePlatinum = userData?.dataInicioTestePlatinum && userData?.testePlatinumUsado;
+            let precisaAtualizarValor = false;
+            
+            if (isTestePlatinum && isRenovacao) {
+              // Verificar se já passaram 30 dias desde o início do teste
+              let dataInicioTeste: Date;
+              if (userData.dataInicioTestePlatinum instanceof Date) {
+                dataInicioTeste = userData.dataInicioTestePlatinum;
+              } else if ((userData.dataInicioTestePlatinum as any)?.toDate) {
+                dataInicioTeste = (userData.dataInicioTestePlatinum as any).toDate();
+              } else if ((userData.dataInicioTestePlatinum as any)?.seconds) {
+                dataInicioTeste = new Date((userData.dataInicioTestePlatinum as any).seconds * 1000);
+              } else {
+                dataInicioTeste = new Date();
+              }
+              
+              const diasDesdeInicio = Math.floor((new Date().getTime() - dataInicioTeste.getTime()) / (1000 * 60 * 60 * 24));
+              
+              // Se passaram 30 dias ou mais, precisa atualizar para valor normal
+              if (diasDesdeInicio >= 30) {
+                precisaAtualizarValor = true;
+                console.log(`🔄 Renovação após teste Platinum detectada. Criando novo Preapproval com valor normal (R$ 990,00)`);
+                
+                // Buscar Preapproval antigo para obter dados do pagador
+                try {
+                  const accessToken = process.env.MP_ACCESS_TOKEN || '';
+                  const preapprovalResp = await fetch(`https://api.mercadopago.com/preapproval/${preapprovalId}`, {
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+                  
+                  if (preapprovalResp.ok) {
+                    const preapprovalAntigo = await preapprovalResp.json();
+                    const payerEmail = preapprovalAntigo.payer_email || userData.email || `${autopecaId}@example.com`;
+                    const payerFirstName = preapprovalAntigo.payer_first_name || userData.nome?.split(' ')[0] || '';
+                    const payerLastName = preapprovalAntigo.payer_last_name || userData.nome?.split(' ').slice(1).join(' ') || '';
+                    
+                    // Criar novo Preapproval com valor normal (R$ 990,00)
+                    const novoStartDate = new Date();
+                    novoStartDate.setDate(novoStartDate.getDate() + 1); // Começar amanhã
+                    
+                    const novoPreapprovalBody: any = {
+                      reason: `Assinatura Platinum - Grupão das Autopeças`,
+                      auto_recurring: {
+                        frequency: 1,
+                        frequency_type: 'months',
+                        transaction_amount: 990.00, // Valor normal
+                        currency_id: 'BRL',
+                        start_date: novoStartDate.toISOString(),
+                        statement_descriptor: 'GRUPAO AUTOPECAS',
+                      },
+                      payer_email: payerEmail,
+                      external_reference: `${autopecaId}|platinum`, // Sem flag de teste
+                      notification_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/mercadopago/webhook?secret=${process.env.MP_WEBHOOK_SECRET || 'dev-secret'}`,
+                    };
+                    
+                    if (payerFirstName) {
+                      novoPreapprovalBody.payer_first_name = payerFirstName;
+                    }
+                    if (payerLastName) {
+                      novoPreapprovalBody.payer_last_name = payerLastName;
+                    }
+                    
+                    // IMPORTANTE: Tentar usar o payment_method_id do Preapproval antigo
+                    // Se o Preapproval antigo tiver um card token ou payment_method, podemos reutilizar
+                    // Mas o Mercado Pago não permite reutilizar diretamente. 
+                    // Como solução, vamos criar um Preapproval que requer aprovação do usuário
+                    // O usuário receberá um link para aprovar o novo Preapproval
+                    
+                    const novoPreapprovalResp = await fetch('https://api.mercadopago.com/preapproval', {
+                      method: 'POST',
+                      headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify(novoPreapprovalBody),
+                    });
+                    
+                    if (novoPreapprovalResp.ok) {
+                      const novoPreapproval = await novoPreapprovalResp.json();
+                      console.log(`✅ Novo Preapproval criado: ${novoPreapproval.id} com valor R$ 990,00`);
+                      
+                      // Cancelar Preapproval antigo
+                      await fetch(`https://api.mercadopago.com/preapproval/${preapprovalId}`, {
+                        method: 'PUT',
+                        headers: {
+                          Authorization: `Bearer ${accessToken}`,
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ status: 'cancelled' }),
+                      });
+                      
+                      console.log(`✅ Preapproval antigo ${preapprovalId} cancelado`);
+                      
+                      // Atualizar subscriptionId no Firestore
+                      updateData.subscriptionId = String(novoPreapproval.id);
+                      updateData.dataProximoPagamento = Timestamp.fromDate(novoStartDate);
+                      
+                      // Salvar link de aprovação para o usuário (se necessário)
+                      if (novoPreapproval.init_point) {
+                        await adminDb.collection('users').doc(autopecaId).update({
+                          linkAprovacaoPlatinum: novoPreapproval.init_point || novoPreapproval.sandbox_init_point,
+                        });
+                      }
+                    } else {
+                      const errorData = await novoPreapprovalResp.json();
+                      console.error(`❌ Erro ao criar novo Preapproval:`, errorData);
+                      // Continuar com o Preapproval antigo, mas registrar o erro
+                    }
+                  }
+                } catch (error) {
+                  console.error('❌ Erro ao processar atualização do Preapproval:', error);
+                  // Continuar com o fluxo normal mesmo se houver erro
+                }
+              }
+            }
+            
             const updateData: any = {
               plano,
               assinaturaAtiva: true,
@@ -307,7 +508,7 @@ export async function POST(request: Request) {
             };
 
             // Se for renovação de assinatura, manter subscriptionId e resetar ofertas
-            if (isRenovacao) {
+            if (isRenovacao && !precisaAtualizarValor) {
               updateData.ofertasUsadas = 0;
               updateData.subscriptionId = String(preapprovalId);
               console.log(`🔄 Renovação automática da assinatura ${preapprovalId} - Plano ${plano} renovado para usuário ${autopecaId}`);

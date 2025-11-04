@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlanoAssinatura, PRECOS_PLANOS } from '@/types';
@@ -27,8 +27,10 @@ export default function CheckoutPage() {
   const [processandoSecureFields, setProcessandoSecureFields] = useState(false);
 
   const planoParam = searchParams?.get('plano') as PlanoAssinatura | null;
+  const isTestePlatinum = searchParams?.get('teste') === '1';
   const plano = planoParam || 'premium';
-  const valor = PRECOS_PLANOS[plano];
+  // Se for teste do Platinum, cobrar R$ 1,00 ao invés de R$ 990,00
+  const valor = isTestePlatinum && plano === 'platinum' ? 1.00 : PRECOS_PLANOS[plano];
 
   const planosInfo: Record<PlanoAssinatura, { nome: string; limite: string }> = {
     basico: { nome: 'Básico', limite: '20 ofertas/mês' },
@@ -94,11 +96,36 @@ export default function CheckoutPage() {
     return { firstName, lastName };
   };
 
+  // Flag para garantir que o toast apareça apenas uma vez
+  const toastAprovadoRef = useRef(false);
+
+  // Função centralizada para notificar pagamento aprovado
+  const notificarPagamentoAprovado = () => {
+    // Garantir que o toast apareça apenas uma vez
+    if (toastAprovadoRef.current) {
+      return;
+    }
+    toastAprovadoRef.current = true;
+
+    // Mostrar toast apenas uma vez
+    toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!', { 
+      duration: 3000,
+      id: 'pagamento-aprovado-unico'
+    });
+
+    // Fazer refresh forçado após 1 segundo para mostrar o plano atualizado
+    setTimeout(() => {
+      console.log('🔄 Fazendo refresh forçado da página...');
+      window.location.reload(); // F5 forçado
+    }, 1000);
+  };
+
   // Função para iniciar verificação de pagamento (usada por PIX e Secure Fields)
   const iniciarVerificacaoPagamento = (paymentIdToCheck: string) => {
     if (!userData || escutandoAtivacao) return;
     setEscutandoAtivacao(true);
     setUsandoSecureFields(false); // Esconder formulário Secure Fields após iniciar verificação
+    toastAprovadoRef.current = false; // Resetar flag quando iniciar nova verificação
 
     let pollInterval: NodeJS.Timeout;
     let listenerUnsub: (() => void) | null = null;
@@ -112,8 +139,7 @@ export default function CheckoutPage() {
       if (currentData?.assinaturaAtiva && currentData?.plano === plano) {
         console.log(`[Checkout] ✅ Plano já está ativo!`);
         setPagamentoAprovado(true);
-        toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
-        setTimeout(() => router.push('/dashboard'), 2000);
+        notificarPagamentoAprovado();
         return;
       }
     });
@@ -128,8 +154,7 @@ export default function CheckoutPage() {
           listenerUnsub();
           listenerUnsub = null;
         }
-        toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
-        setTimeout(() => router.push('/dashboard'), 1500);
+        notificarPagamentoAprovado();
         setEscutandoAtivacao(false);
       }
     });
@@ -158,8 +183,7 @@ export default function CheckoutPage() {
             clearInterval(pollInterval);
             if (listenerUnsub) listenerUnsub();
             setPagamentoAprovado(true);
-            toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
-            setTimeout(() => router.push('/dashboard'), 1500);
+            notificarPagamentoAprovado();
             setEscutandoAtivacao(false);
           }
         } else if (data.status === 'rejected' || data.status === 'cancelled') {
@@ -210,6 +234,8 @@ export default function CheckoutPage() {
           firstName: firstName || undefined,
           lastName: lastName || undefined,
           deviceId: deviceId || undefined,
+          isTestePlatinum: isTestePlatinum && plano === 'platinum', // Flag para teste
+          valor: valor, // Enviar valor específico (pode ser 1.00 para teste)
         }),
       });
       
@@ -359,6 +385,7 @@ export default function CheckoutPage() {
 
     console.log(`[Checkout] 🚀 Iniciando polling para paymentId: ${paymentId}, plano: ${plano}`);
     setEscutandoAtivacao(true);
+    toastAprovadoRef.current = false; // Resetar flag quando iniciar nova verificação
     let pollInterval: NodeJS.Timeout;
     let listenerUnsub: (() => void) | null = null;
     let attempts = 0;
@@ -379,11 +406,10 @@ export default function CheckoutPage() {
       
       // Se já estiver ativo, não precisa iniciar o listener
       if (currentData?.assinaturaAtiva && currentData?.plano === plano) {
-        console.log(`[Checkout] ✅ Plano já está ativo! Redirecionando...`);
+        console.log(`[Checkout] ✅ Plano já está ativo!`);
         setPagamentoAprovado(true);
-        toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
+        notificarPagamentoAprovado();
         if (pollInterval) clearInterval(pollInterval);
-        setTimeout(() => router.push('/dashboard'), 2000);
         return;
       }
     });
@@ -417,17 +443,8 @@ export default function CheckoutPage() {
           listenerUnsub = null;
         }
         
-        // Mostrar toast
-        toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!', { 
-          duration: 3000,
-          id: 'pagamento-aprovado'
-        });
-        
-        // Redirecionar após 1.5 segundos
-        setTimeout(() => {
-          console.log(`[Checkout] Executando redirecionamento para /dashboard...`);
-          router.push('/dashboard');
-        }, 1500);
+        // Notificar pagamento aprovado (mostra toast apenas uma vez e faz refresh)
+        notificarPagamentoAprovado();
         
         // Retornar para não continuar executando
         return;
@@ -486,9 +503,8 @@ export default function CheckoutPage() {
                 });
                 
                 if (userDataCheck?.assinaturaAtiva && userDataCheck?.plano === plano) {
-                  console.log(`[Checkout] ✅✅✅ Plano confirmado ativo no Firestore! Redirecionando...`);
+                  console.log(`[Checkout] ✅✅✅ Plano confirmado ativo no Firestore!`);
                   setPagamentoAprovado(true);
-                  toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!', { id: 'pagamento-aprovado' });
                   if (pollInterval) {
                     clearInterval(pollInterval);
                     pollInterval = undefined as any;
@@ -497,10 +513,7 @@ export default function CheckoutPage() {
                     listenerUnsub();
                     listenerUnsub = null;
                   }
-                  setTimeout(() => {
-                    console.log(`[Checkout] Redirecionando para dashboard...`);
-                    router.push('/dashboard');
-                  }, 1500);
+                  notificarPagamentoAprovado();
                 } else {
                   console.warn(`[Checkout] ⚠️ Firestore ainda não atualizou. Tentando novamente em 2 segundos...`);
                   // Tentar mais uma vez após 2 segundos
@@ -508,9 +521,8 @@ export default function CheckoutPage() {
                     const userDocRetry = await getDoc(userRef);
                     const userDataRetry: any = userDocRetry.data();
                     if (userDataRetry?.assinaturaAtiva && userDataRetry?.plano === plano) {
-                      console.log(`[Checkout] ✅✅✅ Plano ativo no retry! Redirecionando...`);
+                      console.log(`[Checkout] ✅✅✅ Plano ativo no retry!`);
                       setPagamentoAprovado(true);
-                      toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!', { id: 'pagamento-aprovado' });
                       if (pollInterval) {
                         clearInterval(pollInterval);
                         pollInterval = undefined as any;
@@ -519,10 +531,7 @@ export default function CheckoutPage() {
                         listenerUnsub();
                         listenerUnsub = null;
                       }
-                      setTimeout(() => {
-                        console.log(`[Checkout] Redirecionando após retry...`);
-                        router.push('/dashboard');
-                      }, 1500);
+                      notificarPagamentoAprovado();
                     }
                   }, 2000);
                 }
@@ -540,9 +549,8 @@ export default function CheckoutPage() {
               const userDataCheck: any = userDoc.data();
               
               if (userDataCheck?.assinaturaAtiva && userDataCheck?.plano === plano) {
-                console.log(`[Checkout] ✅✅✅ Plano já está ativo no Firestore! Redirecionando...`);
+                console.log(`[Checkout] ✅✅✅ Plano já está ativo no Firestore!`);
                 setPagamentoAprovado(true);
-                toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!');
                 if (pollInterval) {
                   clearInterval(pollInterval);
                   pollInterval = undefined as any;
@@ -551,10 +559,7 @@ export default function CheckoutPage() {
                   listenerUnsub();
                   listenerUnsub = null;
                 }
-                setTimeout(() => {
-                  console.log(`[Checkout] Executando redirecionamento...`);
-                  router.push('/dashboard');
-                }, 1500);
+                notificarPagamentoAprovado();
                 return; // Parar a execução aqui
               } else {
                 console.log(`[Checkout] ⏳ Plano ainda não está ativo. Aguardando próximo ciclo de polling...`, {
@@ -597,7 +602,7 @@ export default function CheckoutPage() {
         const userDataCheck: any = userDocCheck.data();
         
         if (userDataCheck?.assinaturaAtiva && userDataCheck?.plano === plano) {
-          console.log(`[Checkout] ✅✅✅ Verificação extra detectou plano ativo! Redirecionando...`);
+          console.log(`[Checkout] ✅✅✅ Verificação extra detectou plano ativo!`);
           clearInterval(checkInterval);
           if (pollInterval) {
             clearInterval(pollInterval);
@@ -608,11 +613,7 @@ export default function CheckoutPage() {
             listenerUnsub = null;
           }
           setPagamentoAprovado(true);
-          toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!', { id: 'pagamento-aprovado' });
-          setTimeout(() => {
-            console.log(`[Checkout] Redirecionando via verificação extra...`);
-            router.push('/dashboard');
-          }, 1500);
+          notificarPagamentoAprovado();
         }
       } catch (err) {
         console.error(`[Checkout] Erro na verificação extra:`, err);
@@ -760,9 +761,9 @@ export default function CheckoutPage() {
                           const userDataCheck: any = userDoc.data();
                           
                           if (userDataCheck?.assinaturaAtiva && userDataCheck?.plano === plano) {
-                            toast.success('🎉 Pagamento confirmado! Plano ativado!', { id: 'check-payment' });
+                            toast.dismiss('check-payment');
                             setPagamentoAprovado(true);
-                            setTimeout(() => router.push('/dashboard'), 2000);
+                            notificarPagamentoAprovado();
                           } else {
                             toast.error('Pagamento aprovado, mas plano ainda não foi ativado. Aguarde alguns segundos.', { id: 'check-payment' });
                           }
@@ -802,7 +803,7 @@ export default function CheckoutPage() {
                   mpInstance={mpInstance}
                   amount={valor}
                   loading={processandoSecureFields}
-                  onTokenGenerated={async (token) => {
+                  onTokenGenerated={async (token, identificationType, identificationNumber) => {
                     if (!userData) return;
                     
                     setProcessandoSecureFields(true);
@@ -814,8 +815,9 @@ export default function CheckoutPage() {
                       // Extrair nome completo
                       const { firstName, lastName } = extrairNomeCompleto(userData.nome);
                       
-                      // Chamar API de pagamento com token
-                      const resp = await fetch('/api/mercadopago/payment', {
+                      // Chamar API de assinatura recorrente com token
+                      // Isso cria um Preapproval que renova automaticamente todo mês
+                      const resp = await fetch('/api/mercadopago/subscription-with-token', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -827,7 +829,10 @@ export default function CheckoutPage() {
                           firstName: firstName || undefined,
                           lastName: lastName || undefined,
                           deviceId: deviceId || undefined,
-                          description: `Assinatura ${plano} - Grupão das Autopeças`,
+                          identificationType: identificationType || 'CPF',
+                          identificationNumber: identificationNumber ? identificationNumber.replace(/\D/g, '') : undefined,
+                          isTestePlatinum: isTestePlatinum && plano === 'platinum', // Flag para teste
+                          valor: valor, // Enviar valor específico (pode ser 1.00 para teste)
                         }),
                       });
                       
@@ -841,11 +846,10 @@ export default function CheckoutPage() {
                         return;
                       }
                       
-                      console.log('✅ Pagamento processado:', data);
+                      console.log('✅ Assinatura criada:', data);
                       
-                      // Criar registro de pagamento
-                      const paymentIdStr = String(data.paymentId);
-                      setPaymentId(paymentIdStr);
+                      // Criar registro de assinatura
+                      const subscriptionIdStr = String(data.subscriptionId);
                       
                       await addDoc(collection(db, 'pagamentos'), {
                         autopecaId: userData.id,
@@ -853,24 +857,33 @@ export default function CheckoutPage() {
                         plano,
                         valor,
                         metodoPagamento: 'cartao',
-                        statusPagamento: data.status,
-                        mercadoPagoId: paymentIdStr,
-                        external_reference: `${userData.id}|${plano}`,
+                        statusPagamento: 'pendente',
+                        mercadoPagoId: subscriptionIdStr,
+                        subscriptionId: subscriptionIdStr,
+                        external_reference: isTestePlatinum && plano === 'platinum'
+                          ? `${userData.id}|${plano}|teste_platinum`
+                          : `${userData.id}|${plano}`,
                         createdAt: Timestamp.now(),
                         updatedAt: Timestamp.now(),
                       });
+
+                      // A assinatura será processada pelo webhook quando aprovada
+                      // O Preapproval criado com token já inclui o cartão salvo
+                      // e será renovado automaticamente todo mês
+                      toast.success('🎉 Assinatura criada! Aguardando aprovação...');
+                      toast.success('✅ Renovação automática mensal configurada!', { duration: 5000 });
                       
-                      // Se pagamento aprovado, aguardar ativação via webhook
-                      if (data.status === 'approved') {
-                        toast.success('🎉 Pagamento aprovado! Aguardando ativação do plano...');
-                        // Iniciar verificação similar ao PIX
-                        iniciarVerificacaoPagamento(paymentIdStr);
-                      } else if (data.status === 'pending') {
-                        toast('⏳ Pagamento pendente. Aguarde a confirmação...');
-                        iniciarVerificacaoPagamento(paymentIdStr);
+                      // Redirecionar para página de aprovação se houver init_point
+                      const initPoint = data.init_point || data.sandbox_init_point;
+                      if (initPoint) {
+                        console.log('🔗 Redirecionando para aprovação da assinatura...');
+                        setTimeout(() => {
+                          window.location.href = initPoint;
+                        }, 2000);
                       } else {
-                        toast.error(`Pagamento ${data.status}. Verifique os detalhes.`);
-                        setProcessandoSecureFields(false);
+                        // Se não houver init_point, a assinatura pode já estar autorizada
+                        // Aguardar webhook processar
+                        iniciarVerificacaoPagamento(subscriptionIdStr);
                       }
                     } catch (error: any) {
                       console.error('Erro ao processar pagamento:', error);
@@ -899,24 +912,6 @@ export default function CheckoutPage() {
                     <div className="text-left">
                       <div>PIX</div>
                       <div className="text-xs text-gray-900 dark:text-gray-300">Aprovação instantânea</div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setMetodoPagamento('cartao');
-                      setUsandoSecureFields(false);
-                    }}
-                    className={`w-full p-4 rounded-xl border-2 font-semibold flex items-center gap-3 transition-all ${
-                      metodoPagamento === 'cartao' && !usandoSecureFields
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
-                    } dark:text-white`}
-                  >
-                    <CreditCard size={24} />
-                    <div className="text-left">
-                      <div>Cartão de Crédito (Checkout Pro)</div>
-                      <div className="text-xs text-gray-900 dark:text-gray-300">Redirecionamento seguro</div>
                     </div>
                   </button>
 
@@ -956,19 +951,6 @@ export default function CheckoutPage() {
                   )}
                 </button>
 
-                {/* Link do checkout (fallback para reabrir) */}
-                {metodoPagamento !== 'pix' && linkPagamento && !usandoSecureFields && (
-                  <div className="mt-6">
-                    <a
-                      href={linkPagamento}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-blue-700 dark:text-blue-400 underline"
-                    >
-                      Reabrir checkout do Mercado Pago
-                    </a>
-                  </div>
-                )}
               </>
             )}
 

@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 interface SecureCardFormProps {
   mpInstance: any;
   amount: number;
-  onTokenGenerated: (token: string) => void;
+  onTokenGenerated: (token: string, identificationType?: string, identificationNumber?: string) => void;
   loading?: boolean;
 }
 
@@ -249,7 +249,7 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
 
         if (token && token.id) {
           console.log('✅ Token criado com sucesso:', token.id);
-          onTokenGenerated(token.id);
+          onTokenGenerated(token.id, identificationType, identificationNumber);
         } else {
           console.error('❌ Token não retornou ID:', token);
           throw new Error(token?.message || 'Erro ao criar token do cartão');

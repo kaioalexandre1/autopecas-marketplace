@@ -5,7 +5,7 @@ import { PRECOS_PLANOS, PlanoAssinatura } from '@/types';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { metodo, plano, autopecaId, autopecaNome, email, firstName, lastName, deviceId } = body as {
+    const { metodo, plano, autopecaId, autopecaNome, email, firstName, lastName, deviceId, isTestePlatinum, valor: valorEnviado } = body as {
       metodo: 'pix' | 'cartao';
       plano: PlanoAssinatura;
       autopecaId: string;
@@ -14,6 +14,8 @@ export async function POST(request: Request) {
       firstName?: string;
       lastName?: string;
       deviceId?: string;
+      isTestePlatinum?: boolean;
+      valor?: number;
     };
 
     if (!autopecaId || !plano || !metodo) {
@@ -26,12 +28,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'missing_access_token' }, { status: 500 });
     }
 
-    const amount = PRECOS_PLANOS[plano];
+    // Se for teste do Platinum, usar valor enviado (R$ 1,00), senão usar preço normal
+    const amount = (isTestePlatinum && valorEnviado) ? valorEnviado : PRECOS_PLANOS[plano];
     const notificationUrlSecret = process.env.MP_WEBHOOK_SECRET || 'dev-secret';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || '';
     const fullBase = String(baseUrl).startsWith('http') ? String(baseUrl) : `https://${baseUrl}`;
     const notification_url = `${fullBase}/api/mercadopago/webhook?secret=${notificationUrlSecret}`;
-    const external_reference = `${autopecaId}|${plano}`; // Para correlacionar no webhook
+    // Incluir flag de teste no external_reference para o webhook processar corretamente
+    const external_reference = isTestePlatinum 
+      ? `${autopecaId}|${plano}|teste_platinum` 
+      : `${autopecaId}|${plano}`;
 
     if (metodo === 'pix') {
       const idemKey = `${autopecaId}-${plano}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -45,7 +51,9 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           transaction_amount: parseFloat(amount.toFixed(2)),
-          description: `Assinatura plano ${plano} - Grupão das Autopeças`, // Descrição detalhada
+          description: isTestePlatinum 
+            ? `Teste 30 dias grátis Platinum - Grupão das Autopeças` 
+            : `Assinatura plano ${plano} - Grupão das Autopeças`, // Descrição detalhada
           payment_method_id: 'pix',
           payer: { 
             email: email || `${autopecaId}@example.com`,
@@ -93,9 +101,14 @@ export async function POST(request: Request) {
         }, { status: 400 });
       }
 
-      // Calcular data de início (hoje + 1 dia para dar tempo do usuário aprovar)
+      // Se for teste, começar imediatamente. Se não, adicionar 1 dia
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() + 1);
+      if (!isTestePlatinum) {
+        startDate.setDate(startDate.getDate() + 1);
+      }
+      
+      // Se for teste, configurar renovação para 30 dias depois com valor normal
+      const valorRenovacao = isTestePlatinum ? PRECOS_PLANOS[plano] : amount;
       
       const preapprovalBody: any = {
         reason: `Assinatura ${plano} - Grupão das Autopeças`,

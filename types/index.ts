@@ -27,6 +27,9 @@ export interface User {
   dataProximoPagamento?: Date; // Data do próximo pagamento
   subscriptionId?: string; // ID da assinatura recorrente no Mercado Pago (para pagamentos automáticos)
   contaBloqueada?: boolean; // Se a conta foi bloqueada pelo admin
+  testePlatinumUsado?: boolean; // Se já usou o teste de 30 dias grátis do Platinum
+  dataInicioTestePlatinum?: Date; // Data em que iniciou o teste de 30 dias
+  linkAprovacaoPlatinum?: string; // Link para aprovar novo Preapproval após trial
   
   createdAt: Date;
 }
@@ -177,9 +180,8 @@ export const LIMITES_PLANOS = {
 // Preços dos planos
 export const PRECOS_PLANOS = {
   basico: 0,
-  // Valores temporariamente reduzidos para testes (R$ 1,00)
-  premium: 1.00,
-  gold: 1.00,
-  platinum: 1.00,
-};
+  premium: 390.00, // Silver
+  gold: 590.00,
+  platinum: 990.00,
+} as const;
 
