@@ -725,6 +725,10 @@ export default function DashboardPage() {
         <div className="absolute top-0 left-1/2 w-1 h-full bg-gradient-to-b from-transparent via-blue-400 to-transparent opacity-30 animate-beam-delayed"></div>
         <div className="absolute top-0 right-1/3 w-1 h-full bg-gradient-to-b from-transparent via-yellow-400 to-transparent opacity-20 animate-beam-slow"></div>
         
+        {/* Raios horizontais */}
+        <div className="absolute top-1/4 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-20 animate-scan"></div>
+        <div className="absolute top-2/3 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-30 animate-scan-delayed"></div>
+        
         {/* LEDs pulsantes */}
         <div className="absolute top-20 left-20 w-2 h-2 bg-cyan-400 rounded-full opacity-70 animate-led-pulse shadow-lg shadow-cyan-400"></div>
         <div className="absolute top-40 right-32 w-2 h-2 bg-yellow-400 rounded-full opacity-70 animate-led-pulse-delayed shadow-lg shadow-yellow-400"></div>
@@ -762,6 +766,33 @@ export default function DashboardPage() {
         <div className="absolute bottom-2/3 left-1/3 text-5xl opacity-41 animate-bounce28 drop-shadow-2xl">🔧</div>
         <div className="absolute top-1/3 right-1/3 text-6xl opacity-34 animate-bounce29 drop-shadow-2xl">⚡</div>
         <div className="absolute top-60 left-1/5 text-5xl opacity-37 animate-bounce30 drop-shadow-2xl">🚘</div>
+        
+        {/* Partículas flutuantes adicionais */}
+        <div className="absolute top-10 left-1/4 w-3 h-3 bg-yellow-400 rounded-full opacity-40 animate-particle-float"></div>
+        <div className="absolute top-1/4 right-10 w-2 h-2 bg-cyan-300 rounded-full opacity-50 animate-particle-float-delayed"></div>
+        <div className="absolute bottom-1/3 left-10 w-3 h-3 bg-blue-300 rounded-full opacity-40 animate-particle-rise"></div>
+        <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-green-300 rounded-full opacity-50 animate-particle-float"></div>
+        <div className="absolute bottom-10 left-1/3 w-3 h-3 bg-purple-300 rounded-full opacity-40 animate-particle-rise-delayed"></div>
+        <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-pink-300 rounded-full opacity-50 animate-particle-float-delayed"></div>
+
+        {/* Raios diagonais extras */}
+        <div className="absolute top-0 left-1/6 w-0.5 h-full bg-gradient-to-b from-transparent via-purple-400 to-transparent opacity-15 animate-diagonal-beam rotate-12"></div>
+        <div className="absolute top-0 right-1/6 w-0.5 h-full bg-gradient-to-b from-transparent via-green-400 to-transparent opacity-15 animate-diagonal-beam-delayed -rotate-12"></div>
+
+        {/* Ondas de energia horizontais */}
+        <div className="absolute top-1/3 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-10 animate-wave"></div>
+        <div className="absolute bottom-1/3 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-10 animate-wave-delayed"></div>
+
+        {/* Anéis pulsantes */}
+        <div className="absolute top-1/4 left-1/3 w-40 h-40 border-2 border-cyan-400 rounded-full opacity-20 animate-ring-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-32 h-32 border-2 border-yellow-400 rounded-full opacity-20 animate-ring-pulse-delayed"></div>
+
+        {/* Estrelas tecnológicas */}
+        <div className="absolute top-16 right-16 w-1 h-1 bg-white rounded-full opacity-70 animate-twinkle shadow-sm shadow-white"></div>
+        <div className="absolute top-32 right-48 w-1 h-1 bg-cyan-300 rounded-full opacity-70 animate-twinkle-delayed shadow-sm shadow-cyan-300"></div>
+        <div className="absolute bottom-16 left-16 w-1 h-1 bg-yellow-300 rounded-full opacity-70 animate-twinkle shadow-sm shadow-yellow-300"></div>
+        <div className="absolute bottom-48 right-32 w-1 h-1 bg-blue-300 rounded-full opacity-70 animate-twinkle-delayed shadow-sm shadow-blue-300"></div>
+        <div className="absolute top-48 left-32 w-1 h-1 bg-green-300 rounded-full opacity-70 animate-twinkle shadow-sm shadow-green-300"></div>
       </div>
 
       {/* Conteúdo principal (com z-index para ficar acima do fundo) */}
@@ -791,13 +822,13 @@ export default function DashboardPage() {
                   <div className="relative">
                     <button
                       onClick={() => setMostrarDropdownFiltroPedidos(!mostrarDropdownFiltroPedidos)}
-                      className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/30 flex items-center gap-1 transition-all"
+                      className="bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded-lg border-2 border-green-400 shadow-lg flex items-center gap-2 transition-all"
                       title="Filtrar pedidos"
                     >
-                      <span className="text-white text-[10px] font-bold">
+                      <span className="text-white text-xs font-bold">
                         {filtroPedidos === 'meus' ? 'Meus Pedidos' : 'Todos os Pedidos'}
                       </span>
-                      <ChevronDown size={12} className="text-white" />
+                      <ChevronDown size={14} className="text-white" />
                     </button>
                     
                     {mostrarDropdownFiltroPedidos && (
@@ -813,9 +844,9 @@ export default function DashboardPage() {
                               setFiltroPedidos('meus');
                               setMostrarDropdownFiltroPedidos(false);
                             }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors ${
                               filtroPedidos === 'meus' 
-                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold' 
+                                ? 'bg-green-500 text-white font-bold shadow-md' 
                                 : 'text-gray-700 dark:text-gray-300'
                             }`}
                           >
@@ -826,9 +857,9 @@ export default function DashboardPage() {
                               setFiltroPedidos('todos');
                               setMostrarDropdownFiltroPedidos(false);
                             }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors ${
                               filtroPedidos === 'todos' 
-                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold' 
+                                ? 'bg-green-500 text-white font-bold shadow-md' 
                                 : 'text-gray-700 dark:text-gray-300'
                             }`}
                           >
@@ -1467,13 +1498,18 @@ export default function DashboardPage() {
                 }
                 
                 // MODO COMPLETO (ou card expandido no modo resumido)
+                // Verificar se é pedido da oficina atual (quando está em "todos os pedidos")
+                const isMeuPedido = userData?.tipo === 'oficina' && filtroPedidos === 'todos' && pedido.oficinaId === userData.id;
+                
                 return (
             <div
               key={pedido.id}
-              className={`bg-white dark:bg-gray-100 rounded-xl transition-all duration-300 ease-in-out p-4 border-2 ${
+              className={`bg-white dark:bg-gray-100 rounded-xl transition-all duration-300 ease-in-out p-4 border-2 relative ${
                 !modoResumido && 'animate-slide-in'
               } ${modoResumido && isExpandido ? 'col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-2' : ''} ${
-                pedido.condicaoPeca === 'Nova' 
+                isMeuPedido
+                  ? 'border-yellow-400 dark:border-yellow-500 shadow-[0_0_20px_6px_rgba(234,179,8,0.7)] dark:shadow-[0_0_20px_6px_rgba(234,179,8,0.6)] ring-4 ring-yellow-300 dark:ring-yellow-400/50'
+                  : pedido.condicaoPeca === 'Nova' 
                   ? 'border-green-500 dark:border-green-600 shadow-[0_0_15px_3px_rgba(16,185,129,0.5)] dark:shadow-[0_0_15px_3px_rgba(16,185,129,0.4)] hover:border-green-600 dark:hover:border-green-500 hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(16,185,129,0.6)]'
                   : pedido.condicaoPeca === 'Usada'
                   ? 'border-orange-500 dark:border-orange-600 shadow-[0_0_15px_3px_rgba(249,115,22,0.5)] dark:shadow-[0_0_15px_3px_rgba(249,115,22,0.4)] hover:border-orange-600 dark:hover:border-orange-500 hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.8)] dark:hover:shadow-[0_0_20px_5px_rgba(249,115,22,0.6)]'
@@ -1510,8 +1546,15 @@ export default function DashboardPage() {
                 )}
               </div>
               
+              {/* Badge "MEU PEDIDO" no topo quando for pedido da oficina em "todos os pedidos" */}
+              {isMeuPedido && (
+                <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-4 py-2 text-xs font-black text-center uppercase tracking-wider z-10 rounded-t-xl">
+                  ⭐ MEU PEDIDO
+                </div>
+              )}
+
               {/* Informações Compactas: Dia/Cidade, Horário e Nome da Loja */}
-              <div className="mb-3 text-center">
+              <div className={`mb-3 text-center ${isMeuPedido ? 'mt-8' : ''}`}>
                 {diaIndicador && (
                   <p className="text-xs text-gray-900 dark:text-gray-900 font-semibold mb-1">
                     {diaIndicador} - {pedido.cidade}
