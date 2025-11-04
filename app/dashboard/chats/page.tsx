@@ -883,10 +883,11 @@ export default function ChatsPage() {
                           : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center flex-wrap gap-2 flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100">
+                      {/* Bloco: Nome da Loja */}
+                      <div className="mb-3">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg px-3 py-2 flex justify-between items-center">
+                          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                            <h3 className="font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100 uppercase">
                               {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
                             </h3>
                             {/* Plano da autopeça com coroinha (apenas para oficinas) */}
@@ -920,56 +921,65 @@ export default function ChatsPage() {
                               return null;
                             })()}
                           </div>
-                          {naoLidas && quantidadeNaoLidas > 0 && (
-                            <span className="text-xs font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
-                              {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {chat.mensagens.length > 0 && (
-                            <span className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                              {formatDistanceToNow(
-                                chat.mensagens[chat.mensagens.length - 1].createdAt,
-                                { addSuffix: true, locale: ptBR }
-                              )}
-                            </span>
-                          )}
-                          {/* Círculo verde estilo WhatsApp com número de mensagens não lidas */}
-                          {naoLidas && quantidadeNaoLidas > 0 && (
-                            <div className="flex-shrink-0">
-                              <div className="bg-green-500 rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
-                                <span className="text-white text-xs font-bold">
-                                  {quantidadeNaoLidas > 99 ? '99+' : quantidadeNaoLidas}
-                                </span>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {chat.mensagens.length > 0 && (
+                              <span className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                {formatDistanceToNow(
+                                  chat.mensagens[chat.mensagens.length - 1].createdAt,
+                                  { addSuffix: true, locale: ptBR }
+                                )}
+                              </span>
+                            )}
+                            {/* Círculo verde estilo WhatsApp com número de mensagens não lidas */}
+                            {naoLidas && quantidadeNaoLidas > 0 && (
+                              <div className="flex-shrink-0">
+                                <div className="bg-green-500 rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                                  <span className="text-white text-xs font-bold">
+                                    {quantidadeNaoLidas > 99 ? '99+' : quantidadeNaoLidas}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100">
-                          {chat.nomePeca}
-                        </span>
-                        {chat.encerrado && (
-                          <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-xs font-semibold">
-                            Encerrado
-                          </span>
-                        )}
+
+                      {/* Bloco: Informações do Pedido */}
+                      <div className="mb-3">
+                        <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100 uppercase">
+                              {chat.nomePeca}
+                            </span>
+                            {chat.encerrado && (
+                              <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-xs font-semibold">
+                                Encerrado
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 uppercase">
+                            {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
+                          </p>
+                        </div>
                       </div>
-                      
-                      <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">
-                        {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
-                      </p>
-                      
+
+                      {/* Última Mensagem */}
                       {chat.mensagens.length > 0 && (
                         <div className="mt-2">
                           <div className="inline-block bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg px-2.5 py-1.5 max-w-full">
-                            <p className="text-xs font-medium text-green-800 dark:text-green-200 truncate">
+                            <p className="text-xs font-medium text-green-800 dark:text-green-200 truncate italic">
                               {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
                             </p>
                           </div>
+                        </div>
+                      )}
+                      
+                      {/* Badge de mensagens não lidas abaixo do nome */}
+                      {naoLidas && quantidadeNaoLidas > 0 && (
+                        <div className="mt-2">
+                          <span className="text-xs font-semibold text-red-600 dark:text-red-400">
+                            {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1000,110 +1010,62 @@ export default function ChatsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <h2 className="font-black text-xl sm:text-2xl md:text-3xl text-white truncate">
-                              {userData?.tipo === 'oficina' 
-                                ? chatSelecionado.autopecaNome 
-                                : chatSelecionado.oficinaNome}
-                            </h2>
-                            {/* Plano da autopeça com coroinha (apenas para oficinas) */}
-                            {userData?.tipo === 'oficina' && (() => {
-                              const plano = planosAutopecas[chatSelecionado.autopecaId] || 'basico';
-                              const cores: {[key: string]: string} = {
-                                basico: 'text-blue-100',
-                                premium: 'text-blue-200',
-                                gold: 'text-yellow-200',
-                                platinum: 'text-yellow-300'
-                              };
-                              const emojis: {[key: string]: string} = {
-                                basico: '',
-                                premium: '💎',
-                                gold: '🏆',
-                                platinum: '👑'
-                              };
-                              const nomesPlanos: {[key: string]: string} = {
-                                basico: '',
-                                premium: 'Silver',
-                                gold: 'Gold',
-                                platinum: 'Platinum'
-                              };
-                              if (plano !== 'basico') {
-                                return (
-                                  <span className={`font-bold ${cores[plano]} text-sm sm:text-base md:text-lg flex items-center gap-1 whitespace-nowrap`}>
-                                    {emojis[plano]} {nomesPlanos[plano]}
-                                  </span>
-                                );
-                              }
-                              return null;
-                            })()}
+                          {/* Bloco: Nome da Loja */}
+                          <div className="bg-white/10 dark:bg-white/5 rounded-lg px-3 py-2 mb-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h2 className="font-black text-xl sm:text-2xl md:text-3xl text-white truncate uppercase">
+                                {userData?.tipo === 'oficina' 
+                                  ? chatSelecionado.autopecaNome 
+                                  : chatSelecionado.oficinaNome}
+                              </h2>
+                              {/* Plano da autopeça com coroinha (apenas para oficinas) */}
+                              {userData?.tipo === 'oficina' && (() => {
+                                const plano = planosAutopecas[chatSelecionado.autopecaId] || 'basico';
+                                const cores: {[key: string]: string} = {
+                                  basico: 'text-blue-100',
+                                  premium: 'text-blue-200',
+                                  gold: 'text-yellow-200',
+                                  platinum: 'text-yellow-300'
+                                };
+                                const emojis: {[key: string]: string} = {
+                                  basico: '',
+                                  premium: '💎',
+                                  gold: '🏆',
+                                  platinum: '👑'
+                                };
+                                const nomesPlanos: {[key: string]: string} = {
+                                  basico: '',
+                                  premium: 'Silver',
+                                  gold: 'Gold',
+                                  platinum: 'Platinum'
+                                };
+                                if (plano !== 'basico') {
+                                  return (
+                                    <span className={`font-bold ${cores[plano]} text-sm sm:text-base md:text-lg flex items-center gap-1 whitespace-nowrap`}>
+                                      {emojis[plano]} {nomesPlanos[plano]}
+                                    </span>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
                           </div>
-                          <p className="text-blue-100 text-base sm:text-lg md:text-xl font-bold mt-1 sm:mt-2 truncate">
-                            {chatSelecionado.nomePeca}
-                          </p>
-                          <p className="text-blue-200 text-sm sm:text-base md:text-lg font-semibold truncate mt-0.5">
-                            {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
-                          </p>
+                          {/* Bloco: Informações do Pedido */}
+                          <div className="bg-white/10 dark:bg-white/5 rounded-lg px-3 py-2">
+                            <p className="text-blue-100 text-base sm:text-lg md:text-xl font-bold truncate uppercase">
+                              {chatSelecionado.nomePeca}
+                            </p>
+                            <p className="text-blue-200 text-sm sm:text-base md:text-lg font-semibold truncate mt-1 uppercase">
+                              {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
+                            </p>
+                          </div>
                         </div>
                         
-                        {/* Desktop: Botões em coluna */}
-                        <div className="hidden sm:flex flex-col gap-1.5 sm:gap-2 w-full sm:w-auto">
-                          {/* Botão Endereço da loja */}
-                          <button
-                            onClick={abrirModalEndereco}
-                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm justify-center"
-                            title="Ver endereço e telefone"
-                          >
-                            <MapPin size={16} className="mr-1 sm:mr-2" />
-                            <span>Endereço da loja</span>
-                          </button>
-
-                          {telefoneOutroUsuario && (
-                            <button
-                              onClick={abrirWhatsApp}
-                              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm justify-center"
-                              title="Abrir WhatsApp"
-                            >
-                              <Phone size={16} className="mr-1 sm:mr-2" />
-                              <span>WhatsApp</span>
-                            </button>
-                          )}
-                          
-                          <button
-                            onClick={() => setMostrarEntregadores(true)}
-                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm justify-center"
-                            title="Solicitar entregador"
-                          >
-                            <Truck size={16} className="mr-1 sm:mr-2" />
-                            <span>Entregador</span>
-                          </button>
-                          
-                          {!chatSelecionado.encerrado && (
-                            <button
-                              onClick={finalizarNegociacao}
-                              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm justify-center"
-                              title="Marcar como negócio fechado"
-                            >
-                              <CheckCircle size={16} className="mr-1 sm:mr-2" />
-                              <span>Negócio Fechado</span>
-                            </button>
-                          )}
-                          
-                          <button
-                            onClick={excluirChat}
-                            disabled={excluindo}
-                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50 text-xs sm:text-sm justify-center"
-                            title="Cancelar pedido"
-                          >
-                            <XCircle size={16} className="mr-1 sm:mr-2" />
-                            <span>Cancelar</span>
-                          </button>
-                        </div>
-
-                        {/* Mobile: Botão "Mais Informações" */}
-                        <div className="sm:hidden relative w-full">
+                        {/* Botão "Mais Informações" - Desktop e Mobile */}
+                        <div className="relative w-full sm:w-auto">
                           <button
                             onClick={() => setMostrarMenuMaisInfo(!mostrarMenuMaisInfo)}
-                            className="w-full px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center justify-center transition-all shadow-lg hover:shadow-xl text-sm"
+                            className="w-full sm:w-auto px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center justify-center transition-all shadow-lg hover:shadow-xl text-sm whitespace-nowrap"
                             title="Mais informações"
                           >
                             <span className="mr-2">Mais informações</span>
@@ -1117,7 +1079,7 @@ export default function ChatsPage() {
                                 className="fixed inset-0 z-10" 
                                 onClick={() => setMostrarMenuMaisInfo(false)}
                               />
-                              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                              <div className="absolute top-full left-0 right-0 sm:right-auto sm:min-w-[200px] mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
                                 {/* Botão Endereço da loja */}
                                 <button
                                   onClick={() => {
