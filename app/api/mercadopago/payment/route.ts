@@ -48,12 +48,14 @@ export async function POST(request: Request) {
     const notification_url = `${baseUrl}/api/mercadopago/webhook?secret=${notificationUrlSecret}`;
 
     // Criar pagamento com token do Secure Fields
+    // IMPORTANTE: O payment_method_id será inferido automaticamente do token
+    // Não especificar payment_method_id explicitamente evita o erro diff_param_bins
     const paymentBody: any = {
       transaction_amount: parseFloat(amount.toFixed(2)),
       token: token,
       description: description || `Assinatura ${plano} - Grupão das Autopeças`,
-      installments: installments,
-      payment_method_id: 'credit_card',
+      installments: installments || 1,
+      // NÃO especificar payment_method_id - o Mercado Pago infere do token
       payer: {
         email: email || `${autopecaId}@example.com`,
         ...(firstName && { first_name: firstName }),
@@ -98,12 +100,38 @@ export async function POST(request: Request) {
 
     if (!paymentResp.ok) {
       console.error('❌ Erro ao criar pagamento:', JSON.stringify(payment, null, 2));
+      
+      // Extrair mensagem de erro mais detalhada
+      let errorMessage = payment?.message || payment?.error || 'Erro ao processar pagamento';
+      const causes = payment?.cause || [];
+      
+      if (causes.length > 0) {
+        const causeMessages = causes.map((c: any) => {
+          if (typeof c === 'string') return c;
+          return c?.description || c?.message || JSON.stringify(c);
+        }).filter(Boolean);
+        
+        if (causeMessages.length > 0) {
+          errorMessage = `${errorMessage}: ${causeMessages.join(', ')}`;
+        }
+      }
+      
+      // Log detalhado para debug
+      console.error('📋 Detalhes do erro:', {
+        status: paymentResp.status,
+        message: payment?.message,
+        error: payment?.error,
+        status_detail: payment?.status_detail,
+        causes: causes,
+      });
+      
       return NextResponse.json({
         ok: false,
         error: 'mp_payment_error',
         details: payment,
-        message: payment?.message || payment?.error || 'Erro ao processar pagamento',
-        cause: payment?.cause || [],
+        message: errorMessage,
+        status_detail: payment?.status_detail,
+        cause: causes,
       }, { status: paymentResp.status });
     }
 
