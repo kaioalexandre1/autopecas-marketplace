@@ -405,23 +405,50 @@ export default function DashboardPage() {
       return;
     }
 
+    // Estado de loading
+    const loadingToast = toast.loading('Criando pedido...');
+
     try {
-      // Fazer upload das fotos se houver
+      // Fazer upload das fotos se houver (opcional - não bloqueia criação do pedido)
       let fotosUrls: string[] = [];
       if (fotosProduto.length > 0) {
-        setFazendoUploadFotos(true);
-        const uploadPromises = fotosProduto.map(async (foto) => {
-          const timestamp = Date.now();
-          const nomeArquivo = `pedido-${timestamp}-${Math.random().toString(36).substring(7)}`;
-          const storageRef = ref(storage, `pedidos/${userData.id}/${nomeArquivo}`);
-          await uploadBytes(storageRef, foto);
-          const url = await getDownloadURL(storageRef);
-          return url;
-        });
-        fotosUrls = await Promise.all(uploadPromises);
-        setFazendoUploadFotos(false);
+        try {
+          setFazendoUploadFotos(true);
+          toast.loading('Enviando fotos...', { id: loadingToast });
+          
+          const uploadPromises = fotosProduto.map(async (foto) => {
+            try {
+              const timestamp = Date.now();
+              const nomeArquivo = `pedido-${timestamp}-${Math.random().toString(36).substring(7)}`;
+              const storageRef = ref(storage, `pedidos/${userData.id}/${nomeArquivo}`);
+              await uploadBytes(storageRef, foto);
+              const url = await getDownloadURL(storageRef);
+              return url;
+            } catch (fotoError) {
+              console.error('Erro ao fazer upload de uma foto:', fotoError);
+              // Continua com outras fotos mesmo se uma falhar
+              return null;
+            }
+          });
+          
+          const resultados = await Promise.all(uploadPromises);
+          fotosUrls = resultados.filter((url): url is string => url !== null);
+          
+          if (fotosUrls.length < fotosProduto.length) {
+            toast.error(`${fotosProduto.length - fotosUrls.length} foto(s) não puderam ser enviadas. O pedido será criado sem elas.`, { id: loadingToast });
+          }
+        } catch (uploadError) {
+          console.error('Erro ao fazer upload das fotos:', uploadError);
+          toast.error('Não foi possível enviar as fotos. O pedido será criado sem elas.', { id: loadingToast });
+          // Continua criando o pedido mesmo sem as fotos
+        } finally {
+          setFazendoUploadFotos(false);
+        }
       }
 
+      // Criar o pedido (mesmo se o upload das fotos falhar)
+      toast.loading('Finalizando pedido...', { id: loadingToast });
+      
       await addDoc(collection(db, 'pedidos'), {
         oficinaId: userData.id,
         oficinaNome: userData.nome,
@@ -442,7 +469,7 @@ export default function DashboardPage() {
         updatedAt: Timestamp.now(),
       });
 
-      toast.success('Pedido criado com sucesso!');
+      toast.success('Pedido criado com sucesso!', { id: loadingToast });
       setMostrarModal(false);
       
       // Limpar form
@@ -459,7 +486,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Erro ao criar pedido:', error);
       setFazendoUploadFotos(false);
-      toast.error('Erro ao criar pedido. Tente novamente.');
+      toast.error('Erro ao criar pedido. Tente novamente.', { id: loadingToast });
     }
   };
 
@@ -2254,9 +2281,14 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3.5 rounded-lg hover:bg-blue-700 font-bold text-base shadow-lg"
+                  disabled={fazendoUploadFotos}
+                  className={`flex-1 py-3.5 rounded-lg font-bold text-base shadow-lg transition-all ${
+                    fazendoUploadFotos
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  Criar Pedido
+                  {fazendoUploadFotos ? 'Criando...' : 'Criar Pedido'}
                 </button>
               </div>
             </form>

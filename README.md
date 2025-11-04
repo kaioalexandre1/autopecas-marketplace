@@ -208,7 +208,16 @@ Adicione estas regras no Storage:
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /chats/{allPaths=**} {
+    // Regras para fotos de chats
+    match /chats/{chatId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null 
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Regras para fotos de pedidos
+    match /pedidos/{userId}/{fileName} {
       allow read: if request.auth != null;
       allow write: if request.auth != null 
                    && request.resource.size < 5 * 1024 * 1024
