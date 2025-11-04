@@ -270,13 +270,21 @@ export default function CheckoutPage() {
     setLoading(true);
     
     try {
+      console.log('[Checkout] 🚀 Iniciando processo de pagamento...');
+      console.log('[Checkout] Método:', metodoPagamento);
+      console.log('[Checkout] Plano:', plano);
+      console.log('[Checkout] User ID:', userData.id);
+      
       // Obter device_id do SDK MercadoPago
       const deviceId = obterDeviceId();
+      console.log('[Checkout] Device ID:', deviceId || 'não disponível');
       
       // Extrair primeiro e último nome
       const { firstName, lastName } = extrairNomeCompleto(userData.nome);
+      console.log('[Checkout] Nome completo:', { firstName, lastName });
       
       // Chamar API real
+      console.log('[Checkout] 📤 Enviando requisição para /api/mercadopago/checkout...');
       const resp = await fetch('/api/mercadopago/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -291,9 +299,18 @@ export default function CheckoutPage() {
           deviceId: deviceId || undefined,
         }),
       });
+      
+      console.log('[Checkout] 📥 Resposta recebida. Status:', resp.status, resp.statusText);
+      
       const data = await resp.json();
+      console.log('[Checkout] 📦 Dados da resposta:', data);
+      
       if (!resp.ok || !data.ok) {
-        console.error('❌ Erro checkout MP:', data);
+        console.error('[Checkout] ❌ Erro checkout MP:', data);
+        console.error('[Checkout] Status HTTP:', resp.status);
+        console.error('[Checkout] Response OK:', resp.ok);
+        console.error('[Checkout] Data OK:', data.ok);
+        
         const errorMessage = data?.message || data?.details?.message || data?.error || 'Falha ao iniciar pagamento';
         const errorDetails = data?.details?.cause || data?.cause || [];
         
@@ -304,8 +321,10 @@ export default function CheckoutPage() {
           mensagemUsuario = `${errorMessage}. Detalhes: ${detalhes}`;
         }
         
+        console.error('[Checkout] ❌ Mensagem de erro final:', mensagemUsuario);
         toast.error(mensagemUsuario);
-        throw new Error(mensagemUsuario);
+        setLoading(false);
+        return;
       }
 
       // Definir valores antes de criar o registro
