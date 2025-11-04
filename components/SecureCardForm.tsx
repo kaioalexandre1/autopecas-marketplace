@@ -41,15 +41,35 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
 
     // Aguardar um pouco para garantir que os refs estão montados no DOM
     const initializeFields = () => {
-      // Verificar se todos os containers estão disponíveis
-      if (!cardNumberRef.current || !expirationDateRef.current || !securityCodeRef.current) {
-        console.log('⏳ Aguardando containers dos campos...');
+      // Verificar se todos os containers estão disponíveis E estão no DOM
+      const cardNumberEl = cardNumberRef.current;
+      const expirationDateEl = expirationDateRef.current;
+      const securityCodeEl = securityCodeRef.current;
+
+      // Verificar se os elementos existem e estão no DOM
+      const isInDOM = (el: HTMLElement | null) => {
+        if (!el) return false;
+        return document.contains(el) || el.isConnected;
+      };
+
+      if (!cardNumberEl || !expirationDateEl || !securityCodeEl || 
+          !isInDOM(cardNumberEl) || !isInDOM(expirationDateEl) || !isInDOM(securityCodeEl)) {
+        console.log('⏳ Aguardando containers dos campos no DOM...', {
+          cardNumber: !!cardNumberEl && isInDOM(cardNumberEl),
+          expirationDate: !!expirationDateEl && isInDOM(expirationDateEl),
+          securityCode: !!securityCodeEl && isInDOM(securityCodeEl),
+        });
         setTimeout(initializeFields, 100);
         return;
       }
 
       try {
         console.log('🚀 Inicializando Secure Fields...');
+        console.log('📦 Containers encontrados:', {
+          cardNumber: cardNumberEl.id || 'sem-id',
+          expirationDate: expirationDateEl.id || 'sem-id',
+          securityCode: securityCodeEl.id || 'sem-id',
+        });
 
         // Limpar campos existentes antes de criar novos
         if (cardNumberFieldRef.current) {
@@ -77,63 +97,86 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
           securityCodeFieldRef.current = null;
         }
 
-        // Card Number Field
-        if (cardNumberRef.current) {
-          console.log('📝 Criando campo de número do cartão...');
-          cardNumberFieldRef.current = mpInstance.fields.create('cardNumber', {
-            placeholder: 'Número do cartão',
-          });
-          cardNumberFieldRef.current.mount(cardNumberRef.current);
-          cardNumberFieldRef.current.on('validityChange', (event: any) => {
-            setCardNumberError(event.error ? event.error.message : '');
-          });
-          cardNumberFieldRef.current.on('ready', () => {
-            console.log('✅ Campo de número do cartão pronto!');
-          });
-          console.log('✅ Campo de número do cartão criado');
-        }
+        // Aguardar um frame para garantir que o DOM está estável
+        requestAnimationFrame(() => {
+          // Aguardar mais um pouco para garantir que tudo está renderizado
+          setTimeout(() => {
+            try {
+              // Garantir que os elementos estão vazios
+              if (cardNumberEl) cardNumberEl.innerHTML = '';
+              if (expirationDateEl) expirationDateEl.innerHTML = '';
+              if (securityCodeEl) securityCodeEl.innerHTML = '';
 
-        // Expiration Date Field
-        if (expirationDateRef.current) {
-          console.log('📅 Criando campo de validade...');
-          expirationDateFieldRef.current = mpInstance.fields.create('expirationDate', {
-            placeholder: 'MM/AA',
-          });
-          expirationDateFieldRef.current.mount(expirationDateRef.current);
-          expirationDateFieldRef.current.on('validityChange', (event: any) => {
-            setExpirationDateError(event.error ? event.error.message : '');
-          });
-          expirationDateFieldRef.current.on('ready', () => {
-            console.log('✅ Campo de validade pronto!');
-          });
-          console.log('✅ Campo de validade criado');
-        }
+              // Card Number Field
+              console.log('📝 Criando campo de número do cartão...', cardNumberEl.id);
+              cardNumberFieldRef.current = mpInstance.fields.create('cardNumber', {
+                placeholder: 'Número do cartão',
+              });
+              
+              // Montar usando o ID (método recomendado pelo Mercado Pago)
+              cardNumberFieldRef.current.mount('mp-cardNumber');
+              cardNumberFieldRef.current.on('validityChange', (event: any) => {
+                setCardNumberError(event.error ? event.error.message : '');
+              });
+              cardNumberFieldRef.current.on('ready', () => {
+                console.log('✅ Campo de número do cartão pronto!');
+              });
+              cardNumberFieldRef.current.on('error', (error: any) => {
+                console.error('❌ Erro no campo de número do cartão:', error);
+              });
+              console.log('✅ Campo de número do cartão criado e montado');
 
-        // Security Code Field
-        if (securityCodeRef.current) {
-          console.log('🔒 Criando campo de CVV...');
-          securityCodeFieldRef.current = mpInstance.fields.create('securityCode', {
-            placeholder: 'CVV',
-          });
-          securityCodeFieldRef.current.mount(securityCodeRef.current);
-          securityCodeFieldRef.current.on('validityChange', (event: any) => {
-            setSecurityCodeError(event.error ? event.error.message : '');
-          });
-          securityCodeFieldRef.current.on('ready', () => {
-            console.log('✅ Campo de CVV pronto!');
-          });
-          console.log('✅ Campo de CVV criado');
-        }
+              // Expiration Date Field
+              console.log('📅 Criando campo de validade...', expirationDateEl.id);
+              expirationDateFieldRef.current = mpInstance.fields.create('expirationDate', {
+                placeholder: 'MM/AA',
+              });
+              
+              expirationDateFieldRef.current.mount('mp-expirationDate');
+              expirationDateFieldRef.current.on('validityChange', (event: any) => {
+                setExpirationDateError(event.error ? event.error.message : '');
+              });
+              expirationDateFieldRef.current.on('ready', () => {
+                console.log('✅ Campo de validade pronto!');
+              });
+              expirationDateFieldRef.current.on('error', (error: any) => {
+                console.error('❌ Erro no campo de validade:', error);
+              });
+              console.log('✅ Campo de validade criado e montado');
 
-        console.log('✅ Todos os Secure Fields foram inicializados com sucesso!');
+              // Security Code Field
+              console.log('🔒 Criando campo de CVV...', securityCodeEl.id);
+              securityCodeFieldRef.current = mpInstance.fields.create('securityCode', {
+                placeholder: 'CVV',
+              });
+              
+              securityCodeFieldRef.current.mount('mp-securityCode');
+              securityCodeFieldRef.current.on('validityChange', (event: any) => {
+                setSecurityCodeError(event.error ? event.error.message : '');
+              });
+              securityCodeFieldRef.current.on('ready', () => {
+                console.log('✅ Campo de CVV pronto!');
+              });
+              securityCodeFieldRef.current.on('error', (error: any) => {
+                console.error('❌ Erro no campo de CVV:', error);
+              });
+              console.log('✅ Campo de CVV criado e montado');
+
+              console.log('✅ Todos os Secure Fields foram inicializados com sucesso!');
+            } catch (error) {
+              console.error('❌ Erro ao criar Secure Fields:', error);
+              toast.error('Erro ao carregar campos do cartão. Recarregue a página e tente novamente.');
+            }
+          }, 100);
+        });
       } catch (error) {
-        console.error('❌ Erro ao criar Secure Fields:', error);
+        console.error('❌ Erro ao inicializar Secure Fields:', error);
         toast.error('Erro ao carregar campos do cartão. Recarregue a página e tente novamente.');
       }
     };
 
-    // Aguardar um pouco para garantir que o DOM está pronto
-    const timeoutId = setTimeout(initializeFields, 200);
+    // Aguardar múltiplos ciclos para garantir que o DOM está pronto
+    const timeoutId = setTimeout(initializeFields, 300);
 
     // Cleanup
     return () => {
@@ -257,7 +300,7 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
           </label>
           <div
             ref={cardNumberRef}
-            id="cardNumber"
+            id="mp-cardNumber"
             className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
             style={{ 
               minHeight: '42px',
@@ -279,7 +322,7 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
             </label>
             <div
               ref={expirationDateRef}
-              id="expirationDate"
+              id="mp-expirationDate"
               className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
               style={{ 
                 minHeight: '42px',
@@ -300,7 +343,7 @@ export default function SecureCardForm({ mpInstance, amount, onTokenGenerated, l
             </label>
             <div
               ref={securityCodeRef}
-              id="securityCode"
+              id="mp-securityCode"
               className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
               style={{ 
                 minHeight: '42px',
