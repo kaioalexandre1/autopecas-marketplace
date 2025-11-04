@@ -709,180 +709,8 @@ export default function CheckoutPage() {
               Forma de Pagamento
             </h2>
 
-            {!pixCopiaECola && !usandoSecureFields ? (
-              <>
-                <div className="space-y-3 mb-6">
-                  <button
-                    onClick={() => {
-                      setMetodoPagamento('pix');
-                      setUsandoSecureFields(false);
-                    }}
-                    className={`w-full p-4 rounded-xl border-2 font-semibold flex items-center gap-3 transition-all ${
-                      metodoPagamento === 'pix'
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
-                    } dark:text-white`}
-                  >
-                    <QrCode size={24} />
-                    <div className="text-left">
-                      <div>PIX</div>
-                      <div className="text-xs text-gray-900 dark:text-gray-300">Aprovação instantânea</div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setMetodoPagamento('cartao');
-                      setUsandoSecureFields(false);
-                    }}
-                    className={`w-full p-4 rounded-xl border-2 font-semibold flex items-center gap-3 transition-all ${
-                      metodoPagamento === 'cartao' && !usandoSecureFields
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
-                    } dark:text-white`}
-                  >
-                    <CreditCard size={24} />
-                    <div className="text-left">
-                      <div>Cartão de Crédito (Checkout Pro)</div>
-                      <div className="text-xs text-gray-900 dark:text-gray-300">Redirecionamento seguro</div>
-                    </div>
-                  </button>
-
-                  {mpInstance && (
-                    <button
-                      onClick={() => {
-                        setMetodoPagamento('cartao');
-                        setUsandoSecureFields(true);
-                      }}
-                      className="w-full p-4 rounded-xl border-2 font-semibold flex items-center gap-3 transition-all border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:border-green-600 dark:hover:border-green-400"
-                    >
-                      <CreditCard size={24} />
-                      <div className="text-left flex-1">
-                        <div className="flex items-center gap-2">
-                          <span>Cartão de Crédito (PCI Secure Fields)</span>
-                          <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded">NOVO</span>
-                        </div>
-                        <div className="text-xs text-gray-900 dark:text-gray-300">Pagamento direto e seguro</div>
-                      </div>
-                    </button>
-                  )}
-
-                </div>
-
-                {metodoPagamento === 'cartao' && usandoSecureFields && mpInstance ? (
-                  <SecureCardForm
-                    mpInstance={mpInstance}
-                    amount={valor}
-                    loading={processandoSecureFields}
-                    onTokenGenerated={async (token) => {
-                      if (!userData) return;
-                      
-                      setProcessandoSecureFields(true);
-                      
-                      try {
-                        // Obter device_id (agora é async)
-                        const deviceId = await obterDeviceId();
-                        
-                        // Extrair nome completo
-                        const { firstName, lastName } = extrairNomeCompleto(userData.nome);
-                        
-                        // Chamar API de pagamento com token
-                        const resp = await fetch('/api/mercadopago/payment', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            token,
-                            plano,
-                            autopecaId: userData.id,
-                            autopecaNome: userData.nome,
-                            email: userData?.email || `${userData.id}@example.com`,
-                            firstName: firstName || undefined,
-                            lastName: lastName || undefined,
-                            deviceId: deviceId || undefined,
-                            description: `Assinatura ${plano} - Grupão das Autopeças`,
-                          }),
-                        });
-                        
-                        const data = await resp.json();
-                        
-                        if (!resp.ok || !data.ok) {
-                          console.error('❌ Erro no pagamento:', data);
-                          const errorMessage = data?.message || data?.details?.message || data?.error || 'Erro ao processar pagamento';
-                          toast.error(errorMessage);
-                          setProcessandoSecureFields(false);
-                          return;
-                        }
-                        
-                        console.log('✅ Pagamento processado:', data);
-                        
-                        // Criar registro de pagamento
-                        const paymentIdStr = String(data.paymentId);
-                        setPaymentId(paymentIdStr);
-                        
-                        await addDoc(collection(db, 'pagamentos'), {
-                          autopecaId: userData.id,
-                          autopecaNome: userData.nome,
-                          plano,
-                          valor,
-                          metodoPagamento: 'cartao',
-                          statusPagamento: data.status,
-                          mercadoPagoId: paymentIdStr,
-                          external_reference: `${userData.id}|${plano}`,
-                          createdAt: Timestamp.now(),
-                          updatedAt: Timestamp.now(),
-                        });
-                        
-                        // Se pagamento aprovado, aguardar ativação via webhook
-                        if (data.status === 'approved') {
-                          toast.success('🎉 Pagamento aprovado! Aguardando ativação do plano...');
-                          // Iniciar verificação similar ao PIX
-                          iniciarVerificacaoPagamento(paymentIdStr);
-                        } else if (data.status === 'pending') {
-                          toast('⏳ Pagamento pendente. Aguarde a confirmação...');
-                          iniciarVerificacaoPagamento(paymentIdStr);
-                        } else {
-                          toast.error(`Pagamento ${data.status}. Verifique os detalhes.`);
-                          setProcessandoSecureFields(false);
-                        }
-                      } catch (error: any) {
-                        console.error('Erro ao processar pagamento:', error);
-                        toast.error(error?.message || 'Erro ao processar pagamento');
-                        setProcessandoSecureFields(false);
-                      }
-                    }}
-                  />
-                ) : (
-                  <button
-                    onClick={handleConfirmarPagamento}
-                    disabled={loading || processando}
-                    className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {loading || processando ? (
-                      <>
-                        <Loader size={24} className="animate-spin" />
-                        Processando...
-                      </>
-                    ) : (
-                      `Pagar R$ ${valor.toFixed(2).replace('.', ',')}`
-                    )}
-                  </button>
-                )}
-
-                {/* Link do checkout (fallback para reabrir) */}
-                {metodoPagamento !== 'pix' && linkPagamento && !usandoSecureFields && (
-                  <div className="mt-6">
-                    <a
-                      href={linkPagamento}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-blue-700 dark:text-blue-400 underline"
-                    >
-                      Reabrir checkout do Mercado Pago
-                    </a>
-                  </div>
-                )}
-              </>
-            ) : (
+            {pixCopiaECola ? (
+              // Tela de confirmação PIX
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-gray-700 dark:to-gray-700 rounded-2xl p-6 text-center border border-gray-200 dark:border-gray-600">
                   <QrCode size={48} className="text-green-600 dark:text-green-400 mx-auto mb-4" />
@@ -957,6 +785,191 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               </div>
+            ) : usandoSecureFields && mpInstance ? (
+              // Formulário Secure Fields (PCI)
+              <div>
+                <button
+                  onClick={() => {
+                    setUsandoSecureFields(false);
+                    setMetodoPagamento('pix');
+                  }}
+                  className="mb-4 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  <ArrowLeft size={18} />
+                  <span className="text-sm font-medium">Voltar para métodos de pagamento</span>
+                </button>
+                <SecureCardForm
+                  mpInstance={mpInstance}
+                  amount={valor}
+                  loading={processandoSecureFields}
+                  onTokenGenerated={async (token) => {
+                    if (!userData) return;
+                    
+                    setProcessandoSecureFields(true);
+                    
+                    try {
+                      // Obter device_id (agora é async)
+                      const deviceId = await obterDeviceId();
+                      
+                      // Extrair nome completo
+                      const { firstName, lastName } = extrairNomeCompleto(userData.nome);
+                      
+                      // Chamar API de pagamento com token
+                      const resp = await fetch('/api/mercadopago/payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          token,
+                          plano,
+                          autopecaId: userData.id,
+                          autopecaNome: userData.nome,
+                          email: userData?.email || `${userData.id}@example.com`,
+                          firstName: firstName || undefined,
+                          lastName: lastName || undefined,
+                          deviceId: deviceId || undefined,
+                          description: `Assinatura ${plano} - Grupão das Autopeças`,
+                        }),
+                      });
+                      
+                      const data = await resp.json();
+                      
+                      if (!resp.ok || !data.ok) {
+                        console.error('❌ Erro no pagamento:', data);
+                        const errorMessage = data?.message || data?.details?.message || data?.error || 'Erro ao processar pagamento';
+                        toast.error(errorMessage);
+                        setProcessandoSecureFields(false);
+                        return;
+                      }
+                      
+                      console.log('✅ Pagamento processado:', data);
+                      
+                      // Criar registro de pagamento
+                      const paymentIdStr = String(data.paymentId);
+                      setPaymentId(paymentIdStr);
+                      
+                      await addDoc(collection(db, 'pagamentos'), {
+                        autopecaId: userData.id,
+                        autopecaNome: userData.nome,
+                        plano,
+                        valor,
+                        metodoPagamento: 'cartao',
+                        statusPagamento: data.status,
+                        mercadoPagoId: paymentIdStr,
+                        external_reference: `${userData.id}|${plano}`,
+                        createdAt: Timestamp.now(),
+                        updatedAt: Timestamp.now(),
+                      });
+                      
+                      // Se pagamento aprovado, aguardar ativação via webhook
+                      if (data.status === 'approved') {
+                        toast.success('🎉 Pagamento aprovado! Aguardando ativação do plano...');
+                        // Iniciar verificação similar ao PIX
+                        iniciarVerificacaoPagamento(paymentIdStr);
+                      } else if (data.status === 'pending') {
+                        toast('⏳ Pagamento pendente. Aguarde a confirmação...');
+                        iniciarVerificacaoPagamento(paymentIdStr);
+                      } else {
+                        toast.error(`Pagamento ${data.status}. Verifique os detalhes.`);
+                        setProcessandoSecureFields(false);
+                      }
+                    } catch (error: any) {
+                      console.error('Erro ao processar pagamento:', error);
+                      toast.error(error?.message || 'Erro ao processar pagamento');
+                      setProcessandoSecureFields(false);
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              // Botões de seleção de método de pagamento
+              <>
+                <div className="space-y-3 mb-6">
+                  <button
+                    onClick={() => {
+                      setMetodoPagamento('pix');
+                      setUsandoSecureFields(false);
+                    }}
+                    className={`w-full p-4 rounded-xl border-2 font-semibold flex items-center gap-3 transition-all ${
+                      metodoPagamento === 'pix'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                    } dark:text-white`}
+                  >
+                    <QrCode size={24} />
+                    <div className="text-left">
+                      <div>PIX</div>
+                      <div className="text-xs text-gray-900 dark:text-gray-300">Aprovação instantânea</div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setMetodoPagamento('cartao');
+                      setUsandoSecureFields(false);
+                    }}
+                    className={`w-full p-4 rounded-xl border-2 font-semibold flex items-center gap-3 transition-all ${
+                      metodoPagamento === 'cartao' && !usandoSecureFields
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                    } dark:text-white`}
+                  >
+                    <CreditCard size={24} />
+                    <div className="text-left">
+                      <div>Cartão de Crédito (Checkout Pro)</div>
+                      <div className="text-xs text-gray-900 dark:text-gray-300">Redirecionamento seguro</div>
+                    </div>
+                  </button>
+
+                  {mpInstance && (
+                    <button
+                      onClick={() => {
+                        setMetodoPagamento('cartao');
+                        setUsandoSecureFields(true);
+                      }}
+                      className="w-full p-4 rounded-xl border-2 font-semibold flex items-center gap-3 transition-all border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:border-green-600 dark:hover:border-green-400"
+                    >
+                      <CreditCard size={24} />
+                      <div className="text-left flex-1">
+                        <div className="flex items-center gap-2">
+                          <span>Cartão de Crédito (PCI Secure Fields)</span>
+                          <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded">NOVO</span>
+                        </div>
+                        <div className="text-xs text-gray-900 dark:text-gray-300">Pagamento direto e seguro</div>
+                      </div>
+                    </button>
+                  )}
+
+                </div>
+
+                <button
+                  onClick={handleConfirmarPagamento}
+                  disabled={loading || processando}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading || processando ? (
+                    <>
+                      <Loader size={24} className="animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    `Pagar R$ ${valor.toFixed(2).replace('.', ',')}`
+                  )}
+                </button>
+
+                {/* Link do checkout (fallback para reabrir) */}
+                {metodoPagamento !== 'pix' && linkPagamento && !usandoSecureFields && (
+                  <div className="mt-6">
+                    <a
+                      href={linkPagamento}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-blue-700 dark:text-blue-400 underline"
+                    >
+                      Reabrir checkout do Mercado Pago
+                    </a>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="mt-6 text-xs text-gray-900 dark:text-gray-300 text-center">
