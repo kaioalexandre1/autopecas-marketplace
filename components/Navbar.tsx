@@ -817,6 +817,29 @@ export default function Navbar() {
             </button>
           </div>
 
+          {/* Botões Mobile - Chat e Pedidos */}
+          <div className="lg:hidden flex items-center gap-2">
+            {/* Botão Chat */}
+            <Link
+              href="/dashboard/chats"
+              className="p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all"
+              style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
+              title="Chats"
+            >
+              💬
+            </Link>
+
+            {/* Botão Pedidos */}
+            <Link
+              href="/dashboard"
+              className="p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all"
+              style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
+              title="Pedidos ao Vivo"
+            >
+              📋
+            </Link>
+          </div>
+
           {/* Menu Hamburger - Mobile */}
           <button
             onClick={() => setMenuMobileAberto(!menuMobileAberto)}

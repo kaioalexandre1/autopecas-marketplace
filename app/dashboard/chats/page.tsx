@@ -821,13 +821,6 @@ export default function ChatsPage() {
       </div>
       
       <div className="max-w-7xl mx-auto relative z-10">
-        {/* Título - Oculto no mobile quando há chat selecionado */}
-        <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-8 flex items-center ${
-          chatSelecionado ? 'hidden lg:flex' : 'flex'
-        }`}>
-          <MessageSquare className="mr-2 sm:mr-3 text-blue-600" size={32} />
-          Conversas
-        </h1>
 
         {/* Mobile: Mostrar lista OU chat, não ambos */}
         {/* Desktop: Mostrar ambos lado a lado */}
