@@ -32,7 +32,8 @@ import {
   Trash2,
   AlertCircle,
   ArrowLeft,
-  Phone
+  Phone,
+  MapPin
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -51,6 +52,18 @@ export default function ChatsPage() {
   const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [telefoneOutroUsuario, setTelefoneOutroUsuario] = useState<string | null>(null);
+  const [planosAutopecas, setPlanosAutopecas] = useState<{[key: string]: string}>({});
+  const [mostrarModalEndereco, setMostrarModalEndereco] = useState(false);
+  const [dadosEndereco, setDadosEndereco] = useState<{
+    estado?: string;
+    cidade: string;
+    endereco: string;
+    bairro?: string;
+    numero?: string;
+    complemento?: string;
+    cep?: string;
+    telefone: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -158,6 +171,32 @@ export default function ChatsPage() {
       });
       
       setChats(chatsData);
+      
+      // Buscar planos das autopeças para mostrar nas ofertas
+      if (userData.tipo === 'oficina') {
+        const autopecaIds = new Set(chatsData.map(chat => chat.autopecaId).filter(Boolean));
+        const novosPlanos: {[key: string]: string} = {};
+        
+        const promessasPlanos = Array.from(autopecaIds).map(async (autopecaId) => {
+          if (!planosAutopecas[autopecaId]) {
+            try {
+              const userDoc = await getDoc(doc(db, 'users', autopecaId));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                novosPlanos[autopecaId] = userData.plano || 'basico';
+              }
+            } catch (error) {
+              console.error(`Erro ao buscar plano da autopeça ${autopecaId}:`, error);
+            }
+          }
+        });
+        
+        await Promise.all(promessasPlanos);
+        
+        if (Object.keys(novosPlanos).length > 0) {
+          setPlanosAutopecas(prev => ({ ...prev, ...novosPlanos }));
+        }
+      }
     });
 
     return () => unsubscribe();
@@ -408,6 +447,52 @@ export default function ChatsPage() {
       }
 
       setImagemUpload(file);
+    }
+  };
+
+  // Função para abrir modal de endereço
+  const abrirModalEndereco = async () => {
+    if (!chatSelecionado || !userData) return;
+
+    try {
+      // Determinar qual usuário buscar (o outro participante do chat)
+      const outroUsuarioId = userData.tipo === 'oficina' 
+        ? chatSelecionado.autopecaId 
+        : chatSelecionado.oficinaId;
+
+      const outroUsuarioDoc = await getDoc(doc(db, 'users', outroUsuarioId));
+      
+      if (outroUsuarioDoc.exists()) {
+        const outroUsuarioData = outroUsuarioDoc.data();
+        
+        // Extrair estado da cidade (formato: "Cidade-ESTADO")
+        let estado = undefined;
+        let cidadeFormatada = outroUsuarioData.cidade || '';
+        if (cidadeFormatada && cidadeFormatada.includes('-')) {
+          const partes = cidadeFormatada.split('-');
+          if (partes.length >= 2) {
+            estado = partes[partes.length - 1].trim();
+            cidadeFormatada = partes.slice(0, -1).join('-').trim();
+          }
+        }
+        
+        setDadosEndereco({
+          estado: estado,
+          cidade: cidadeFormatada || outroUsuarioData.cidade || '',
+          endereco: outroUsuarioData.endereco || '',
+          bairro: outroUsuarioData.bairro,
+          numero: outroUsuarioData.numero,
+          complemento: outroUsuarioData.complemento,
+          cep: outroUsuarioData.cep,
+          telefone: outroUsuarioData.telefone || '',
+        });
+        setMostrarModalEndereco(true);
+      } else {
+        toast.error('Dados do usuário não encontrados');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar endereço:', error);
+      toast.error('Erro ao carregar informações de endereço');
     }
   };
 
@@ -805,9 +890,41 @@ export default function ChatsPage() {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center flex-wrap gap-2 flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                            {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
-                          </h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100">
+                              {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
+                            </h3>
+                            {/* Plano da autopeça com coroinha (apenas para oficinas) */}
+                            {userData?.tipo === 'oficina' && (() => {
+                              const plano = planosAutopecas[chat.autopecaId] || 'basico';
+                              const cores: {[key: string]: string} = {
+                                basico: 'text-gray-600 dark:text-gray-400',
+                                premium: 'text-blue-600 dark:text-blue-400',
+                                gold: 'text-yellow-600 dark:text-yellow-500',
+                                platinum: 'text-purple-600 dark:text-purple-400'
+                              };
+                              const emojis: {[key: string]: string} = {
+                                basico: '',
+                                premium: '💎',
+                                gold: '🏆',
+                                platinum: '👑'
+                              };
+                              const nomesPlanos: {[key: string]: string} = {
+                                basico: '',
+                                premium: 'Silver',
+                                gold: 'Gold',
+                                platinum: 'Platinum'
+                              };
+                              if (plano !== 'basico') {
+                                return (
+                                  <span className={`font-bold ${cores[plano]} text-xs sm:text-sm flex items-center gap-1`}>
+                                    {emojis[plano]} {nomesPlanos[plano]}
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
                           {naoLidas && quantidadeNaoLidas > 0 && (
                             <span className="text-xs font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
                               {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
@@ -836,16 +953,18 @@ export default function ChatsPage() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-900 dark:text-gray-200 mb-1">
-                        <span className="font-medium">{chat.nomePeca}</span>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100">
+                          {chat.nomePeca}
+                        </span>
                         {chat.encerrado && (
-                          <span className="ml-2 px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-xs">
+                          <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-xs font-semibold">
                             Encerrado
                           </span>
                         )}
                       </div>
                       
-                      <p className="text-xs text-gray-700 dark:text-gray-300">
+                      <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">
                         {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
                       </p>
                       
@@ -886,18 +1005,63 @@ export default function ChatsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                         <div className="flex-1 min-w-0">
-                          <h2 className="font-bold text-white text-lg sm:text-xl md:text-2xl truncate">
-                            {userData?.tipo === 'oficina' 
-                              ? chatSelecionado.autopecaNome 
-                              : chatSelecionado.oficinaNome}
-                          </h2>
-                          <p className="text-blue-100 text-sm sm:text-base md:text-lg mt-1 sm:mt-2 truncate">{chatSelecionado.nomePeca}</p>
-                          <p className="text-blue-200 text-xs sm:text-sm md:text-base truncate">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <h2 className="font-black text-xl sm:text-2xl md:text-3xl text-white truncate">
+                              {userData?.tipo === 'oficina' 
+                                ? chatSelecionado.autopecaNome 
+                                : chatSelecionado.oficinaNome}
+                            </h2>
+                            {/* Plano da autopeça com coroinha (apenas para oficinas) */}
+                            {userData?.tipo === 'oficina' && (() => {
+                              const plano = planosAutopecas[chatSelecionado.autopecaId] || 'basico';
+                              const cores: {[key: string]: string} = {
+                                basico: 'text-blue-100',
+                                premium: 'text-blue-200',
+                                gold: 'text-yellow-200',
+                                platinum: 'text-yellow-300'
+                              };
+                              const emojis: {[key: string]: string} = {
+                                basico: '',
+                                premium: '💎',
+                                gold: '🏆',
+                                platinum: '👑'
+                              };
+                              const nomesPlanos: {[key: string]: string} = {
+                                basico: '',
+                                premium: 'Silver',
+                                gold: 'Gold',
+                                platinum: 'Platinum'
+                              };
+                              if (plano !== 'basico') {
+                                return (
+                                  <span className={`font-bold ${cores[plano]} text-sm sm:text-base md:text-lg flex items-center gap-1 whitespace-nowrap`}>
+                                    {emojis[plano]} {nomesPlanos[plano]}
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                          <p className="text-blue-100 text-base sm:text-lg md:text-xl font-bold mt-1 sm:mt-2 truncate">
+                            {chatSelecionado.nomePeca}
+                          </p>
+                          <p className="text-blue-200 text-sm sm:text-base md:text-lg font-semibold truncate mt-0.5">
                             {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
                           </p>
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                          {/* Botão Endereço da loja */}
+                          <button
+                            onClick={abrirModalEndereco}
+                            className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium flex items-center transition-all shadow-lg hover:shadow-xl text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                            title="Ver endereço e telefone"
+                          >
+                            <MapPin size={16} className="mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Endereço da loja</span>
+                            <span className="sm:hidden">Endereço</span>
+                          </button>
+
                           {telefoneOutroUsuario && (
                             <button
                               onClick={abrirWhatsApp}
@@ -1159,6 +1323,63 @@ export default function ChatsPage() {
         onClose={() => setMostrarEntregadores(false)}
         nomePeca={chatSelecionado?.nomePeca}
       />
+
+      {/* Modal - Endereço da Loja/Oficina */}
+      {mostrarModalEndereco && dadosEndereco && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setMostrarModalEndereco(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <MapPin className="text-blue-600" />
+                Endereço e Contato
+              </h2>
+              <button
+                onClick={() => setMostrarModalEndereco(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+                title="Fechar"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {dadosEndereco.estado && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Estado</p>
+                  <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.estado}</p>
+                </div>
+              )}
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Cidade</p>
+                <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.cidade}</p>
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">Endereço</p>
+                <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  {dadosEndereco.endereco}
+                  {dadosEndereco.numero && `, ${dadosEndereco.numero}`}
+                  {dadosEndereco.complemento && ` - ${dadosEndereco.complemento}`}
+                  {dadosEndereco.bairro && `, ${dadosEndereco.bairro}`}
+                  {dadosEndereco.cep && ` - CEP: ${dadosEndereco.cep}`}
+                </p>
+              </div>
+              
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wider mb-1">Telefone</p>
+                <a
+                  href={`tel:${dadosEndereco.telefone}`}
+                  className="text-lg font-bold text-green-600 dark:text-green-400 hover:underline flex items-center gap-2"
+                >
+                  <Phone size={18} />
+                  {dadosEndereco.telefone}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
