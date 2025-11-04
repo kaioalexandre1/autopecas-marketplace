@@ -883,100 +883,102 @@ export default function ChatsPage() {
                           : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
                     >
-                      {/* Bloco: Nome da Loja */}
-                      <div className="mb-1.5">
-                        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded px-1.5 py-1 flex justify-between items-center">
-                          <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-                            <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                              {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
-                            </h3>
-                            {/* Plano da autopeça com coroinha (apenas para oficinas) */}
-                            {userData?.tipo === 'oficina' && (() => {
-                              const plano = planosAutopecas[chat.autopecaId] || 'basico';
-                              const cores: {[key: string]: string} = {
-                                basico: 'text-gray-600 dark:text-gray-400',
-                                premium: 'text-blue-600 dark:text-blue-400',
-                                gold: 'text-yellow-600 dark:text-yellow-500',
-                                platinum: 'text-purple-600 dark:text-purple-400'
-                              };
-                              const emojis: {[key: string]: string} = {
-                                basico: '',
-                                premium: '💎',
-                                gold: '🏆',
-                                platinum: '👑'
-                              };
-                              const nomesPlanos: {[key: string]: string} = {
-                                basico: '',
-                                premium: 'Silver',
-                                gold: 'Gold',
-                                platinum: 'Platinum'
-                              };
-                              if (plano !== 'basico') {
-                                return (
-                                  <span className={`font-bold ${cores[plano]} text-xs sm:text-sm flex items-center gap-1`}>
-                                    {emojis[plano]} {nomesPlanos[plano]}
-                                  </span>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            {chat.mensagens.length > 0 && (
-                              <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                {formatDistanceToNow(
-                                  chat.mensagens[chat.mensagens.length - 1].createdAt,
-                                  { addSuffix: true, locale: ptBR }
-                                )}
-                              </span>
-                            )}
-                            {/* Círculo verde estilo WhatsApp com número de mensagens não lidas */}
-                            {naoLidas && quantidadeNaoLidas > 0 && (
-                              <div className="flex-shrink-0">
-                                <div className="bg-green-500 rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
-                                  <span className="text-white text-[10px] font-bold">
-                                    {quantidadeNaoLidas > 99 ? '99+' : quantidadeNaoLidas}
-                                  </span>
-                                </div>
+                      {/* Nome da Loja */}
+                      <div className="mb-1.5 flex justify-between items-center">
+                        <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+                          <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
+                            {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
+                          </h3>
+                          {/* Plano da autopeça com coroinha (apenas para oficinas) */}
+                          {userData?.tipo === 'oficina' && (() => {
+                            const plano = planosAutopecas[chat.autopecaId] || 'basico';
+                            const cores: {[key: string]: string} = {
+                              basico: 'text-gray-600 dark:text-gray-400',
+                              premium: 'text-blue-600 dark:text-blue-400',
+                              gold: 'text-yellow-600 dark:text-yellow-500',
+                              platinum: 'text-purple-600 dark:text-purple-400'
+                            };
+                            const emojis: {[key: string]: string} = {
+                              basico: '',
+                              premium: '💎',
+                              gold: '🏆',
+                              platinum: '👑'
+                            };
+                            const nomesPlanos: {[key: string]: string} = {
+                              basico: '',
+                              premium: 'Silver',
+                              gold: 'Gold',
+                              platinum: 'Platinum'
+                            };
+                            if (plano !== 'basico') {
+                              return (
+                                <span className={`font-bold ${cores[plano]} text-xs sm:text-sm flex items-center gap-1`}>
+                                  {emojis[plano]} {nomesPlanos[plano]}
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {chat.mensagens.length > 0 && (
+                            <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                              {formatDistanceToNow(
+                                chat.mensagens[chat.mensagens.length - 1].createdAt,
+                                { addSuffix: true, locale: ptBR }
+                              )}
+                            </span>
+                          )}
+                          {/* Círculo verde estilo WhatsApp com número de mensagens não lidas */}
+                          {naoLidas && quantidadeNaoLidas > 0 && (
+                            <div className="flex-shrink-0">
+                              <div className="bg-green-500 rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                                <span className="text-white text-[10px] font-bold">
+                                  {quantidadeNaoLidas > 99 ? '99+' : quantidadeNaoLidas}
+                                </span>
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* Bloco: Informações do Pedido */}
+                      {/* Linha neon verde separadora */}
+                      <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+
+                      {/* Informações do Pedido */}
                       <div className="mb-1.5">
-                        <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded px-1.5 py-1">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                              {chat.nomePeca}
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
+                            {chat.nomePeca}
+                          </span>
+                          {chat.encerrado && (
+                            <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
+                              Encerrado
                             </span>
-                            {chat.encerrado && (
-                              <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
-                                Encerrado
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">
-                            {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
-                          </p>
+                          )}
                         </div>
+                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">
+                          {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
+                        </p>
                       </div>
+
+                      {/* Linha neon verde separadora */}
+                      {chat.mensagens.length > 0 && (
+                        <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent my-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                      )}
 
                       {/* Última Mensagem */}
                       {chat.mensagens.length > 0 && (
-                        <div className="mt-2">
-                          <div className="inline-block bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg px-2.5 py-1.5 max-w-full">
-                            <p className="text-xs font-medium text-green-800 dark:text-green-200 truncate italic">
-                              {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
-                            </p>
-                          </div>
+                        <div className="mt-1">
+                          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate italic">
+                            {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
+                          </p>
                         </div>
                       )}
                       
-                      {/* Badge de mensagens não lidas abaixo do nome */}
+                      {/* Badge de mensagens não lidas */}
                       {naoLidas && quantidadeNaoLidas > 0 && (
-                        <div className="mt-2">
+                        <div className="mt-1">
                           <span className="text-xs font-semibold text-red-600 dark:text-red-400">
                             {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
                           </span>
@@ -1010,48 +1012,50 @@ export default function ChatsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                         <div className="flex-1 min-w-0">
-                          {/* Bloco: Nome da Loja */}
-                          <div className="bg-white/10 dark:bg-white/5 rounded px-1.5 py-1 mb-1.5">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase">
-                                {userData?.tipo === 'oficina' 
-                                  ? chatSelecionado.autopecaNome 
-                                  : chatSelecionado.oficinaNome}
-                              </h2>
-                              {/* Plano da autopeça com coroinha (apenas para oficinas) */}
-                              {userData?.tipo === 'oficina' && (() => {
-                                const plano = planosAutopecas[chatSelecionado.autopecaId] || 'basico';
-                                const cores: {[key: string]: string} = {
-                                  basico: 'text-blue-100',
-                                  premium: 'text-blue-200',
-                                  gold: 'text-yellow-200',
-                                  platinum: 'text-yellow-300'
-                                };
-                                const emojis: {[key: string]: string} = {
-                                  basico: '',
-                                  premium: '💎',
-                                  gold: '🏆',
-                                  platinum: '👑'
-                                };
-                                const nomesPlanos: {[key: string]: string} = {
-                                  basico: '',
-                                  premium: 'Silver',
-                                  gold: 'Gold',
-                                  platinum: 'Platinum'
-                                };
-                                if (plano !== 'basico') {
-                                  return (
-                                    <span className={`font-bold ${cores[plano]} text-sm sm:text-base md:text-lg flex items-center gap-1 whitespace-nowrap`}>
-                                      {emojis[plano]} {nomesPlanos[plano]}
-                                    </span>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </div>
+                          {/* Nome da Loja */}
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                            <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase">
+                              {userData?.tipo === 'oficina' 
+                                ? chatSelecionado.autopecaNome 
+                                : chatSelecionado.oficinaNome}
+                            </h2>
+                            {/* Plano da autopeça com coroinha (apenas para oficinas) */}
+                            {userData?.tipo === 'oficina' && (() => {
+                              const plano = planosAutopecas[chatSelecionado.autopecaId] || 'basico';
+                              const cores: {[key: string]: string} = {
+                                basico: 'text-blue-100',
+                                premium: 'text-blue-200',
+                                gold: 'text-yellow-200',
+                                platinum: 'text-yellow-300'
+                              };
+                              const emojis: {[key: string]: string} = {
+                                basico: '',
+                                premium: '💎',
+                                gold: '🏆',
+                                platinum: '👑'
+                              };
+                              const nomesPlanos: {[key: string]: string} = {
+                                basico: '',
+                                premium: 'Silver',
+                                gold: 'Gold',
+                                platinum: 'Platinum'
+                              };
+                              if (plano !== 'basico') {
+                                return (
+                                  <span className={`font-bold ${cores[plano]} text-sm sm:text-base md:text-lg flex items-center gap-1 whitespace-nowrap`}>
+                                    {emojis[plano]} {nomesPlanos[plano]}
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
                           </div>
-                          {/* Bloco: Informações do Pedido */}
-                          <div className="bg-white/10 dark:bg-white/5 rounded px-1.5 py-1">
+                          
+                          {/* Linha neon verde separadora */}
+                          <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                          
+                          {/* Informações do Pedido */}
+                          <div>
                             <p className="text-blue-100 text-xs font-bold truncate uppercase">
                               {chatSelecionado.nomePeca}
                             </p>
