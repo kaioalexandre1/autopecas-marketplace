@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserType, RamoVeiculo } from '@/types';
 import { validarCPF, validarCNPJ, formatarCPF, formatarCNPJ, formatarTelefone } from '@/lib/utils';
-import { UserPlus, Wrench, Package, Truck, MapPin, Car } from 'lucide-react';
+import { estruturaBrasil } from '@/lib/estruturaBrasil';
+import { UserPlus, Wrench, Package, Truck, MapPin, Car, ChevronDown, ChevronRight, CheckCircle } from 'lucide-react';
 
 export default function CadastroPage() {
   const [tipo, setTipo] = useState<UserType>('oficina');
@@ -21,17 +22,51 @@ export default function CadastroPage() {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [erros, setErros] = useState<Record<string, string>>({});
+  const [mostrarDropdownCidade, setMostrarDropdownCidade] = useState(false);
+  const [estadosExpandidos, setEstadosExpandidos] = useState<string[]>(['Paraná-PR']); // Expandir Paraná por padrão
 
   const { signUp } = useAuth();
   const router = useRouter();
 
-  const cidadesDisponiveis = [
-    'Maringá-PR',
-    'Londrina-PR',
-    'Curitiba-PR',
-    'Cascavel-PR',
-    'Ponta Grossa-PR'
-  ];
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (mostrarDropdownCidade && !target.closest('.dropdown-cidade')) {
+        setMostrarDropdownCidade(false);
+      }
+    };
+
+    if (mostrarDropdownCidade) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [mostrarDropdownCidade]);
+
+  // Função para obter sigla do estado
+  const obterSiglaEstado = (estado: string): string => {
+    const partes = estado.split('-');
+    return partes.length > 1 ? partes[1] : '';
+  };
+
+  // Função para selecionar cidade
+  const selecionarCidade = (nomeCidade: string, estado: string) => {
+    const sigla = obterSiglaEstado(estado);
+    setCidade(`${nomeCidade}-${sigla}`);
+    setMostrarDropdownCidade(false);
+  };
+
+  // Função para expandir/recolher estado
+  const toggleEstado = (estado: string) => {
+    setEstadosExpandidos(prev => 
+      prev.includes(estado) 
+        ? prev.filter(e => e !== estado)
+        : [...prev, estado]
+    );
+  };
 
   const validarFormulario = (): boolean => {
     const novosErros: Record<string, string> = {};
@@ -391,19 +426,80 @@ export default function CadastroPage() {
                 <MapPin className="inline mr-2" size={18} />
                 🌆 Cidade
               </label>
-              <select
-                value={cidade}
-                onChange={(e) => setCidade(e.target.value)}
-                className={`w-full px-4 py-3 border-2 rounded-xl backdrop-blur-md bg-white/20 text-white font-medium focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 focus:bg-white/30 transition-all ${
-                  erros.cidade ? 'border-red-400 bg-red-500/20' : 'border-white/30'
-                }`}
-              >
-                {cidadesDisponiveis.map((c) => (
-                  <option key={c} value={c} className="bg-blue-900 text-white">
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <div className="relative dropdown-cidade">
+                <button
+                  type="button"
+                  onClick={() => setMostrarDropdownCidade(!mostrarDropdownCidade)}
+                  className={`w-full px-4 py-3 border-2 rounded-xl backdrop-blur-md bg-white/20 text-white font-medium focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 focus:bg-white/30 transition-all flex items-center justify-between ${
+                    erros.cidade ? 'border-red-400 bg-red-500/20' : 'border-white/30'
+                  }`}
+                >
+                  <span>{cidade || 'Selecione uma cidade'}</span>
+                  <ChevronDown size={18} className={`transition-transform ${mostrarDropdownCidade ? 'rotate-180' : ''}`} />
+                </button>
+
+                {mostrarDropdownCidade && (
+                  <div 
+                    className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-xl shadow-xl border-2 border-gray-200 dark:border-gray-700 py-2 max-h-[400px] overflow-y-auto z-50 dropdown-cidade"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">Selecione Estado e Cidade</p>
+                    </div>
+                    
+                    {Object.entries(estruturaBrasil).map(([estado, cidades]) => (
+                      <div key={estado}>
+                        {/* Estado */}
+                        <div className="flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleEstado(estado)}
+                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <ChevronRight 
+                              size={16} 
+                              className={`text-gray-600 dark:text-gray-300 transition-transform ${estadosExpandidos.includes(estado) ? 'rotate-90' : ''}`}
+                            />
+                          </button>
+                          <span className="flex-1 px-2 py-2 text-sm font-semibold text-gray-900 dark:text-white">
+                            {estado}
+                          </span>
+                        </div>
+                        
+                        {/* Cidades */}
+                        {estadosExpandidos.includes(estado) && (
+                          <div className="pl-8">
+                            {cidades.map((nomeCidade) => {
+                              const cidadeCompleta = `${nomeCidade}-${obterSiglaEstado(estado)}`;
+                              const isSelecionada = cidade === cidadeCompleta;
+                              
+                              return (
+                                <button
+                                  key={nomeCidade}
+                                  type="button"
+                                  onClick={() => selecionarCidade(nomeCidade, estado)}
+                                  className="w-full px-4 py-2 flex items-center gap-2 text-left hover:bg-blue-50 dark:hover:bg-gray-700"
+                                >
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                    isSelecionada
+                                      ? 'bg-blue-600 border-blue-600'
+                                      : 'border-gray-400'
+                                  }`}>
+                                    {isSelecionada && (
+                                      <CheckCircle size={12} className="text-white" />
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-gray-700 dark:text-gray-300">{nomeCidade}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               {erros.cidade && <p className="mt-1 text-sm text-red-300 font-semibold drop-shadow-lg">⚠️ {erros.cidade}</p>}
               <p className="mt-2 text-xs text-cyan-200 font-medium bg-cyan-500/20 rounded-lg px-3 py-1.5 backdrop-blur-sm border border-cyan-400/30">
                 ℹ️ Você poderá ver e fazer pedidos em todas as cidades pelo painel
