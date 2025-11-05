@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+    // Função auxiliar para verificar se é admin
+    function isAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Usuários podem ler e atualizar apenas seus próprios dados
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+                    (request.auth.uid == userId || isAdmin());
+    }
+
+    // Pedidos podem ser criados por oficinas e lidos por todos autenticados
+    match /pedidos/{pedidoId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && 
+                     (resource.data.oficinaId == request.auth.uid || isAdmin());
+    }
+
+    // Chats podem ser acessados pelos participantes
+    match /chats/{chatId} {
+      allow read: if request.auth != null && 
+                   ((resource.data.keys().hasAll(['oficinaId']) && resource.data.oficinaId == request.auth.uid) ||
+                    (resource.data.keys().hasAll(['autopecaId']) && resource.data.autopecaId == request.auth.uid) ||
+                    isAdmin());
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+                    ((resource.data.keys().hasAll(['oficinaId']) && resource.data.oficinaId == request.auth.uid) ||
+                     (resource.data.keys().hasAll(['autopecaId']) && resource.data.autopecaId == request.auth.uid) ||
+                     isAdmin());
+      allow delete: if request.auth != null && 
+                    ((resource.data.keys().hasAll(['oficinaId']) && resource.data.oficinaId == request.auth.uid) ||
+                     (resource.data.keys().hasAll(['autopecaId']) && resource.data.autopecaId == request.auth.uid) ||
+                     isAdmin());
+    }
+
+    // Negócios fechados podem ser lidos pelos participantes
+    match /negocios_fechados/{negocioId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+
+    // Configurações do sistema (apenas admins)
+    match /configuracoes/{configId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Assinaturas
+    match /assinaturas/{assinaturaId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+                     (resource.data.autopecaId == request.auth.uid || isAdmin());
+    }
+
+    // Pagamentos
+    match /pagamentos/{pagamentoId} {
+      allow read: if request.auth != null && 
+                   (resource.data.autopecaId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null;
+      allow update: if isAdmin();
+    }
+
+    // Chats de Suporte
+    match /suporte_chats/{chatId} {
+      allow read: if request.auth != null && 
+                   (resource.data.usuarioId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+                    (resource.data.usuarioId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Sessões de usuário - limite de 3 dispositivos
+    match /user_sessions/{sessionId} {
+      allow read, create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+  }
+
+}
+

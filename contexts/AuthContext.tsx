@@ -361,8 +361,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
             
             console.log('Tentando criar sessão:', sessaoData);
-            await setDoc(doc(db, 'user_sessions', sessionId), sessaoData);
-            console.log('Sessão criada com sucesso!');
+            console.log('Usuário autenticado:', userId, 'Auth UID:', auth.currentUser?.uid);
+            
+            try {
+              await setDoc(doc(db, 'user_sessions', sessionId), sessaoData);
+              console.log('✅ Sessão criada com sucesso!');
+            } catch (createError: any) {
+              console.error('❌ Erro ao criar sessão:', createError.code, createError.message);
+              throw createError;
+            }
 
             // Armazenar sessionId no localStorage para validação posterior
             if (typeof window !== 'undefined') {
@@ -371,8 +378,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (sessionError: any) {
             // Se houver erro de permissão, apenas logar - não bloquear login
+            console.error('❌ Erro completo na sessão:', {
+              code: sessionError.code,
+              message: sessionError.message,
+              stack: sessionError.stack
+            });
+            
             if (sessionError.code === 'permission-denied') {
-              console.warn('⚠️ Erro de permissão ao criar sessão. Verifique as regras do Firestore.');
+              console.warn('⚠️ Erro de permissão ao criar sessão.');
+              console.warn('Verifique se as regras do Firestore foram publicadas corretamente.');
+              console.warn('Regra esperada: allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;');
             } else if (sessionError.code === 'failed-precondition') {
               // Erro de índice - tenta criar sem orderBy
               console.warn('⚠️ Índice composto não criado ainda. Criando sessão sem orderBy...');
@@ -393,10 +408,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
                 console.log('✅ Sessão criada com sucesso (sem índice)!');
               } catch (retryError: any) {
-                console.error('Erro ao criar sessão (retry):', retryError);
+                console.error('❌ Erro ao criar sessão (retry):', retryError.code, retryError.message);
               }
             } else {
-              console.error('Erro ao gerenciar sessão:', sessionError.code, sessionError.message);
+              console.error('❌ Erro desconhecido ao gerenciar sessão:', sessionError.code, sessionError.message);
             }
           }
         } catch (error) {
