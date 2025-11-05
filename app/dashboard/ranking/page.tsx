@@ -241,7 +241,7 @@ export default function RankingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-blue-600 p-4 sm:p-6 relative overflow-hidden">
       {/* Fundo animado com emojis */}
       {/* Raios de energia */}
       <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent opacity-20 animate-beam"></div>
