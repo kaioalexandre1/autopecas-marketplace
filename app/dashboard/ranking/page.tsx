@@ -512,10 +512,10 @@ export default function RankingPage() {
         </div>
 
         {/* Seletor de Período */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 border-2 border-green-400/30" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-6 border-2 border-green-400/30 dark:border-green-500/30" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
             <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2" style={{ color: '#22c55e', textShadow: '0 0 10px rgba(34, 197, 94, 0.5)' }}>
-              <TrendingUp className="text-green-500" size={24} style={{ filter: 'drop-shadow(0 0 5px rgba(34, 197, 94, 0.8))' }} />
+              <TrendingUp className="text-green-500 dark:text-green-400" size={24} style={{ filter: 'drop-shadow(0 0 5px rgba(34, 197, 94, 0.8))' }} />
               <span className="hidden sm:inline uppercase">Período</span>
             </h2>
             
@@ -531,8 +531,8 @@ export default function RankingPage() {
                   onClick={() => setPeriodoSelecionado(periodo.key)}
                   className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-sm transition-all uppercase ${
                     periodoSelecionado === periodo.key
-                      ? 'bg-green-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-600 hover:border-green-400 border-2 border-transparent'
+                      ? 'bg-green-600 dark:bg-green-700 text-white shadow-lg'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-600 hover:text-green-600 dark:hover:text-green-400 hover:border-green-400 dark:hover:border-green-500 border-2 border-transparent'
                   }`}
                   style={periodoSelecionado === periodo.key ? { boxShadow: '0 0 15px rgba(34, 197, 94, 0.5)' } : {}}
                 >
@@ -550,7 +550,7 @@ export default function RankingPage() {
             </h3>
             {rankingAutopecas.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-green-600/70 text-lg font-semibold">Nenhum negócio fechado neste período e região.</p>
+                <p className="text-green-600/70 dark:text-green-400/70 text-lg font-semibold">Nenhum negócio fechado neste período e região.</p>
               </div>
             ) : (
               <div className="space-y-0">
@@ -565,7 +565,7 @@ export default function RankingPage() {
                         <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent my-3 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
                       )}
                       <div 
-                        className="flex items-center justify-between p-4 rounded-lg border-l-4 shadow-md hover:shadow-lg transition-all"
+                        className="flex items-center justify-between p-4 rounded-lg border-l-4 shadow-md hover:shadow-lg transition-all bg-white dark:bg-gray-800"
                         style={index === 0 ? {
                           background: 'linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1))',
                           boxShadow: '0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3), inset 0 0 20px rgba(59, 130, 246, 0.1)',
