@@ -284,7 +284,7 @@ export default function RankingPage() {
           <div className="flex items-center justify-between mb-4">
             <Link 
               href="/dashboard" 
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+              className="flex items-center gap-2 text-white hover:text-blue-200 font-semibold transition-colors"
             >
               <ArrowLeft size={20} />
               <span className="hidden sm:inline">Voltar ao Dashboard</span>
@@ -292,19 +292,27 @@ export default function RankingPage() {
             </Link>
           </div>
           
-          {/* Título com neon amarelo */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 uppercase text-center sm:text-left">
-            <span 
-              className="inline-block"
-              style={{
-                color: '#FFD700',
-                textShadow: '0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.4)',
-                letterSpacing: '0.05em'
-              }}
-            >
-              MELHORES VENDEDORES DO SITE
-            </span>
-          </h1>
+          {/* Card com título em verde neon */}
+          <div 
+            className="bg-green-500/20 border-2 border-green-400 rounded-xl p-4 sm:p-6 shadow-lg mb-4"
+            style={{
+              boxShadow: '0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3), inset 0 0 20px rgba(34, 197, 94, 0.1)'
+            }}
+          >
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase text-center sm:text-left flex items-center justify-center sm:justify-start gap-3">
+              <span 
+                className="inline-block"
+                style={{
+                  color: '#22c55e',
+                  textShadow: '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4)',
+                  letterSpacing: '0.05em'
+                }}
+              >
+                MELHORES VENDEDORES DO SITE
+              </span>
+              <span className="text-3xl sm:text-4xl md:text-5xl">🚀</span>
+            </h1>
+          </div>
         </div>
 
         {/* Seletor de Localização */}
