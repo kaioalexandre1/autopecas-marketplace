@@ -294,12 +294,12 @@ export default function RankingPage() {
           
           {/* Card com título em verde neon */}
           <div 
-            className="bg-green-500/20 border-2 border-green-400 rounded-xl p-4 sm:p-6 shadow-lg mb-4"
+            className="bg-white border-2 border-green-400 rounded-xl p-4 sm:p-6 shadow-lg mb-4"
             style={{
               boxShadow: '0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3), inset 0 0 20px rgba(34, 197, 94, 0.1)'
             }}
           >
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase text-center sm:text-left flex items-center justify-center sm:justify-start gap-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase flex items-center justify-center gap-3">
               <span 
                 className="inline-block"
                 style={{
@@ -316,14 +316,15 @@ export default function RankingPage() {
         </div>
 
         {/* Seletor de Localização */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 border-2 border-green-400/30" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>
           <div className="relative">
             <button
               onClick={() => setMostrarDropdownLocalizacao(!mostrarDropdownLocalizacao)}
-              className="w-full flex items-center justify-between bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="w-full flex items-center justify-between bg-green-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-700 transition-all uppercase"
+              style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.5)' }}
             >
               <div className="flex items-center gap-2">
-                <MapPin size={20} />
+                <MapPin size={20} style={{ filter: 'drop-shadow(0 0 3px rgba(255, 255, 255, 0.5))' }} />
                 <span>
                   {brasilSelecionado 
                     ? '🇧🇷 Brasil inteiro' 
@@ -455,11 +456,11 @@ export default function RankingPage() {
         </div>
 
         {/* Seletor de Período */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 border-2 border-green-400/30" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2">
-              <TrendingUp className="text-green-600" size={24} />
-              <span className="hidden sm:inline">Período</span>
+            <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2" style={{ color: '#22c55e', textShadow: '0 0 10px rgba(34, 197, 94, 0.5)' }}>
+              <TrendingUp className="text-green-500" size={24} style={{ filter: 'drop-shadow(0 0 5px rgba(34, 197, 94, 0.8))' }} />
+              <span className="hidden sm:inline uppercase">Período</span>
             </h2>
             
             <div className="flex gap-2 flex-wrap">
@@ -472,11 +473,12 @@ export default function RankingPage() {
                 <button
                   key={periodo.key}
                   onClick={() => setPeriodoSelecionado(periodo.key)}
-                  className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-sm transition-all uppercase ${
                     periodoSelecionado === periodo.key
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-green-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-600 hover:border-green-400 border-2 border-transparent'
                   }`}
+                  style={periodoSelecionado === periodo.key ? { boxShadow: '0 0 15px rgba(34, 197, 94, 0.5)' } : {}}
                 >
                   {periodo.label}
                 </button>
@@ -486,33 +488,38 @@ export default function RankingPage() {
 
           {/* Ranking de Autopeças */}
           <div>
-            <h3 className="text-lg sm:text-xl font-black text-gray-900 mb-4">
-              🏆 Ranking por Faturamento
+            <h3 className="text-lg sm:text-xl font-black mb-4 flex items-center gap-2 uppercase" style={{ color: '#22c55e', textShadow: '0 0 10px rgba(34, 197, 94, 0.5)' }}>
+              <span className="text-2xl">🏆</span>
+              <span>Ranking por Faturamento</span>
             </h3>
             {rankingAutopecas.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500 text-lg">Nenhum negócio fechado neste período e região.</p>
+                <p className="text-green-600/70 text-lg font-semibold">Nenhum negócio fechado neste período e região.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {rankingAutopecas.map((autopeca, index) => (
                   <div 
                     key={autopeca.id}
-                    className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg border-l-4 border-blue-500 shadow-md hover:shadow-lg transition-shadow"
+                    className="flex items-center justify-between bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all hover:border-green-400"
+                    style={{ 
+                      boxShadow: index < 3 ? '0 0 15px rgba(34, 197, 94, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                      borderLeftColor: index === 0 ? '#eab308' : index === 1 ? '#9ca3af' : index === 2 ? '#ea580c' : '#22c55e'
+                    }}
                   >
                     <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                       <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-white flex-shrink-0 ${
-                        index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-blue-500'
-                      }`}>
+                        index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-green-600'
+                      }`} style={{ boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)' }}>
                         {index + 1}º
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-black text-gray-900 text-sm sm:text-base truncate">{autopeca.nome}</p>
-                        <p className="text-xs sm:text-sm text-gray-600">{autopeca.quantidade} venda{autopeca.quantidade > 1 ? 's' : ''}</p>
+                        <p className="font-black text-sm sm:text-base truncate uppercase" style={{ color: '#15803d' }}>{autopeca.nome}</p>
+                        <p className="text-xs sm:text-sm font-semibold" style={{ color: '#22c55e' }}>{autopeca.quantidade} venda{autopeca.quantidade > 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0 ml-4">
-                      <p className="text-lg sm:text-2xl font-black text-green-600">R$ {autopeca.total.toFixed(2)}</p>
+                      <p className="text-lg sm:text-2xl font-black" style={{ color: '#16a34a', textShadow: '0 0 8px rgba(34, 197, 94, 0.4)' }}>R$ {autopeca.total.toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
