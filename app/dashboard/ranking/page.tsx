@@ -268,10 +268,10 @@ export default function RankingPage() {
   // Função para obter info do plano
   const getPlanoInfo = (plano: string) => {
     const planos: Record<string, { nome: string; emoji: string; cor: string }> = {
-      basico: { nome: 'Básico', emoji: '', cor: 'text-gray-600' },
-      premium: { nome: 'Silver', emoji: '💎', cor: 'text-blue-600' },
-      gold: { nome: 'Gold', emoji: '🏆', cor: 'text-yellow-600' },
-      platinum: { nome: 'Platinum', emoji: '👑', cor: 'text-purple-600' }
+      basico: { nome: 'Básico', emoji: '', cor: '#6b7280' }, // Cinza
+      premium: { nome: 'Silver', emoji: '💎', cor: '#2563eb' }, // Azul
+      gold: { nome: 'Gold', emoji: '🏆', cor: '#eab308' }, // Amarelo/Dourado
+      platinum: { nome: 'Platinum', emoji: '👑', cor: '#9333ea' } // Roxo
     };
     return planos[plano] || planos.basico;
   };
@@ -590,8 +590,7 @@ export default function RankingPage() {
                               <p 
                                 className="font-black text-sm sm:text-base truncate uppercase" 
                                 style={index === 0 ? {
-                                  color: '#3b82f6',
-                                  textShadow: '0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.5)'
+                                  color: '#3b82f6'
                                 } : {
                                   color: '#15803d'
                                 }}
@@ -600,19 +599,13 @@ export default function RankingPage() {
                               </p>
                               <span 
                                 className="text-xs sm:text-sm font-semibold flex items-center gap-1 whitespace-nowrap" 
-                                style={index === 0 ? {
-                                  color: '#3b82f6',
-                                  textShadow: '0 0 8px rgba(59, 130, 246, 0.6)'
-                                } : {
-                                  color: '#3b82f6',
-                                  textShadow: '0 0 8px rgba(59, 130, 246, 0.6)'
-                                }}
+                                style={{ color: planoInfo.cor }}
                               >
                                 <span>-{planoInfo.nome}</span>
                                 {planoInfo.emoji && <span>{planoInfo.emoji}</span>}
                               </span>
                               {isTop1Cidade && (
-                                <span className="text-xs sm:text-sm font-bold flex items-center gap-1 whitespace-nowrap" style={{ color: '#3b82f6', textShadow: '0 0 8px rgba(59, 130, 246, 0.6)' }}>
+                                <span className="text-xs sm:text-sm font-bold flex items-center gap-1 whitespace-nowrap" style={{ color: '#3b82f6' }}>
                                   TOP 1 {cidadeFormatada} 👑
                                 </span>
                               )}
@@ -620,8 +613,7 @@ export default function RankingPage() {
                             <p 
                               className="text-xs sm:text-sm font-semibold mt-1" 
                               style={index === 0 ? {
-                                color: '#3b82f6',
-                                textShadow: '0 0 8px rgba(59, 130, 246, 0.6)'
+                                color: '#3b82f6'
                               } : {
                                 color: '#22c55e'
                               }}
@@ -634,11 +626,9 @@ export default function RankingPage() {
                           <p 
                             className="text-lg sm:text-2xl font-black" 
                             style={index === 0 ? {
-                              color: '#3b82f6',
-                              textShadow: '0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.5)'
+                              color: '#3b82f6'
                             } : {
-                              color: '#16a34a',
-                              textShadow: '0 0 8px rgba(34, 197, 94, 0.4)'
+                              color: '#16a34a'
                             }}
                           >
                             R$ {autopeca.total.toFixed(2)}
