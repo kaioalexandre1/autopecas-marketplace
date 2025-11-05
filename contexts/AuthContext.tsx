@@ -267,73 +267,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const querySnapshot = await getDocs(q);
       const deletePromises = querySnapshot.docs.map(docSnapshot => deleteDoc(docSnapshot.ref));
       await Promise.all(deletePromises);
-    } catch (error) {
-      console.error('Erro ao limpar sessões expiradas:', error);
+    } catch (error: any) {
+      // Se for erro de permissão, não bloquear o login - apenas logar silenciosamente
+      if (error.code === 'permission-denied') {
+        console.warn('Permissões do Firestore não configuradas para sessões. Configure as regras de segurança.');
+      } else {
+        console.error('Erro ao limpar sessões expiradas:', error);
+      }
     }
   };
 
   const signIn = async (email: string, senha: string) => {
     try {
-      // Fazer login no Firebase Auth
+      // Fazer login no Firebase Auth (isso NÃO depende de regras do Firestore)
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       const userId = userCredential.user.uid;
 
-      // Limpar sessões expiradas primeiro
-      await limparSessoesExpiradas(userId);
+      // Login foi bem-sucedido! Agora tentar gerenciar sessões (sem bloquear se falhar)
+      // Executar em background, sem bloquear o login
+      setTimeout(async () => {
+        try {
+          // Limpar sessões expiradas (sem bloquear se falhar)
+          try {
+            await limparSessoesExpiradas(userId);
+          } catch (e: any) {
+            if (e.code !== 'permission-denied') {
+              console.error('Erro ao limpar sessões expiradas:', e);
+            }
+          }
 
-      // Verificar quantas sessões ativas existem
-      const sessoesRef = collection(db, 'user_sessions');
-      const q = query(
-        sessoesRef,
-        where('userId', '==', userId),
-        orderBy('lastActivity', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const sessoesAtivas = querySnapshot.docs;
+          try {
+            // Verificar quantas sessões ativas existem
+            const sessoesRef = collection(db, 'user_sessions');
+            const q = query(
+              sessoesRef,
+              where('userId', '==', userId)
+            );
+            
+            const querySnapshot = await getDocs(q);
+            const sessoesAtivas = querySnapshot.docs;
 
-      // Se já existem 3 ou mais sessões, remover a mais antiga
-      if (sessoesAtivas.length >= 3) {
-        // Ordenar por lastActivity (mais antiga primeiro)
-        const sessoesOrdenadas = sessoesAtivas.sort((a, b) => {
-          const aTime = a.data().lastActivity?.toMillis() || 0;
-          const bTime = b.data().lastActivity?.toMillis() || 0;
-          return aTime - bTime;
-        });
+            // Se já existem 3 ou mais sessões, remover a mais antiga
+            if (sessoesAtivas.length >= 3) {
+              // Ordenar por lastActivity (mais antiga primeiro) no código
+              const sessoesOrdenadas = sessoesAtivas.sort((a, b) => {
+                const aTime = a.data().lastActivity?.toMillis() || 0;
+                const bTime = b.data().lastActivity?.toMillis() || 0;
+                return aTime - bTime;
+              });
 
-        // Remover a sessão mais antiga
-        const sessaoMaisAntiga = sessoesOrdenadas[0];
-        await deleteDoc(sessaoMaisAntiga.ref);
-        
-        // Fazer logout da sessão removida (invalidação do token)
-        // Nota: O Firebase Auth não permite invalidar tokens de outros dispositivos diretamente
-        // Mas podemos registrar isso para que o sistema saiba que a sessão foi removida
-        toast.info('Uma sessão antiga foi removida para permitir este login. Limite: 3 dispositivos simultâneos.');
-      }
+              // Remover a sessão mais antiga
+              const sessaoMaisAntiga = sessoesOrdenadas[0];
+              try {
+                await deleteDoc(sessaoMaisAntiga.ref);
+                toast.info('Uma sessão antiga foi removida. Limite: 3 dispositivos simultâneos.');
+              } catch (e) {
+                // Ignorar erro ao deletar
+              }
+            }
 
-      // Criar nova sessão
-      const sessionId = generateSessionId();
-      const agora = Timestamp.now();
-      
-      await setDoc(doc(db, 'user_sessions', sessionId), {
-        userId,
-        sessionId,
-        createdAt: agora,
-        lastActivity: agora,
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-      });
+            // Criar nova sessão
+            const sessionId = generateSessionId();
+            const agora = Timestamp.now();
+            
+            await setDoc(doc(db, 'user_sessions', sessionId), {
+              userId,
+              sessionId,
+              createdAt: agora,
+              lastActivity: agora,
+              userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+            });
 
-      // Armazenar sessionId no localStorage para validação posterior
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sessionId', sessionId);
-        localStorage.setItem('userId', userId);
-      }
+            // Armazenar sessionId no localStorage para validação posterior
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('sessionId', sessionId);
+              localStorage.setItem('userId', userId);
+            }
+          } catch (sessionError: any) {
+            // Se houver erro de permissão, apenas logar - não bloquear login
+            if (sessionError.code === 'permission-denied' || sessionError.code === 'failed-precondition') {
+              console.warn('⚠️ Regras do Firestore não configuradas. Configure as regras para ativar o limite de sessões.');
+            } else {
+              console.error('Erro ao gerenciar sessão:', sessionError);
+            }
+          }
+        } catch (error) {
+          // Erro geral - apenas logar
+          console.warn('Erro ao gerenciar sessões:', error);
+        }
+      }, 100); // Executar após 100ms para não bloquear o login
 
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {
       console.error('Erro no login:', error);
+      // Erros do Firebase Auth (não do Firestore)
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         toast.error('Email ou senha incorretos!');
+      } else if (error.code === 'auth/invalid-email') {
+        toast.error('Email inválido!');
+      } else if (error.code === 'auth/too-many-requests') {
+        toast.error('Muitas tentativas. Tente novamente mais tarde.');
       } else {
         toast.error('Erro ao fazer login. Tente novamente.');
       }
