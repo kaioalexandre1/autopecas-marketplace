@@ -936,6 +936,35 @@ export default function DashboardPage() {
         <div className="absolute top-40 right-32 w-2 h-2 bg-yellow-400 rounded-full opacity-70 animate-led-pulse-delayed shadow-lg shadow-yellow-400"></div>
         <div className="absolute bottom-32 left-40 w-2 h-2 bg-blue-400 rounded-full opacity-70 animate-led-pulse shadow-lg shadow-blue-400"></div>
         <div className="absolute bottom-20 right-20 w-2 h-2 bg-green-400 rounded-full opacity-70 animate-led-pulse-delayed shadow-lg shadow-green-400"></div>
+        <div className="absolute top-60 left-1/3 w-2 h-2 bg-purple-400 rounded-full opacity-70 shadow-lg shadow-purple-400"></div>
+        <div className="absolute bottom-60 right-1/4 w-2 h-2 bg-pink-400 rounded-full opacity-70 shadow-lg shadow-pink-400"></div>
+        
+        {/* Linhas de energia conectando */}
+        <svg className="absolute inset-0 w-full h-full opacity-20" style={{ mixBlendMode: 'screen' }}>
+          <line x1="10%" y1="20%" x2="90%" y2="30%" stroke="url(#grad1)" strokeWidth="1" className="animate-energy" />
+          <line x1="20%" y1="70%" x2="80%" y2="40%" stroke="url(#grad2)" strokeWidth="1" className="animate-energy-delayed" />
+          <line x1="30%" y1="50%" x2="70%" y2="80%" stroke="url(#grad3)" strokeWidth="1" className="animate-energy" />
+          <defs>
+            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: 'rgb(34, 211, 238)', stopOpacity: 0 }} />
+              <stop offset="50%" style={{ stopColor: 'rgb(34, 211, 238)', stopOpacity: 1 }} />
+              <stop offset="100%" style={{ stopColor: 'rgb(34, 211, 238)', stopOpacity: 0 }} />
+            </linearGradient>
+            <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: 'rgb(96, 165, 250)', stopOpacity: 0 }} />
+              <stop offset="50%" style={{ stopColor: 'rgb(96, 165, 250)', stopOpacity: 1 }} />
+              <stop offset="100%" style={{ stopColor: 'rgb(96, 165, 250)', stopOpacity: 0 }} />
+            </linearGradient>
+            <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: 'rgb(250, 204, 21)', stopOpacity: 0 }} />
+              <stop offset="50%" style={{ stopColor: 'rgb(250, 204, 21)', stopOpacity: 1 }} />
+              <stop offset="100%" style={{ stopColor: 'rgb(250, 204, 21)', stopOpacity: 0 }} />
+            </linearGradient>
+          </defs>
+        </svg>
+        
+        {/* Grade de linhas sutis */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         
         {/* Emojis de autopeças e carros flutuantes - ESTILO BOLHAS! */}
         <div className="absolute top-10 left-10 text-6xl opacity-40 animate-bounce1 drop-shadow-2xl">🚗</div>
@@ -995,6 +1024,49 @@ export default function DashboardPage() {
         <div className="absolute bottom-16 left-16 w-1 h-1 bg-yellow-300 rounded-full opacity-70 animate-twinkle shadow-sm shadow-yellow-300"></div>
         <div className="absolute bottom-48 right-32 w-1 h-1 bg-blue-300 rounded-full opacity-70 animate-twinkle-delayed shadow-sm shadow-blue-300"></div>
         <div className="absolute top-48 left-32 w-1 h-1 bg-green-300 rounded-full opacity-70 animate-twinkle shadow-sm shadow-green-300"></div>
+
+        {/* Pontos de circuito */}
+        <div className="absolute top-1/3 left-1/6 w-32 h-32 opacity-20">
+          <div className="absolute w-1 h-1 bg-cyan-400 rounded-full top-0 left-0"></div>
+          <div className="absolute w-1 h-1 bg-cyan-400 rounded-full top-0 right-0"></div>
+          <div className="absolute w-1 h-1 bg-cyan-400 rounded-full bottom-0 left-0"></div>
+          <div className="absolute w-1 h-1 bg-cyan-400 rounded-full bottom-0 right-0"></div>
+          <div className="absolute w-full h-0.5 bg-cyan-400 top-0"></div>
+          <div className="absolute w-full h-0.5 bg-cyan-400 bottom-0"></div>
+          <div className="absolute w-0.5 h-full bg-cyan-400 left-0"></div>
+          <div className="absolute w-0.5 h-full bg-cyan-400 right-0"></div>
+        </div>
+
+        {/* Hexágonos tecnológicos */}
+        <div className="absolute top-1/5 right-1/5 w-16 h-16 opacity-15 animate-spin-slow">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <polygon points="50,5 90,30 90,70 50,95 10,70 10,30" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-400" />
+          </svg>
+        </div>
+        <div className="absolute bottom-1/5 left-1/5 w-20 h-20 opacity-15 animate-spin-slow-reverse">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <polygon points="50,5 90,30 90,70 50,95 10,70 10,30" fill="none" stroke="currentColor" strokeWidth="2" className="text-yellow-400" />
+          </svg>
+        </div>
+
+        {/* Linhas de código simuladas */}
+        <div className="absolute top-1/2 left-5 opacity-10">
+          <div className="w-24 h-1 bg-cyan-400 mb-2 animate-code-line"></div>
+          <div className="w-16 h-1 bg-cyan-400 mb-2 animate-code-line-delayed"></div>
+          <div className="w-20 h-1 bg-cyan-400 animate-code-line"></div>
+        </div>
+        <div className="absolute bottom-1/4 right-5 opacity-10">
+          <div className="w-20 h-1 bg-blue-400 mb-2 animate-code-line-delayed"></div>
+          <div className="w-28 h-1 bg-blue-400 mb-2 animate-code-line"></div>
+          <div className="w-16 h-1 bg-blue-400 animate-code-line-delayed"></div>
+        </div>
+
+        {/* Círculos de radar */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="w-96 h-96 border border-cyan-400 rounded-full opacity-10 animate-radar"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 border border-cyan-400 rounded-full opacity-10 animate-radar-delayed"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-cyan-400 rounded-full opacity-10 animate-radar"></div>
+        </div>
       </div>
 
       {/* Conteúdo principal (com z-index para ficar acima do fundo) */}
