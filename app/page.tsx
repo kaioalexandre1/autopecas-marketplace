@@ -71,37 +71,55 @@ export default function Home() {
         {/* Grade de linhas sutis */}
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         
-        {/* Emojis de autopeças e carros flutuantes - ESTILO BOLHAS! */}
-        <div className="absolute top-10 left-10 text-6xl opacity-40 animate-bounce1 drop-shadow-2xl">🚗</div>
-        <div className="absolute top-20 left-1/4 text-5xl opacity-35 animate-bounce2 drop-shadow-2xl">🔧</div>
-        <div className="absolute top-16 left-1/2 text-6xl opacity-45 animate-bounce3 drop-shadow-2xl">🛞</div>
-        <div className="absolute top-12 right-1/4 text-5xl opacity-40 animate-bounce4 drop-shadow-2xl">⚙️</div>
-        <div className="absolute top-24 right-10 text-7xl opacity-35 animate-bounce5 drop-shadow-2xl">🏎️</div>
-        <div className="absolute top-40 left-16 text-5xl opacity-50 animate-bounce6 drop-shadow-2xl">🔩</div>
-        <div className="absolute top-48 left-1/3 text-6xl opacity-40 animate-bounce7 drop-shadow-2xl">🚙</div>
-        <div className="absolute top-44 right-1/3 text-5xl opacity-45 animate-bounce8 drop-shadow-2xl">🔋</div>
-        <div className="absolute top-52 right-20 text-6xl opacity-38 animate-bounce9 drop-shadow-2xl">⚡</div>
-        <div className="absolute top-1/2 left-8 text-7xl opacity-30 animate-bounce10 drop-shadow-2xl">🛠️</div>
-        <div className="absolute top-1/2 left-1/4 text-5xl opacity-42 animate-bounce11 drop-shadow-2xl">🏁</div>
-        <div className="absolute top-1/2 left-1/2 text-6xl opacity-35 animate-bounce12 drop-shadow-2xl">🚘</div>
-        <div className="absolute top-1/2 right-1/4 text-5xl opacity-48 animate-bounce13 drop-shadow-2xl">🔑</div>
-        <div className="absolute top-1/2 right-12 text-6xl opacity-40 animate-bounce14 drop-shadow-2xl">🛡️</div>
-        <div className="absolute bottom-48 left-20 text-5xl opacity-45 animate-bounce15 drop-shadow-2xl">🚕</div>
-        <div className="absolute bottom-52 left-1/3 text-6xl opacity-38 animate-bounce16 drop-shadow-2xl">⛽</div>
-        <div className="absolute bottom-44 right-1/3 text-5xl opacity-42 animate-bounce17 drop-shadow-2xl">🧰</div>
-        <div className="absolute bottom-40 right-16 text-6xl opacity-36 animate-bounce18 drop-shadow-2xl">💡</div>
-        <div className="absolute bottom-24 left-12 text-6xl opacity-40 animate-bounce19 drop-shadow-2xl">🚓</div>
-        <div className="absolute bottom-20 left-1/4 text-5xl opacity-44 animate-bounce20 drop-shadow-2xl">🔌</div>
-        <div className="absolute bottom-16 left-1/2 text-7xl opacity-32 animate-bounce21 drop-shadow-2xl">🚗</div>
-        <div className="absolute bottom-20 right-1/4 text-5xl opacity-46 animate-bounce22 drop-shadow-2xl">🪛</div>
-        <div className="absolute bottom-12 right-10 text-6xl opacity-40 animate-bounce23 drop-shadow-2xl">🚙</div>
-        <div className="absolute top-1/3 left-1/6 text-5xl opacity-35 animate-bounce24 drop-shadow-2xl">🏆</div>
-        <div className="absolute top-2/3 left-1/5 text-6xl opacity-38 animate-bounce25 drop-shadow-2xl">🔩</div>
-        <div className="absolute top-1/4 right-1/6 text-5xl opacity-43 animate-bounce26 drop-shadow-2xl">⚙️</div>
-        <div className="absolute bottom-1/3 right-1/5 text-6xl opacity-37 animate-bounce27 drop-shadow-2xl">🛞</div>
-        <div className="absolute bottom-2/3 left-1/3 text-5xl opacity-41 animate-bounce28 drop-shadow-2xl">🔧</div>
-        <div className="absolute top-1/3 right-1/3 text-6xl opacity-34 animate-bounce29 drop-shadow-2xl">⚡</div>
-        <div className="absolute top-60 left-1/5 text-5xl opacity-37 animate-bounce30 drop-shadow-2xl">🚘</div>
+        {/* Emojis de autopeças e carros flutuantes - ESTILO BOLHAS! - Distribuídos por toda a altura */}
+        {/* Topo (0-10%) */}
+        <div className="absolute top-[5%] left-[5%] text-6xl opacity-40 animate-bounce1 drop-shadow-2xl">🚗</div>
+        <div className="absolute top-[3%] left-[25%] text-5xl opacity-35 animate-bounce2 drop-shadow-2xl">🔧</div>
+        <div className="absolute top-[8%] left-[50%] text-6xl opacity-45 animate-bounce3 drop-shadow-2xl">🛞</div>
+        <div className="absolute top-[2%] right-[25%] text-5xl opacity-40 animate-bounce4 drop-shadow-2xl">⚙️</div>
+        <div className="absolute top-[6%] right-[5%] text-7xl opacity-35 animate-bounce5 drop-shadow-2xl">🏎️</div>
+        
+        {/* Parte superior (10-25%) */}
+        <div className="absolute top-[12%] left-[10%] text-5xl opacity-50 animate-bounce6 drop-shadow-2xl">🔩</div>
+        <div className="absolute top-[15%] left-[35%] text-6xl opacity-40 animate-bounce7 drop-shadow-2xl">🚙</div>
+        <div className="absolute top-[18%] right-[30%] text-5xl opacity-45 animate-bounce8 drop-shadow-2xl">🔋</div>
+        <div className="absolute top-[20%] right-[10%] text-6xl opacity-38 animate-bounce9 drop-shadow-2xl">⚡</div>
+        <div className="absolute top-[22%] left-[60%] text-5xl opacity-42 animate-bounce10 drop-shadow-2xl">🏁</div>
+        
+        {/* Meio superior (25-40%) */}
+        <div className="absolute top-[28%] left-[8%] text-7xl opacity-30 animate-bounce11 drop-shadow-2xl">🛠️</div>
+        <div className="absolute top-[30%] left-[25%] text-5xl opacity-42 animate-bounce12 drop-shadow-2xl">🏆</div>
+        <div className="absolute top-[32%] left-[50%] text-6xl opacity-35 animate-bounce13 drop-shadow-2xl">🚘</div>
+        <div className="absolute top-[35%] right-[25%] text-5xl opacity-48 animate-bounce14 drop-shadow-2xl">🔑</div>
+        <div className="absolute top-[38%] right-[8%] text-6xl opacity-40 animate-bounce15 drop-shadow-2xl">🛡️</div>
+        
+        {/* Centro (40-55%) */}
+        <div className="absolute top-[42%] left-[15%] text-5xl opacity-45 animate-bounce16 drop-shadow-2xl">🚕</div>
+        <div className="absolute top-[45%] left-[40%] text-6xl opacity-38 animate-bounce17 drop-shadow-2xl">⛽</div>
+        <div className="absolute top-[48%] right-[35%] text-5xl opacity-42 animate-bounce18 drop-shadow-2xl">🧰</div>
+        <div className="absolute top-[50%] right-[12%] text-6xl opacity-36 animate-bounce19 drop-shadow-2xl">💡</div>
+        <div className="absolute top-[52%] left-[65%] text-5xl opacity-40 animate-bounce20 drop-shadow-2xl">🚓</div>
+        
+        {/* Meio inferior (55-70%) */}
+        <div className="absolute top-[58%] left-[10%] text-5xl opacity-44 animate-bounce21 drop-shadow-2xl">🔌</div>
+        <div className="absolute top-[60%] left-[30%] text-7xl opacity-32 animate-bounce22 drop-shadow-2xl">🚗</div>
+        <div className="absolute top-[62%] right-[28%] text-5xl opacity-46 animate-bounce23 drop-shadow-2xl">🪛</div>
+        <div className="absolute top-[65%] right-[8%] text-6xl opacity-40 animate-bounce24 drop-shadow-2xl">🚙</div>
+        <div className="absolute top-[68%] left-[55%] text-5xl opacity-38 animate-bounce25 drop-shadow-2xl">🔩</div>
+        
+        {/* Parte inferior (70-85%) */}
+        <div className="absolute top-[72%] left-[20%] text-6xl opacity-37 animate-bounce26 drop-shadow-2xl">🛞</div>
+        <div className="absolute top-[75%] left-[45%] text-5xl opacity-41 animate-bounce27 drop-shadow-2xl">🔧</div>
+        <div className="absolute top-[78%] right-[32%] text-6xl opacity-34 animate-bounce28 drop-shadow-2xl">⚡</div>
+        <div className="absolute top-[80%] right-[12%] text-5xl opacity-37 animate-bounce29 drop-shadow-2xl">🚘</div>
+        <div className="absolute top-[82%] left-[70%] text-6xl opacity-35 animate-bounce30 drop-shadow-2xl">🚗</div>
+        
+        {/* Final (85-100%) */}
+        <div className="absolute top-[88%] left-[8%] text-5xl opacity-40 animate-bounce1 drop-shadow-2xl">🔧</div>
+        <div className="absolute top-[90%] left-[35%] text-6xl opacity-38 animate-bounce2 drop-shadow-2xl">🛞</div>
+        <div className="absolute top-[92%] right-[30%] text-5xl opacity-42 animate-bounce3 drop-shadow-2xl">⚙️</div>
+        <div className="absolute top-[95%] right-[10%] text-7xl opacity-35 animate-bounce4 drop-shadow-2xl">🏎️</div>
+        <div className="absolute top-[97%] left-[60%] text-5xl opacity-36 animate-bounce5 drop-shadow-2xl">🔋</div>
         
         {/* Pontos de circuito */}
         <div className="absolute top-1/3 left-1/6 w-32 h-32 opacity-20">
