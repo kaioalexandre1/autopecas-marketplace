@@ -1291,7 +1291,7 @@ export default function ChatsPage() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-gray-100 p-3 sm:p-4">
+              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-gray-100 p-3 sm:p-4 py-8 sm:py-12">
                 <div className="w-full max-w-3xl">
                   <div className="space-y-3">
                     <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 p-3 rounded-r-lg">
