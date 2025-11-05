@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   collection, 
@@ -775,8 +775,8 @@ export default function ChatsPage() {
     }
   };
 
-  // Excluir chat de suporte individual
-  const excluirChatSuporte = async (chatId: string, e?: React.MouseEvent) => {
+  // Excluir chat de suporte individual  
+  const excluirChatSuporte = async (chatId: string, e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) {
       e.stopPropagation(); // Evitar que o clique selecione o chat
     }
@@ -977,10 +977,6 @@ export default function ChatsPage() {
                   return (
                     <div
                       key={chat.id}
-                      onClick={() => {
-                        setChatSelecionado(chat);
-                        marcarComoLido(chat);
-                      }}
                       className={`relative p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${
                         chat.isSuporte 
                           ? chatSelecionado?.id === chat.id

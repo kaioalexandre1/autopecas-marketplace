@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc, setDoc, getDoc, onSnapshot, deleteDoc, where } from 'firebase/firestore';
@@ -56,6 +56,7 @@ export default function AdminPage() {
   const [mostrarSuporte, setMostrarSuporte] = useState(false);
   const [chatsSuporte, setChatsSuporte] = useState<any[]>([]);
   const [chatSelecionado, setChatSelecionado] = useState<any>(null);
+  const [excluindoChat, setExcluindoChat] = useState<string | null>(null);
 
   // Verificar se é admin
   useEffect(() => {
@@ -130,7 +131,7 @@ export default function AdminPage() {
       setChatsSuporte(chatsFiltrados);
       
       // Se não há chat selecionado e há chats, selecionar o primeiro
-      setChatSelecionado(prev => {
+      setChatSelecionado((prev: any) => {
         if (!prev && chatsFiltrados.length > 0) {
           return chatsFiltrados[0];
         }
@@ -209,7 +210,7 @@ export default function AdminPage() {
   };
 
   // Excluir chat de suporte individual
-  const excluirChatSuporte = async (chatId: string, e?: React.MouseEvent) => {
+  const excluirChatSuporte = async (chatId: string, e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) {
       e.stopPropagation(); // Evitar que o clique selecione o chat
     }
@@ -482,6 +483,7 @@ export default function AdminPage() {
 
   const rankingAutopecas = Object.values(faturamentoPorAutopeca).sort((a, b) => b.total - a.total);
 
+  // Early returns
   if (authLoading || carregando) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
@@ -1041,45 +1043,46 @@ export default function AdminPage() {
                           className="w-full text-left pr-10"
                         >
                           <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-gray-900 dark:text-white text-sm truncate">
-                              {chat.usuarioNome || chat.oficinaNome || chat.autopecaNome}
-                            </p>
-                            <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                              {chat.motivoLabel}
-                            </p>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-gray-900 dark:text-white text-sm truncate">
+                                {chat.usuarioNome || chat.oficinaNome || chat.autopecaNome}
+                              </p>
+                              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                                {chat.motivoLabel}
+                              </p>
+                            </div>
+                            <span className={`px-2 py-1 rounded text-xs font-bold ml-2 flex-shrink-0 ${
+                              chat.status === 'aberto'
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                : chat.status === 'em_andamento'
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                : chat.status === 'resolvido'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                            }`}>
+                              {chat.status === 'aberto' ? 'Aberto' : 
+                               chat.status === 'em_andamento' ? 'Em Andamento' :
+                               chat.status === 'resolvido' ? 'Resolvido' : 'Fechado'}
+                            </span>
                           </div>
-                          <span className={`px-2 py-1 rounded text-xs font-bold ml-2 flex-shrink-0 ${
-                            chat.status === 'aberto'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                              : chat.status === 'em_andamento'
-                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                              : chat.status === 'resolvido'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                          }`}>
-                            {chat.status === 'aberto' ? 'Aberto' : 
-                             chat.status === 'em_andamento' ? 'Em Andamento' :
-                             chat.status === 'resolvido' ? 'Resolvido' : 'Fechado'}
-                          </span>
-                        </div>
-                        {chat.mensagens && chat.mensagens.length > 0 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
-                            {chat.mensagens[chat.mensagens.length - 1].texto || 'Mensagem'}
+                          {chat.mensagens && chat.mensagens.length > 0 && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
+                              {chat.mensagens[chat.mensagens.length - 1].texto || 'Mensagem'}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            {format(chat.updatedAt, "dd/MM/yyyy HH:mm", { locale: ptBR })}
                           </p>
-                        )}
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                          {format(chat.updatedAt, "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                        </p>
-                      </button>
-                      <button
-                        onClick={(e) => excluirChatSuporte(chat.id, e)}
-                        disabled={excluindoChat === chat.id}
-                        className="absolute top-4 right-4 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Excluir este chat de suporte"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                        </button>
+                        <button
+                          onClick={(e) => excluirChatSuporte(chat.id, e)}
+                          disabled={excluindoChat === chat.id}
+                          className="absolute top-4 right-4 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Excluir este chat de suporte"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>
