@@ -284,10 +284,10 @@ export default function RankingPage() {
 
   if (authLoading || carregando) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-semibold">Carregando ranking...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300 font-semibold">Carregando ranking...</p>
         </div>
       </div>
     );
@@ -298,7 +298,7 @@ export default function RankingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-blue-600 p-4 sm:p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-blue-600 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 sm:p-6 relative overflow-hidden">
       {/* Fundo animado com emojis */}
       {/* Raios de energia */}
       <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent opacity-20 animate-beam"></div>
@@ -341,7 +341,7 @@ export default function RankingPage() {
           <div className="flex items-center justify-between mb-4">
             <Link 
               href="/dashboard" 
-              className="flex items-center gap-2 text-white hover:text-blue-200 font-semibold transition-colors"
+              className="flex items-center gap-2 text-white dark:text-gray-100 hover:text-blue-200 dark:hover:text-blue-300 font-semibold transition-colors"
             >
               <ArrowLeft size={20} />
               <span className="hidden sm:inline">Voltar ao Dashboard</span>
@@ -351,7 +351,7 @@ export default function RankingPage() {
           
           {/* Card com título em verde neon */}
           <div 
-            className="bg-green-600 border-2 border-green-400 rounded-xl p-4 sm:p-6 shadow-lg mb-4"
+            className="bg-green-600 dark:bg-green-700 border-2 border-green-400 dark:border-green-500 rounded-xl p-4 sm:p-6 shadow-lg mb-4"
             style={{
               boxShadow: '0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.6), inset 0 0 20px rgba(34, 197, 94, 0.3)'
             }}
@@ -372,11 +372,11 @@ export default function RankingPage() {
         </div>
 
         {/* Seletor de Localização */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 border-2 border-green-400/30" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-6 border-2 border-green-400/30 dark:border-green-500/30" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>
           <div className="relative">
             <button
               onClick={() => setMostrarDropdownLocalizacao(!mostrarDropdownLocalizacao)}
-              className="w-full flex items-center justify-between bg-green-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-700 transition-all uppercase"
+              className="w-full flex items-center justify-between bg-green-600 dark:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 transition-all uppercase"
               style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.5)' }}
             >
               <div className="flex items-center gap-2">
@@ -397,9 +397,9 @@ export default function RankingPage() {
                   className="fixed inset-0 z-10" 
                   onClick={() => setMostrarDropdownLocalizacao(false)}
                 />
-                <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-lg shadow-xl border-2 border-blue-200 py-2 max-h-[70vh] overflow-y-auto z-20">
-                  <div className="px-3 py-3 border-b border-gray-200">
-                    <p className="text-sm font-semibold text-gray-600">Selecione Brasil, Estados ou Cidades</p>
+                <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-blue-200 dark:border-gray-700 py-2 max-h-[70vh] overflow-y-auto z-20">
+                  <div className="px-3 py-3 border-b border-gray-200 dark:border-gray-700">
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">Selecione Brasil, Estados ou Cidades</p>
                   </div>
                   
                   {/* BRASIL */}
@@ -408,21 +408,21 @@ export default function RankingPage() {
                       e.stopPropagation();
                       toggleBrasil();
                     }}
-                    className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-blue-50 font-bold"
+                    className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-blue-50 dark:hover:bg-gray-700 font-bold"
                   >
                     <div className={`w-7 h-7 rounded border-2 flex items-center justify-center ${
                       brasilSelecionado
-                        ? 'bg-blue-600 border-blue-600'
-                        : 'border-gray-400'
+                        ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500'
+                        : 'border-gray-400 dark:border-gray-600'
                     }`}>
                       {brasilSelecionado && (
                         <CheckCircle size={18} className="text-white" />
                       )}
                     </div>
-                    <span className="text-lg text-blue-900">🇧🇷 BRASIL</span>
+                    <span className="text-lg text-blue-900 dark:text-blue-300">🇧🇷 BRASIL</span>
                   </button>
                   
-                  <div className="border-t border-gray-200 my-1"></div>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                   
                   {/* ESTADOS */}
                   {Object.entries(estruturaBrasil).map(([estado, cidades]) => (
@@ -433,11 +433,11 @@ export default function RankingPage() {
                             e.stopPropagation();
                             toggleEstadoExpansao(estado);
                           }}
-                          className="px-3 py-3 hover:bg-gray-100"
+                          className="px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <ChevronRight 
                             size={20} 
-                            className={`text-gray-600 transition-transform ${estadosExpandidos.includes(estado) ? 'rotate-90' : ''}`}
+                            className={`text-gray-600 dark:text-gray-400 transition-transform ${estadosExpandidos.includes(estado) ? 'rotate-90' : ''}`}
                           />
                         </button>
                         <button
@@ -445,12 +445,12 @@ export default function RankingPage() {
                             e.stopPropagation();
                             toggleEstado(estado);
                           }}
-                          className="flex-1 px-3 py-3 flex items-center gap-3 text-left hover:bg-blue-50"
+                          className="flex-1 px-3 py-3 flex items-center gap-3 text-left hover:bg-blue-50 dark:hover:bg-gray-700"
                         >
                           <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
                             estadoTotalmenteSelecionado(estado)
-                              ? 'bg-blue-600 border-blue-600'
-                              : 'border-gray-300'
+                              ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500'
+                              : 'border-gray-300 dark:border-gray-600'
                           }`}>
                             {estadoTotalmenteSelecionado(estado) && (
                               <CheckCircle size={16} className="text-white" />
@@ -458,8 +458,8 @@ export default function RankingPage() {
                           </div>
                           <span className={`text-base ${
                             estadoTotalmenteSelecionado(estado)
-                              ? 'font-bold text-blue-800'
-                              : 'font-semibold text-gray-700'
+                              ? 'font-bold text-blue-800 dark:text-blue-300'
+                              : 'font-semibold text-gray-700 dark:text-gray-300'
                           }`}>
                             {estado}
                           </span>
@@ -467,7 +467,7 @@ export default function RankingPage() {
                       </div>
                       
                       {estadosExpandidos.includes(estado) && (
-                        <div className="ml-6 border-l-2 border-gray-200">
+                        <div className="ml-6 border-l-2 border-gray-200 dark:border-gray-700">
                           {cidades.map((cidade) => (
                             <button
                               key={cidade}
@@ -475,12 +475,12 @@ export default function RankingPage() {
                                 e.stopPropagation();
                                 toggleCidade(cidade);
                               }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-blue-50"
+                              className="w-full px-4 py-2.5 flex items-center gap-3 text-left hover:bg-blue-50 dark:hover:bg-gray-700"
                             >
                               <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                                 cidadesSelecionadas.includes(cidade)
-                                  ? 'bg-green-500 border-green-500'
-                                  : 'border-gray-300'
+                                  ? 'bg-green-500 dark:bg-green-600 border-green-500 dark:border-green-600'
+                                  : 'border-gray-300 dark:border-gray-600'
                               }`}>
                                 {cidadesSelecionadas.includes(cidade) && (
                                   <CheckCircle size={14} className="text-white" />
@@ -488,8 +488,8 @@ export default function RankingPage() {
                               </div>
                               <span className={`text-sm ${
                                 cidadesSelecionadas.includes(cidade)
-                                  ? 'font-semibold text-green-700'
-                                  : 'text-gray-600'
+                                  ? 'font-semibold text-green-700 dark:text-green-400'
+                                  : 'text-gray-600 dark:text-gray-400'
                               }`}>
                                 {cidade}
                               </span>
@@ -500,8 +500,8 @@ export default function RankingPage() {
                     </div>
                   ))}
                   
-                  <div className="px-3 py-2 border-t border-gray-200 mt-2 bg-gray-50">
-                    <p className="text-xs text-gray-600 font-semibold">
+                  <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 mt-2 bg-gray-50 dark:bg-gray-900">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">
                       ✓ {brasilSelecionado ? 'Brasil inteiro' : `${cidadesSelecionadas.length} ${cidadesSelecionadas.length === 1 ? 'cidade' : 'cidades'}`} selecionada{cidadesSelecionadas.length > 1 ? 's' : ''}
                     </p>
                   </div>
