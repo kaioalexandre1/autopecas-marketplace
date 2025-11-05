@@ -293,7 +293,7 @@ export default function NegociosFechadosPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div className="mt-6 sm:mt-8 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -319,31 +319,31 @@ export default function NegociosFechadosPage() {
                 {negociosFiltrados.map((negocio, index) => (
                   <tr 
                     key={negocio.id}
-                    className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
-                      index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-800/50'
+                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     }`}
                   >
-                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900 dark:text-white uppercase">
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900 uppercase">
                       {userData?.tipo === 'oficina' ? negocio.autopecaNome : negocio.oficinaNome}
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900 dark:text-white uppercase">
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900 uppercase">
                       {negocio.nomePeca}
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700">
                       <div className="flex flex-col gap-0.5">
                         <span className="font-semibold uppercase">
                           {negocio.marcaCarro} {negocio.modeloCarro}
                         </span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-xs text-gray-600">
                           {negocio.anoCarro}
                           {negocio.especificacaoMotor && ` | ${negocio.especificacaoMotor}`}
                         </span>
                       </div>
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-bold text-green-700 dark:text-green-400">
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-bold text-green-700">
                       R$ {negocio.valorFinal?.toFixed(2) || '0.00'}
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
                       {format(negocio.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </td>
                   </tr>
