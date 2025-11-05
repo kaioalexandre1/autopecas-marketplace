@@ -511,12 +511,12 @@ export default function RankingPage() {
           </div>
         </div>
 
-        {/* Seletor de Período */}
+        {/* Seletor de Liderança */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-6 border-2 border-green-400/30 dark:border-green-500/30" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
             <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2" style={{ color: '#22c55e', textShadow: '0 0 10px rgba(34, 197, 94, 0.5)' }}>
               <TrendingUp className="text-green-500 dark:text-green-400" size={24} style={{ filter: 'drop-shadow(0 0 5px rgba(34, 197, 94, 0.8))' }} />
-              <span className="hidden sm:inline uppercase">Período</span>
+              <span className="hidden sm:inline uppercase">Liderança</span>
             </h2>
             
             <div className="flex gap-2 flex-wrap">
