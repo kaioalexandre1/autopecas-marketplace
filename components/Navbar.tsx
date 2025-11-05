@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones } from 'lucide-react';
+import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones, Trophy } from 'lucide-react';
 import ModalSuporte from './ModalSuporte';
 import { useUnreadChats } from '@/hooks/useUnreadChats';
 
@@ -293,6 +293,7 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Pedidos ao Vivo', icon: Radio },
     { href: '/dashboard/chats', label: 'Chats', icon: MessageSquare },
     { href: '/dashboard/negocios-fechados', label: 'Negócios Fechados', icon: CheckCircle },
+    { href: '/dashboard/ranking', label: 'Ranking', icon: Trophy },
     ...(userData?.role === 'admin' ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
@@ -784,15 +785,23 @@ export default function Navbar() {
               </Link>
             )}
             
+            {/* Botão de Ranking (para todos os usuários) */}
+            <Link
+              href="/dashboard/ranking"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-white/30 text-white hover:bg-white/20 transition-all text-xl"
+              title="Ranking"
+            >
+              🏆
+            </Link>
+            
             {/* Botão de Suporte (apenas para autopeças) */}
             {userData?.tipo === 'autopeca' && (
               <button
                 onClick={() => setModalSuporteAberto(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-white/30 text-white hover:bg-white/20 transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-white/30 text-white hover:bg-white/20 transition-all text-xl"
                 title="Suporte"
               >
-                <Headphones size={18} />
-                <span className="text-sm font-bold hidden xl:inline">Suporte</span>
+                🎧
               </button>
             )}
             
@@ -930,6 +939,16 @@ export default function Navbar() {
                 })}
               </div>
 
+              {/* Botão de Ranking Mobile */}
+              <Link
+                href="/dashboard/ranking"
+                onClick={() => setMenuMobileAberto(false)}
+                className="w-full flex items-center px-4 py-3.5 mt-4 bg-blue-700 text-white rounded-lg font-semibold text-base"
+              >
+                <Trophy size={24} className="mr-3" />
+                Ranking
+              </Link>
+
               {/* Botão de Suporte Mobile (apenas para autopeças) */}
               {userData?.tipo === 'autopeca' && (
                 <button
@@ -939,7 +958,7 @@ export default function Navbar() {
                   }}
                   className="w-full flex items-center px-4 py-3.5 mt-4 bg-blue-700 text-white rounded-lg font-semibold text-base"
                 >
-                  <Headphones size={24} className="mr-3" />
+                  <span className="text-2xl mr-3">🎧</span>
                   Suporte
                 </button>
               )}
