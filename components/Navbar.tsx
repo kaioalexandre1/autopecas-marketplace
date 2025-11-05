@@ -936,6 +936,20 @@ export default function Navbar() {
                     </Link>
                   );
                 })}
+
+                {/* Botão de Ranking Mobile */}
+                <Link
+                  href="/dashboard/ranking"
+                  onClick={() => setMenuMobileAberto(false)}
+                  className={`relative flex items-center px-4 py-3.5 rounded-lg font-semibold text-base ${
+                    pathname === '/dashboard/ranking'
+                      ? 'bg-yellow-400 text-blue-900 shadow-lg'
+                      : 'bg-blue-700 text-white'
+                  }`}
+                >
+                  <Trophy size={24} className="mr-3" />
+                  Ranking
+                </Link>
               </div>
 
               {/* Botão de Suporte Mobile (apenas para autopeças) */}

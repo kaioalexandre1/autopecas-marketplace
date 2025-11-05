@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, MessageSquare, Send } from 'lucide-react';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, getDocs, query, where, updateDoc, arrayUnion, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -39,32 +39,68 @@ export default function ModalSuporte({ aberto, onFechar }: ModalSuporteProps) {
     try {
       const motivo = motivosSuporte.find(m => m.id === motivoSelecionado);
       
-      // Criar chat de suporte
-      const chatSuporteRef = await addDoc(collection(db, 'suporte_chats'), {
-        usuarioId: userData.id,
-        usuarioNome: userData.nome || userData.nomeLoja || 'Usuário',
-        usuarioTipo: userData.tipo,
-        motivo: motivoSelecionado,
-        motivoLabel: motivo?.label || 'Outro',
-        status: 'aberto', // aberto, em_andamento, resolvido, fechado
-        mensagens: [
-          {
+      // Verificar se já existe um chat de suporte para este usuário
+      const chatsSuporteQuery = query(
+        collection(db, 'chats'),
+        where('isSuporte', '==', true),
+        where(userData.tipo === 'oficina' ? 'oficinaId' : 'autopecaId', '==', userData.id)
+      );
+      
+      const chatsExistentes = await getDocs(chatsSuporteQuery);
+      
+      let chatSuporteRef;
+      
+      if (!chatsExistentes.empty) {
+        // Usar chat existente
+        const chatExistente = chatsExistentes.docs[0];
+        chatSuporteRef = { id: chatExistente.id };
+        
+        // Adicionar nova mensagem ao chat existente
+        await updateDoc(doc(db, 'chats', chatExistente.id), {
+          mensagens: arrayUnion({
             id: `inicial-${Date.now()}`,
             remetenteId: userData.id,
             remetenteTipo: userData.tipo,
             texto: mensagemInicial || `Olá, preciso de ajuda com: ${motivo?.label || 'Outro'}`,
             createdAt: Timestamp.now(),
-          }
-        ],
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
+          }),
+          updatedAt: Timestamp.now(),
+        });
+      } else {
+        // Criar novo chat de suporte na coleção 'chats'
+        chatSuporteRef = await addDoc(collection(db, 'chats'), {
+          isSuporte: true,
+          pedidoId: '', // Chat de suporte não tem pedido associado (string vazia para compatibilidade)
+          oficinaId: userData.tipo === 'oficina' ? userData.id : 'suporte',
+          autopecaId: userData.tipo === 'autopeca' ? userData.id : 'suporte',
+          oficinaNome: userData.tipo === 'oficina' ? (userData.nome || userData.nomeLoja || 'Usuário') : 'Suporte',
+          autopecaNome: userData.tipo === 'autopeca' ? (userData.nome || userData.nomeLoja || 'Usuário') : 'Suporte',
+          nomePeca: 'Chat de Suporte',
+          marcaCarro: '',
+          modeloCarro: '',
+          anoCarro: '',
+          motivo: motivoSelecionado,
+          motivoLabel: motivo?.label || 'Outro',
+          mensagens: [
+            {
+              id: `inicial-${Date.now()}`,
+              remetenteId: userData.id,
+              remetenteTipo: userData.tipo,
+              texto: mensagemInicial || `Olá, preciso de ajuda com: ${motivo?.label || 'Outro'}`,
+              createdAt: Timestamp.now(),
+            }
+          ],
+          encerrado: false,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+      }
 
-      toast.success('Chat de suporte aberto! Redirecionando...');
+      toast.success('Chat de suporte aberto!');
       onFechar();
       
-      // Redirecionar para a página de suporte do usuário
-      router.push(`/dashboard/suporte/${chatSuporteRef.id}`);
+      // Redirecionar para a página de chats
+      router.push(`/dashboard/chats?chatId=${chatSuporteRef.id}`);
     } catch (error: any) {
       console.error('Erro ao criar chat de suporte:', error);
       toast.error('Erro ao abrir chat de suporte. Tente novamente.');

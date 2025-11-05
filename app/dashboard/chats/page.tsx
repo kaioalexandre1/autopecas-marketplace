@@ -94,9 +94,14 @@ export default function ChatsPage() {
       
       snapshot.forEach((doc) => {
         const data = doc.data();
+        const isSuporte = data.isSuporte === true;
+        
         chatsData.push({
           id: doc.id,
           ...data,
+          isSuporte: isSuporte,
+          motivo: data.motivo,
+          motivoLabel: data.motivoLabel,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
           encerradoEm: data.encerradoEm?.toDate(),
@@ -109,7 +114,8 @@ export default function ChatsPage() {
         } as Chat);
         
         // Coletar IDs de chats com pedidoId para verificar se o pedido ainda existe
-        if (data.pedidoId) {
+        // Chats de suporte não têm pedidoId válido, então ignorar
+        if (data.pedidoId && !isSuporte && data.pedidoId !== '') {
           chatsParaVerificar.push(doc.id);
         }
       });
@@ -876,19 +882,31 @@ export default function ChatsPage() {
                         marcarComoLido(chat);
                       }}
                       className={`relative p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${
-                        chatSelecionado?.id === chat.id 
+                        chat.isSuporte 
+                          ? chatSelecionado?.id === chat.id
+                            ? 'bg-blue-100 dark:bg-blue-900/50 border-l-4 border-l-blue-600 dark:border-l-blue-500'
+                            : chat.encerrado
+                            ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700 border-l-4 border-l-gray-400'
+                            : 'bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 border-l-4 border-l-blue-500 dark:border-l-blue-400'
+                          : chatSelecionado?.id === chat.id 
                           ? 'bg-green-100 dark:bg-green-900/50 border-l-4 border-l-green-600 dark:border-l-green-500' 
                           : chat.encerrado
                           ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700'
                           : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
                     >
-                      {/* Nome da Loja */}
+                      {/* Nome da Loja ou Suporte */}
                       <div className="mb-1.5 flex justify-between items-center">
                         <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-                          <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                            {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
-                          </h3>
+                          {chat.isSuporte ? (
+                            <h3 className="font-bold text-xs text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1">
+                              🎧 Suporte
+                            </h3>
+                          ) : (
+                            <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
+                              {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
+                            </h3>
+                          )}
                           {/* Plano da autopeça com coroinha (apenas para oficinas) */}
                           {userData?.tipo === 'oficina' && (() => {
                             const plano = planosAutopecas[chat.autopecaId] || 'basico';
@@ -942,29 +960,39 @@ export default function ChatsPage() {
                         </div>
                       </div>
 
-                      {/* Linha neon verde separadora */}
-                      <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                      {/* Linha neon separadora (verde para chats normais, azul para suporte) */}
+                      {chat.isSuporte ? (
+                        <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                      ) : (
+                        <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                      )}
 
-                      {/* Informações do Pedido */}
-                      <div className="mb-1.5">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                            {chat.nomePeca}
-                          </span>
-                          {chat.encerrado && (
-                            <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
-                              Encerrado
+                      {/* Informações do Pedido (ocultar para chats de suporte) */}
+                      {!chat.isSuporte && (
+                        <div className="mb-1.5">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
+                              {chat.nomePeca}
                             </span>
-                          )}
+                            {chat.encerrado && (
+                              <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
+                                Encerrado
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">
+                            {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
+                          </p>
                         </div>
-                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">
-                          {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
-                        </p>
-                      </div>
+                      )}
 
-                      {/* Linha neon verde separadora */}
+                      {/* Linha neon separadora antes da última mensagem */}
                       {chat.mensagens.length > 0 && (
-                        <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent my-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                        chat.isSuporte ? (
+                          <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent my-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                        ) : (
+                          <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent my-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                        )
                       )}
 
                       {/* Última Mensagem */}
@@ -1012,15 +1040,21 @@ export default function ChatsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                         <div className="flex-1 min-w-0">
-                          {/* Nome da Loja */}
+                          {/* Nome da Loja ou Suporte */}
                           <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                            <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase">
-                              {userData?.tipo === 'oficina' 
-                                ? chatSelecionado.autopecaNome 
-                                : chatSelecionado.oficinaNome}
-                            </h2>
-                            {/* Plano da autopeça com coroinha (apenas para oficinas) */}
-                            {userData?.tipo === 'oficina' && (() => {
+                            {chatSelecionado.isSuporte ? (
+                              <h2 className="font-black text-xs sm:text-sm text-blue-200 truncate uppercase flex items-center gap-1">
+                                🎧 Suporte
+                              </h2>
+                            ) : (
+                              <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase">
+                                {userData?.tipo === 'oficina' 
+                                  ? chatSelecionado.autopecaNome 
+                                  : chatSelecionado.oficinaNome}
+                              </h2>
+                            )}
+                            {/* Plano da autopeça com coroinha (apenas para oficinas e chats normais) */}
+                            {userData?.tipo === 'oficina' && !chatSelecionado.isSuporte && (() => {
                               const plano = planosAutopecas[chatSelecionado.autopecaId] || 'basico';
                               const cores: {[key: string]: string} = {
                                 basico: 'text-blue-100',
@@ -1051,21 +1085,39 @@ export default function ChatsPage() {
                             })()}
                           </div>
                           
-                          {/* Linha neon verde separadora */}
-                          <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                          {/* Linha neon separadora (verde para chats normais, azul para suporte) */}
+                          {chatSelecionado.isSuporte ? (
+                            <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                          ) : (
+                            <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                          )}
                           
-                          {/* Informações do Pedido */}
-                          <div>
-                            <p className="text-blue-100 text-xs font-bold truncate uppercase">
-                              {chatSelecionado.nomePeca}
-                            </p>
-                            <p className="text-blue-200 text-xs font-semibold truncate mt-0.5 uppercase">
-                              {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
-                            </p>
-                          </div>
+                          {/* Informações do Pedido ou Suporte */}
+                          {chatSelecionado.isSuporte ? (
+                            <div>
+                              <p className="text-blue-100 text-xs font-bold truncate uppercase flex items-center gap-1">
+                                🎧 Suporte
+                              </p>
+                              {chatSelecionado.motivoLabel && (
+                                <p className="text-blue-200 text-xs font-semibold truncate mt-0.5">
+                                  {chatSelecionado.motivoLabel}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-blue-100 text-xs font-bold truncate uppercase">
+                                {chatSelecionado.nomePeca}
+                              </p>
+                              <p className="text-blue-200 text-xs font-semibold truncate mt-0.5 uppercase">
+                                {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
+                              </p>
+                            </div>
+                          )}
                         </div>
                         
                         {/* Botão "Mais Informações" - Desktop e Mobile */}
+                        {!chatSelecionado.isSuporte && (
                         <div className="relative w-full sm:w-auto">
                           <button
                             onClick={() => setMostrarMenuMaisInfo(!mostrarMenuMaisInfo)}
@@ -1148,6 +1200,7 @@ export default function ChatsPage() {
                             </>
                           )}
                         </div>
+                        )}
                       </div>
                     </div>
                   </div>

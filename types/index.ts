@@ -86,6 +86,10 @@ export interface Chat {
   ultimaLeituraAutopeca?: Date;
   createdAt: Date;
   updatedAt: Date;
+  // Chat de suporte
+  isSuporte?: boolean;
+  motivo?: string;
+  motivoLabel?: string;
 }
 
 export interface Mensagem {
