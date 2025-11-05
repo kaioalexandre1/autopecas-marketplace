@@ -210,20 +210,71 @@ export default function RankingPage() {
 
   // Calcular faturamento por autopeça
   const faturamentoPorAutopeca = negociosFiltrados.reduce((acc, negocio) => {
+    const autopeca = autopecas[negocio.autopecaId];
+    if (!autopeca) return acc;
+    
     if (!acc[negocio.autopecaNome]) {
       acc[negocio.autopecaNome] = {
         nome: negocio.autopecaNome,
         id: negocio.autopecaId,
         total: 0,
-        quantidade: 0
+        quantidade: 0,
+        cidade: autopeca.cidade || '',
+        plano: autopeca.plano || 'basico'
       };
     }
     acc[negocio.autopecaNome].total += negocio.valorFinal || 0;
     acc[negocio.autopecaNome].quantidade += 1;
     return acc;
-  }, {} as Record<string, { nome: string; id: string; total: number; quantidade: number }>);
+  }, {} as Record<string, { nome: string; id: string; total: number; quantidade: number; cidade: string; plano: string }>);
 
+  // Calcular ranking geral
   const rankingAutopecas = Object.values(faturamentoPorAutopeca).sort((a, b) => b.total - a.total);
+
+  // Calcular top 1 de cada cidade (quando "todos" está selecionado e Brasil inteiro)
+  const top1PorCidade: Record<string, string> = {};
+  if (periodoSelecionado === 'todos' && brasilSelecionado) {
+    // Agrupar faturamento por autopeça e cidade
+    const faturamentoPorCidade: Record<string, Record<string, number>> = {};
+    
+    negociosFiltrados.forEach(negocio => {
+      const autopeca = autopecas[negocio.autopecaId];
+      if (!autopeca || !autopeca.cidade) return;
+      
+      const cidade = autopeca.cidade;
+      if (!faturamentoPorCidade[cidade]) {
+        faturamentoPorCidade[cidade] = {};
+      }
+      
+      if (!faturamentoPorCidade[cidade][negocio.autopecaId]) {
+        faturamentoPorCidade[cidade][negocio.autopecaId] = 0;
+      }
+      
+      faturamentoPorCidade[cidade][negocio.autopecaId] += negocio.valorFinal || 0;
+    });
+    
+    // Encontrar top 1 de cada cidade
+    Object.entries(faturamentoPorCidade).forEach(([cidade, autopecasPorId]) => {
+      const entries = Object.entries(autopecasPorId);
+      if (entries.length > 0) {
+        const top1 = entries.sort((a, b) => b[1] - a[1])[0];
+        if (top1) {
+          top1PorCidade[top1[0]] = cidade;
+        }
+      }
+    });
+  }
+
+  // Função para obter info do plano
+  const getPlanoInfo = (plano: string) => {
+    const planos: Record<string, { nome: string; emoji: string; cor: string }> = {
+      basico: { nome: 'Básico', emoji: '', cor: 'text-gray-600' },
+      premium: { nome: 'Silver', emoji: '💎', cor: 'text-blue-600' },
+      gold: { nome: 'Gold', emoji: '🏆', cor: 'text-yellow-600' },
+      platinum: { nome: 'Platinum', emoji: '👑', cor: 'text-purple-600' }
+    };
+    return planos[plano] || planos.basico;
+  };
 
   if (authLoading || carregando) {
     return (
@@ -496,32 +547,53 @@ export default function RankingPage() {
                 <p className="text-green-600/70 text-lg font-semibold">Nenhum negócio fechado neste período e região.</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {rankingAutopecas.map((autopeca, index) => (
-                  <div 
-                    key={autopeca.id}
-                    className="flex items-center justify-between bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all hover:border-green-400"
-                    style={{ 
-                      boxShadow: index < 3 ? '0 0 15px rgba(34, 197, 94, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
-                      borderLeftColor: index === 0 ? '#eab308' : index === 1 ? '#9ca3af' : index === 2 ? '#ea580c' : '#22c55e'
-                    }}
-                  >
-                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-white flex-shrink-0 ${
-                        index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-green-600'
-                      }`} style={{ boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)' }}>
-                        {index + 1}º
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-black text-sm sm:text-base truncate uppercase" style={{ color: '#15803d' }}>{autopeca.nome}</p>
-                        <p className="text-xs sm:text-sm font-semibold" style={{ color: '#22c55e' }}>{autopeca.quantidade} venda{autopeca.quantidade > 1 ? 's' : ''}</p>
+              <div className="space-y-0">
+                {rankingAutopecas.map((autopeca, index) => {
+                  const planoInfo = getPlanoInfo(autopeca.plano);
+                  const isTop1Cidade = top1PorCidade[autopeca.id];
+                  const cidadeFormatada = isTop1Cidade ? isTop1Cidade.split('-').join('-') : '';
+                  
+                  return (
+                    <div key={autopeca.id}>
+                      {index > 0 && (
+                        <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent my-3 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                      )}
+                      <div 
+                        className="flex items-center justify-between bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all hover:border-green-400"
+                        style={{ 
+                          boxShadow: index < 3 ? '0 0 15px rgba(34, 197, 94, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                          borderLeftColor: index === 0 ? '#eab308' : index === 1 ? '#9ca3af' : index === 2 ? '#ea580c' : '#22c55e'
+                        }}
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-white flex-shrink-0 ${
+                            index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-green-600'
+                          }`} style={{ boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)' }}>
+                            {index + 1}º
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-black text-sm sm:text-base truncate uppercase" style={{ color: '#15803d' }}>{autopeca.nome}</p>
+                              <span className="text-xs sm:text-sm font-semibold flex items-center gap-1" style={{ color: '#22c55e' }}>
+                                <span>-{planoInfo.nome}</span>
+                                {planoInfo.emoji && <span>{planoInfo.emoji}</span>}
+                              </span>
+                              {isTop1Cidade && (
+                                <span className="text-xs sm:text-sm font-bold px-2 py-0.5 bg-yellow-400 text-yellow-900 rounded-full whitespace-nowrap">
+                                  TOP 1 {cidadeFormatada}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs sm:text-sm font-semibold mt-1" style={{ color: '#22c55e' }}>{autopeca.quantidade} venda{autopeca.quantidade > 1 ? 's' : ''}</p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-4">
+                          <p className="text-lg sm:text-2xl font-black" style={{ color: '#16a34a', textShadow: '0 0 8px rgba(34, 197, 94, 0.4)' }}>R$ {autopeca.total.toFixed(2)}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-4">
-                      <p className="text-lg sm:text-2xl font-black" style={{ color: '#16a34a', textShadow: '0 0 8px rgba(34, 197, 94, 0.4)' }}>R$ {autopeca.total.toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
