@@ -83,9 +83,22 @@ service cloud.firestore {
 
     // Sessões de usuário - limite de 3 dispositivos
     match /user_sessions/{sessionId} {
-      allow read, create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Ler: usuário pode ler apenas suas próprias sessões
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow list: if request.auth != null;
+      
+      // Criar: usuário pode criar apenas sessões com seu próprio userId
+      allow create: if request.auth != null && 
+                     request.resource.data.userId == request.auth.uid;
+      
+      // Atualizar: usuário pode atualizar apenas suas próprias sessões
+      allow update: if request.auth != null && 
+                     resource.data.userId == request.auth.uid &&
+                     request.resource.data.userId == request.auth.uid;
+      
+      // Deletar: usuário pode deletar apenas suas próprias sessões
+      allow delete: if request.auth != null && 
+                     resource.data.userId == request.auth.uid;
     }
 
   }
