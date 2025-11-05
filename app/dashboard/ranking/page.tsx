@@ -231,30 +231,36 @@ export default function RankingPage() {
   // Calcular ranking geral
   const rankingAutopecas = Object.values(faturamentoPorAutopeca).sort((a, b) => b.total - a.total);
 
-  // Calcular top 1 de cada cidade (quando "todos" está selecionado e Brasil inteiro)
+  // Calcular top 1 de cada cidade (sempre que houver filtro de localização)
   const top1PorCidade: Record<string, string> = {};
-  if (periodoSelecionado === 'todos' && brasilSelecionado) {
-    // Agrupar faturamento por autopeça e cidade
-    const faturamentoPorCidade: Record<string, Record<string, number>> = {};
+  
+  // Agrupar faturamento por autopeça e cidade usando apenas os negócios filtrados
+  const faturamentoPorCidade: Record<string, Record<string, number>> = {};
+  
+  negociosFiltrados.forEach(negocio => {
+    const autopeca = autopecas[negocio.autopecaId];
+    if (!autopeca || !autopeca.cidade) return;
     
-    negociosFiltrados.forEach(negocio => {
-      const autopeca = autopecas[negocio.autopecaId];
-      if (!autopeca || !autopeca.cidade) return;
-      
-      const cidade = autopeca.cidade;
-      if (!faturamentoPorCidade[cidade]) {
-        faturamentoPorCidade[cidade] = {};
-      }
-      
-      if (!faturamentoPorCidade[cidade][negocio.autopecaId]) {
-        faturamentoPorCidade[cidade][negocio.autopecaId] = 0;
-      }
-      
-      faturamentoPorCidade[cidade][negocio.autopecaId] += negocio.valorFinal || 0;
-    });
+    const cidade = autopeca.cidade;
+    if (!faturamentoPorCidade[cidade]) {
+      faturamentoPorCidade[cidade] = {};
+    }
     
-    // Encontrar top 1 de cada cidade
-    Object.entries(faturamentoPorCidade).forEach(([cidade, autopecasPorId]) => {
+    if (!faturamentoPorCidade[cidade][negocio.autopecaId]) {
+      faturamentoPorCidade[cidade][negocio.autopecaId] = 0;
+    }
+    
+    faturamentoPorCidade[cidade][negocio.autopecaId] += negocio.valorFinal || 0;
+  });
+  
+  // Encontrar top 1 de cada cidade que aparece nos resultados filtrados
+  Object.entries(faturamentoPorCidade).forEach(([cidade, autopecasPorId]) => {
+    // Verificar se a cidade está no filtro atual (se houver filtro de localização)
+    const nomeCidade = cidade.split('-')[0];
+    const cidadeNoFiltro = cidadesSelecionadas.includes(nomeCidade);
+    
+    // Se Brasil está selecionado OU a cidade está no filtro, calcular TOP 1
+    if (brasilSelecionado || cidadeNoFiltro) {
       const entries = Object.entries(autopecasPorId);
       if (entries.length > 0) {
         const top1 = entries.sort((a, b) => b[1] - a[1])[0];
@@ -262,8 +268,8 @@ export default function RankingPage() {
           top1PorCidade[top1[0]] = cidade;
         }
       }
-    });
-  }
+    }
+  });
 
   // Função para obter info do plano
   const getPlanoInfo = (plano: string) => {
@@ -577,11 +583,6 @@ export default function RankingPage() {
                             className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-white flex-shrink-0 ${
                               index === 0 ? 'bg-blue-600' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-green-600'
                             }`}
-                            style={index === 0 ? {
-                              boxShadow: '0 0 15px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.5)'
-                            } : {
-                              boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)'
-                            }}
                           >
                             {index + 1}º
                           </div>
