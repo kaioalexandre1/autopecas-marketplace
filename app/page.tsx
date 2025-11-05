@@ -194,7 +194,7 @@ export default function Home() {
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 relative z-10">
         {/* Header */}
-        <header className="flex flex-col lg:flex-row justify-between items-center gap-4 sm:gap-6 lg:gap-4 mb-8 sm:mb-16 backdrop-blur-xl bg-gradient-to-r from-white/15 via-white/10 to-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-8 border-2 border-white/30 shadow-2xl hover:shadow-yellow-400/20 transition-all group">
+        <header className="flex flex-col lg:flex-row justify-between items-center gap-4 sm:gap-6 lg:gap-4 mb-8 sm:mb-16 p-4 sm:p-8 transition-all group">
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 w-full lg:w-auto">
             {/* Logo com Animação */}
             <div className="relative flex-shrink-0">
@@ -267,8 +267,8 @@ export default function Home() {
 
         {/* Hero Section */}
         <div className="text-center mb-12 sm:mb-20 px-3">
-          <div className="inline-block mb-4 sm:mb-6 px-4 sm:px-6 py-2 sm:py-3 bg-yellow-400/20 backdrop-blur-sm rounded-full border border-yellow-400/30">
-            <span className="text-yellow-200 font-bold text-sm sm:text-base">✨ Plataforma #1 em Maringá-PR</span>
+          <div className="inline-block mb-4 sm:mb-6 px-4 sm:px-6 py-2 sm:py-3">
+            <span className="text-yellow-200 font-bold text-sm sm:text-base drop-shadow-lg">✨ Plataforma #1 em Maringá-PR</span>
           </div>
           <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6 sm:mb-8 leading-tight drop-shadow-2xl px-2">
             Marketplace de Autopeças<br />
@@ -291,8 +291,8 @@ export default function Home() {
 
         {/* Features */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-12 sm:mb-20 px-3">
-          <div className="backdrop-blur-md bg-white/10 p-5 sm:p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4 sm:mb-6 backdrop-blur-sm border border-blue-400/30">
+          <div className="p-5 sm:p-8 transition-all hover:scale-105">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-6">
               <Wrench className="text-yellow-300" size={28} />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 sm:mb-4">Oficinas</h3>
@@ -308,8 +308,8 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="backdrop-blur-md bg-white/10 p-5 sm:p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4 sm:mb-6 backdrop-blur-sm border border-green-400/30">
+          <div className="p-5 sm:p-8 transition-all hover:scale-105">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-6">
               <Package className="text-green-300" size={28} />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 sm:mb-4">Autopeças</h3>
@@ -325,8 +325,8 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="backdrop-blur-md bg-white/10 p-5 sm:p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20 sm:col-span-2 lg:col-span-1">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4 sm:mb-6 backdrop-blur-sm border border-yellow-400/30">
+          <div className="p-5 sm:p-8 transition-all hover:scale-105 sm:col-span-2 lg:col-span-1">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-6">
               <Truck className="text-yellow-300" size={28} />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 sm:mb-4">Entregadores</h3>
@@ -344,12 +344,12 @@ export default function Home() {
         </div>
 
         {/* How it Works */}
-        <div className="backdrop-blur-xl bg-white/10 rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-12 mb-12 sm:mb-20 border border-white/20 hover:bg-white/15 transition-all mx-3">
+        <div className="p-6 sm:p-12 mb-12 sm:mb-20 mx-3">
           <h3 className="text-3xl sm:text-4xl font-black text-center mb-8 sm:mb-16 text-white drop-shadow-lg">
             Como Funciona
           </h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
-            <div className="text-center backdrop-blur-md bg-white/10 p-4 sm:p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
+            <div className="text-center p-4 sm:p-6 hover:scale-105 transition-all">
               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-cyan-400 to-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-xl sm:text-2xl font-black shadow-lg shadow-cyan-500/50 ring-4 ring-white/20">
                 1
               </div>
@@ -358,7 +358,7 @@ export default function Home() {
                 Escolha seu tipo de conta: Oficina, Autopeça ou Entregador
               </p>
             </div>
-            <div className="text-center backdrop-blur-md bg-white/10 p-4 sm:p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
+            <div className="text-center p-4 sm:p-6 hover:scale-105 transition-all">
               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-xl sm:text-2xl font-black shadow-lg shadow-green-500/50 ring-4 ring-white/20">
                 2
               </div>
@@ -367,7 +367,7 @@ export default function Home() {
                 Oficinas publicam pedidos, Autopeças fazem ofertas
               </p>
             </div>
-            <div className="text-center backdrop-blur-md bg-white/10 p-4 sm:p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
+            <div className="text-center p-4 sm:p-6 hover:scale-105 transition-all">
               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-xl sm:text-2xl font-black shadow-lg shadow-yellow-500/50 ring-4 ring-white/20">
                 3
               </div>
@@ -376,7 +376,7 @@ export default function Home() {
                 Use o chat para negociar detalhes e enviar fotos
               </p>
             </div>
-            <div className="text-center backdrop-blur-md bg-white/10 p-4 sm:p-6 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all">
+            <div className="text-center p-4 sm:p-6 hover:scale-105 transition-all">
               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-pink-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-xl sm:text-2xl font-black shadow-lg shadow-purple-500/50 ring-4 ring-white/20">
                 4
               </div>
@@ -407,10 +407,10 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-12 sm:mt-20 py-6 sm:py-8 border-t border-white/20 backdrop-blur-sm bg-white/5">
+      <footer className="mt-12 sm:mt-20 py-6 sm:py-8">
         <div className="container mx-auto px-4 text-center text-white">
-          <p className="font-semibold text-base sm:text-lg">&copy; 2025 Grupão das autopeças - Marketplace em Tempo Real</p>
-          <p className="text-sm sm:text-base mt-2 text-cyan-100">Maringá-PR • Conectando o mercado automotivo local</p>
+          <p className="font-semibold text-base sm:text-lg drop-shadow-lg">&copy; 2025 Grupão das autopeças - Marketplace em Tempo Real</p>
+          <p className="text-sm sm:text-base mt-2 text-cyan-100 drop-shadow-lg">Maringá-PR • Conectando o mercado automotivo local</p>
         </div>
       </footer>
     </div>

@@ -914,9 +914,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 overflow-auto dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative">
       {/* Elementos decorativos de fundo - IDÊNTICOS à página de cadastro */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         {/* Círculos grandes desfocados */}
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl"></div>
         <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl"></div>
@@ -1070,7 +1070,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Conteúdo principal (com z-index para ficar acima do fundo) */}
-      <div className="relative z-10 min-h-screen p-3 sm:p-6">
+      <div className="relative z-10 min-h-screen pt-20 sm:pt-24 p-3 sm:p-6">
         {/* Header com Banner Horizontal */}
         <div className="flex flex-col lg:flex-row items-stretch gap-2 sm:gap-3 mb-3 sm:mb-4">
         {/* Título à Esquerda - Quadrado Moderno */}
