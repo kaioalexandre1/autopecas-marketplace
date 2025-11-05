@@ -8,7 +8,7 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, Timestamp, orderBy } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, Timestamp, orderBy, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User, UserType } from '@/types';
 import toast from 'react-hot-toast';
@@ -36,6 +36,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Função centralizada para GARANTIR que nunca há mais de 3 sessões
+  const garantirLimiteSessoes = async (userId: string, sessionIdExcluir?: string): Promise<{ podeCriar: boolean; sessoesRestantes: number }> => {
+    try {
+      // Buscar todas as sessões do usuário
+      const sessoesRef = collection(db, 'user_sessions');
+      const q = query(sessoesRef, where('userId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      let sessoesAtivas = querySnapshot.docs;
+      
+      console.log(`🔍 Verificando sessões para ${userId}: ${sessoesAtivas.length} encontradas`);
+      
+      // Se há sessão para excluir da contagem (sessão atual que será mantida)
+      if (sessionIdExcluir) {
+        sessoesAtivas = sessoesAtivas.filter(s => s.id !== sessionIdExcluir);
+        console.log(`📌 Excluindo sessão atual da contagem: ${sessionIdExcluir}`);
+      }
+      
+      // Se já tem 3 ou mais sessões (excluindo a atual), precisa remover
+      if (sessoesAtivas.length >= 3) {
+        console.log(`⚠️ LIMITE ATINGIDO! ${sessoesAtivas.length} sessões encontradas. Removendo as mais antigas...`);
+        
+        // Ordenar por lastActivity (mais antiga primeiro)
+        const sessoesOrdenadas = [...sessoesAtivas].sort((a, b) => {
+          const aTime = a.data().lastActivity?.toMillis() || 0;
+          const bTime = b.data().lastActivity?.toMillis() || 0;
+          return aTime - bTime;
+        });
+        
+        // Calcular quantas remover (sempre deixar máximo 2 se vai criar nova, ou 3 se já tem sessão atual)
+        const maxPermitido = sessionIdExcluir ? 3 : 2; // Se tem sessão atual, pode ter 3; se não, só 2
+        const sessoesParaRemover = Math.max(0, sessoesAtivas.length - maxPermitido);
+        
+        if (sessoesParaRemover > 0) {
+          console.log(`🗑️ Removendo ${sessoesParaRemover} sessão(ões) mais antiga(s)...`);
+          
+          // Remover as mais antigas
+          const promisesRemocao = [];
+          for (let i = 0; i < sessoesParaRemover; i++) {
+            const sessaoParaRemover = sessoesOrdenadas[i];
+            console.log(`   - Removendo: ${sessaoParaRemover.id}`);
+            promisesRemocao.push(deleteDoc(sessaoParaRemover.ref));
+          }
+          
+          await Promise.all(promisesRemocao);
+          console.log(`✅ ${sessoesParaRemover} sessão(ões) removida(s)!`);
+        }
+        
+        // Verificar novamente após remoção
+        const querySnapshot2 = await getDocs(q);
+        const sessoesAposRemocao = sessionIdExcluir 
+          ? querySnapshot2.docs.filter(s => s.id !== sessionIdExcluir)
+          : querySnapshot2.docs;
+        
+        // Se ainda tem 3 ou mais, NÃO pode criar nova sessão
+        if (sessoesAposRemocao.length >= 3) {
+          console.log(`❌ Ainda há ${sessoesAposRemocao.length} sessões. NÃO pode criar nova!`);
+          return { podeCriar: false, sessoesRestantes: sessoesAposRemocao.length };
+        }
+      }
+      
+      // Verificar novamente para garantir
+      const querySnapshotFinal = await getDocs(q);
+      const sessoesFinais = sessionIdExcluir 
+        ? querySnapshotFinal.docs.filter(s => s.id !== sessionIdExcluir)
+        : querySnapshotFinal.docs;
+      
+      console.log(`✅ Sessões dentro do limite: ${sessoesFinais.length}/3`);
+      return { podeCriar: sessoesFinais.length < 3, sessoesRestantes: sessoesFinais.length };
+    } catch (error: any) {
+      console.error('❌ Erro ao garantir limite de sessões:', error);
+      // Em caso de erro, não permitir criar nova sessão por segurança
+      return { podeCriar: false, sessoesRestantes: 999 };
+    }
+  };
 
   useEffect(() => {
     let activityInterval: NodeJS.Timeout | null = null;
@@ -77,45 +152,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Verificar se já existe uma sessão válida para este dispositivo
               const sessaoAtual = sessionId ? sessoesAtivas.find(s => s.id === sessionId) : null;
               
-              // SEMPRE verificar o limite, mesmo se já existe uma sessão
-              // Se já existem 3 ou mais sessões, remover a mais antiga (que NÃO seja a atual)
-              if (sessoesAtivas.length >= 3) {
-                console.log(`⚠️ LIMITE ATINGIDO! ${sessoesAtivas.length} sessões encontradas. Removendo a mais antiga...`);
-                
-                // Filtrar sessões que não são a atual (se houver)
-                const sessoesParaRemover = sessionId 
-                  ? sessoesAtivas.filter(s => s.id !== sessionId)
-                  : sessoesAtivas;
-                
-                // Ordenar por lastActivity (mais antiga primeiro)
-                const sessoesOrdenadas = [...sessoesParaRemover].sort((a, b) => {
-                  const aTime = a.data().lastActivity?.toMillis() || 0;
-                  const bTime = b.data().lastActivity?.toMillis() || 0;
-                  return aTime - bTime;
-                });
-                
-                // Remover a sessão mais antiga (que não é a atual)
-                if (sessoesOrdenadas.length > 0) {
-                  const sessaoMaisAntiga = sessoesOrdenadas[0];
-                  console.log(`🗑️ Removendo sessão: ${sessaoMaisAntiga.id} (última atividade: ${sessaoMaisAntiga.data().lastActivity?.toDate()})`);
-                  try {
-                    await deleteDoc(sessaoMaisAntiga.ref);
-                    console.log(`✅ Sessão mais antiga removida com sucesso!`);
-                    toast.info('Uma sessão antiga foi removida. Limite: 3 dispositivos simultâneos.');
-                  } catch (e: any) {
-                    console.error('❌ Erro ao remover sessão antiga:', e.code, e.message);
-                  }
-                }
+              // Usar função centralizada para GARANTIR limite de 3 sessões
+              const verificacao = await garantirLimiteSessoes(user.uid, sessionId || undefined);
+              
+              // Se não pode criar e já tem 3 sessões, fazer logout
+              if (!verificacao.podeCriar && verificacao.sessoesRestantes >= 3) {
+                console.log(`❌ LIMITE ATINGIDO! ${verificacao.sessoesRestantes} sessões ativas. Fazendo logout...`);
+                toast.error('Você já está logado em 3 dispositivos. Limite máximo atingido.');
+                await firebaseSignOut(auth);
+                localStorage.removeItem('sessionId');
+                localStorage.removeItem('userId');
+                return;
               }
 
-              // Se já existe uma sessão válida para este dispositivo, apenas atualizar
+              // Se já existe uma sessão válida, apenas atualizar
               if (sessaoAtual && sessaoAtual.exists()) {
                 console.log('✅ Sessão já existe, atualizando lastActivity...');
                 await updateDoc(sessaoAtual.ref, {
                   lastActivity: Timestamp.now(),
                 });
                 
-                // Iniciar intervalo de atualização se não existir
+                // Usar listener em tempo real para detectar remoção INSTANTÂNEA
+                const sessaoRefAtual = doc(db, 'user_sessions', sessionId!);
+                const unsubscribeSessao = onSnapshot(sessaoRefAtual, (docSnapshot) => {
+                  if (!docSnapshot.exists()) {
+                    console.log('⚠️ Sessão removida INSTANTANEAMENTE! Fazendo logout...');
+                    unsubscribeSessao(); // Parar o listener
+                    if (activityInterval) {
+                      clearInterval(activityInterval);
+                      activityInterval = null;
+                    }
+                    toast.error('Sua sessão foi encerrada. Limite de 3 dispositivos atingido.');
+                    firebaseSignOut(auth);
+                    localStorage.removeItem('sessionId');
+                    localStorage.removeItem('userId');
+                  }
+                }, (error) => {
+                  console.error('Erro no listener de sessão:', error);
+                });
+                
+                // Também manter intervalo de atualização de lastActivity
                 if (!activityInterval) {
                   activityInterval = setInterval(async () => {
                     try {
@@ -123,15 +199,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       const sessaoDocAtual = await getDoc(sessaoRefAtual);
                       
                       if (!sessaoDocAtual.exists()) {
-                        console.log('⚠️ Sessão removida! Fazendo logout...');
                         if (activityInterval) {
                           clearInterval(activityInterval);
                           activityInterval = null;
                         }
-                        toast.error('Sua sessão foi encerrada. Limite de 3 dispositivos atingido.');
-                        await firebaseSignOut(auth);
-                        localStorage.removeItem('sessionId');
-                        localStorage.removeItem('userId');
                         return;
                       }
                       
@@ -150,6 +221,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 return; // Não criar nova sessão se já existe
               }
 
+              // Verificar novamente ANTES de criar nova sessão (garantia dupla)
+              const verificacaoFinal = await garantirLimiteSessoes(user.uid, sessionId || undefined);
+              
+              if (!verificacaoFinal.podeCriar && verificacaoFinal.sessoesRestantes >= 3) {
+                console.log(`❌ BLOQUEANDO CRIAÇÃO: Ainda há ${verificacaoFinal.sessoesRestantes} sessões!`);
+                toast.error('Você já está logado em 3 dispositivos. Limite máximo atingido.');
+                await firebaseSignOut(auth);
+                localStorage.removeItem('sessionId');
+                localStorage.removeItem('userId');
+                return;
+              }
+              
               // Criar nova sessão para este dispositivo (se não existe)
               const novoSessionId = generateSessionId();
               const agora = Timestamp.now();
@@ -167,7 +250,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               localStorage.setItem('userId', user.uid);
               console.log('✅ Nova sessão criada com sucesso!');
               
-              // Iniciar intervalo de atualização
+              // Usar listener em tempo real para detectar remoção INSTANTÂNEA
+              const sessaoRefNova = doc(db, 'user_sessions', novoSessionId);
+              const unsubscribeSessaoNova = onSnapshot(sessaoRefNova, (docSnapshot) => {
+                if (!docSnapshot.exists()) {
+                  console.log('⚠️ Sessão removida INSTANTANEAMENTE! Fazendo logout...');
+                  unsubscribeSessaoNova(); // Parar o listener
+                  if (activityInterval) {
+                    clearInterval(activityInterval);
+                    activityInterval = null;
+                  }
+                  toast.error('Sua sessão foi encerrada. Limite de 3 dispositivos atingido.');
+                  firebaseSignOut(auth);
+                  localStorage.removeItem('sessionId');
+                  localStorage.removeItem('userId');
+                }
+              }, (error) => {
+                console.error('Erro no listener de sessão:', error);
+              });
+              
+              // Iniciar intervalo de atualização de lastActivity
               if (activityInterval) {
                 clearInterval(activityInterval);
               }
@@ -177,15 +279,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   const sessaoDocAtual = await getDoc(sessaoRefAtual);
                   
                   if (!sessaoDocAtual.exists()) {
-                    console.log('⚠️ Sessão removida! Fazendo logout...');
                     if (activityInterval) {
                       clearInterval(activityInterval);
                       activityInterval = null;
                     }
-                    toast.error('Sua sessão foi encerrada. Limite de 3 dispositivos atingido.');
-                    await firebaseSignOut(auth);
-                    localStorage.removeItem('sessionId');
-                    localStorage.removeItem('userId');
                     return;
                   }
                   
@@ -374,6 +471,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       const userId = userCredential.user.uid;
 
+      // VERIFICAR LIMITE DE SESSÕES ANTES DE PERMITIR LOGIN
+      // Isso garante que nunca haverá mais de 3 sessões
+      const verificacao = await garantirLimiteSessoes(userId);
+      
+      if (!verificacao.podeCriar && verificacao.sessoesRestantes >= 3) {
+        // Já tem 3 sessões ativas, fazer logout imediatamente
+        console.log(`❌ BLOQUEANDO LOGIN: Já existem ${verificacao.sessoesRestantes} sessões ativas!`);
+        await firebaseSignOut(auth);
+        toast.error(`Você já está logado em 3 dispositivos. Limite máximo atingido. Faça logout em um dispositivo antes de fazer login em outro.`);
+        throw new Error('LIMITE_DE_SESSOES_ATINGIDO');
+      }
+
       // Login foi bem-sucedido! Agora tentar gerenciar sessões (sem bloquear se falhar)
       // Executar em background, sem bloquear o login
       setTimeout(async () => {
@@ -388,62 +497,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           try {
-            // Verificar quantas sessões ativas existem
-            let sessoesAtivas: any[] = [];
-            try {
-              const sessoesRef = collection(db, 'user_sessions');
-              const q = query(
-                sessoesRef,
-                where('userId', '==', userId),
-                orderBy('lastActivity', 'desc')
-              );
-              const querySnapshot = await getDocs(q);
-              sessoesAtivas = querySnapshot.docs;
-              console.log(`📊 Sessões encontradas: ${sessoesAtivas.length}`);
-            } catch (queryError: any) {
-              // Se o índice não existir, tenta sem orderBy
-              if (queryError.code === 'failed-precondition') {
-                console.warn('⚠️ Índice composto não criado. Buscando sessões sem orderBy...');
-                const sessoesRef = collection(db, 'user_sessions');
-                const q = query(
-                  sessoesRef,
-                  where('userId', '==', userId)
-                );
-                const querySnapshot = await getDocs(q);
-                sessoesAtivas = querySnapshot.docs;
-                console.log(`📊 Sessões encontradas (sem índice): ${sessoesAtivas.length}`);
-              } else {
-                throw queryError;
-              }
-            }
-
-            // Se já existem 3 ou mais sessões, remover a mais antiga
-            if (sessoesAtivas.length >= 3) {
-              console.log(`⚠️ Limite de 3 sessões atingido! Removendo a mais antiga...`);
-              
-              // Ordenar por lastActivity (mais antiga primeiro) no código
-              const sessoesOrdenadas = [...sessoesAtivas].sort((a, b) => {
-                const aTime = a.data().lastActivity?.toMillis() || 0;
-                const bTime = b.data().lastActivity?.toMillis() || 0;
-                return aTime - bTime;
-              });
-
-              // Remover a sessão mais antiga
-              const sessaoMaisAntiga = sessoesOrdenadas[0];
-              console.log(`🗑️ Removendo sessão: ${sessaoMaisAntiga.id}`, {
-                sessionId: sessaoMaisAntiga.data().sessionId,
-                lastActivity: sessaoMaisAntiga.data().lastActivity?.toDate()
-              });
-              
-              try {
-                await deleteDoc(sessaoMaisAntiga.ref);
-                console.log(`✅ Sessão removida com sucesso!`);
-                toast.info('Uma sessão antiga foi removida. Limite: 3 dispositivos simultâneos.');
-              } catch (e: any) {
-                console.error('❌ Erro ao deletar sessão:', e.code, e.message);
-              }
-            } else {
-              console.log(`✅ Sessões dentro do limite (${sessoesAtivas.length}/3)`);
+            // Usar função centralizada para GARANTIR limite ANTES de criar sessão
+            const verificacao = await garantirLimiteSessoes(userId);
+            
+            if (!verificacao.podeCriar && verificacao.sessoesRestantes >= 3) {
+              // Já tem 3 sessões, fazer logout imediatamente
+              console.log(`❌ BLOQUEANDO: Já existem ${verificacao.sessoesRestantes} sessões ativas!`);
+              await firebaseSignOut(auth);
+              toast.error('Você já está logado em 3 dispositivos. Limite máximo atingido.');
+              return;
             }
 
             // Criar nova sessão
@@ -459,21 +521,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
             };
             
-            console.log('Tentando criar sessão:', sessaoData);
-            console.log('Usuário autenticado:', userId, 'Auth UID:', auth.currentUser?.uid);
+            console.log('📝 Criando sessão no signIn:', sessionId);
             
             try {
               await setDoc(doc(db, 'user_sessions', sessionId), sessaoData);
-              console.log('✅ Sessão criada com sucesso!');
+              console.log('✅ Sessão criada com sucesso no signIn!');
+              
+              // Armazenar sessionId no localStorage para validação posterior
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('sessionId', sessionId);
+                localStorage.setItem('userId', userId);
+              }
             } catch (createError: any) {
               console.error('❌ Erro ao criar sessão:', createError.code, createError.message);
               throw createError;
-            }
-
-            // Armazenar sessionId no localStorage para validação posterior
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('sessionId', sessionId);
-              localStorage.setItem('userId', userId);
             }
           } catch (sessionError: any) {
             // Se houver erro de permissão, apenas logar - não bloquear login
