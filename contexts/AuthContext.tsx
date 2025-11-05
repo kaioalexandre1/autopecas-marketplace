@@ -50,12 +50,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (user) {
-        // Verificar se a sessão ainda é válida
+        // Verificar se a sessão ainda é válida (apenas se já existir)
         if (typeof window !== 'undefined') {
           const sessionId = localStorage.getItem('sessionId');
           const userId = localStorage.getItem('userId');
           
-          if (sessionId && userId && userId === user.uid) {
+          // Se não há sessão no localStorage, significa que é um novo login
+          // A sessão será criada no signIn, então não precisamos verificar aqui
+          if (!sessionId || !userId) {
+            // É um novo login, a sessão será criada no signIn
+            // Não fazer nada aqui, apenas continuar o fluxo normal
+          } else if (userId === user.uid) {
             // Verificar se a sessão ainda existe no Firestore
             try {
               const sessaoRef = doc(db, 'user_sessions', sessionId);
@@ -107,14 +112,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }, 5 * 60 * 1000); // 5 minutos
             } catch (error) {
               console.error('Erro ao verificar sessão:', error);
+              // Não fazer logout em caso de erro, apenas logar
             }
           } else {
-            // Não há sessão válida, fazer logout
-            toast.error('Sessão inválida. Por favor, faça login novamente.');
-            await firebaseSignOut(auth);
+            // userId não corresponde, limpar e permitir novo login
             localStorage.removeItem('sessionId');
             localStorage.removeItem('userId');
-            return;
           }
         }
 
