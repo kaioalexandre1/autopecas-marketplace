@@ -559,36 +559,90 @@ export default function RankingPage() {
                         <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent my-3 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
                       )}
                       <div 
-                        className="flex items-center justify-between bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-4 rounded-lg border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all hover:border-green-400"
-                        style={{ 
+                        className="flex items-center justify-between p-4 rounded-lg border-l-4 shadow-md hover:shadow-lg transition-all"
+                        style={index === 0 ? {
+                          background: 'linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1))',
+                          boxShadow: '0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3), inset 0 0 20px rgba(59, 130, 246, 0.1)',
+                          borderLeftColor: '#3b82f6',
+                          borderLeftWidth: '4px'
+                        } : {
+                          background: 'linear-gradient(to right, rgba(34, 197, 94, 0.05), rgba(16, 185, 129, 0.05))',
                           boxShadow: index < 3 ? '0 0 15px rgba(34, 197, 94, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
-                          borderLeftColor: index === 0 ? '#eab308' : index === 1 ? '#9ca3af' : index === 2 ? '#ea580c' : '#22c55e'
+                          borderLeftColor: index === 1 ? '#9ca3af' : index === 2 ? '#ea580c' : '#22c55e',
+                          borderLeftWidth: '4px'
                         }}
                       >
                         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-white flex-shrink-0 ${
-                            index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-green-600'
-                          }`} style={{ boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)' }}>
+                          <div 
+                            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-white flex-shrink-0 ${
+                              index === 0 ? 'bg-blue-600' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-green-600'
+                            }`}
+                            style={index === 0 ? {
+                              boxShadow: '0 0 15px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.5)'
+                            } : {
+                              boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)'
+                            }}
+                          >
                             {index + 1}º
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-black text-sm sm:text-base truncate uppercase" style={{ color: '#15803d' }}>{autopeca.nome}</p>
-                              <span className="text-xs sm:text-sm font-semibold flex items-center gap-1" style={{ color: '#22c55e' }}>
+                              <p 
+                                className="font-black text-sm sm:text-base truncate uppercase" 
+                                style={index === 0 ? {
+                                  color: '#3b82f6',
+                                  textShadow: '0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.5)'
+                                } : {
+                                  color: '#15803d'
+                                }}
+                              >
+                                {autopeca.nome}
+                              </p>
+                              <span 
+                                className="text-xs sm:text-sm font-semibold flex items-center gap-1 whitespace-nowrap" 
+                                style={index === 0 ? {
+                                  color: '#3b82f6',
+                                  textShadow: '0 0 8px rgba(59, 130, 246, 0.6)'
+                                } : {
+                                  color: '#3b82f6',
+                                  textShadow: '0 0 8px rgba(59, 130, 246, 0.6)'
+                                }}
+                              >
                                 <span>-{planoInfo.nome}</span>
                                 {planoInfo.emoji && <span>{planoInfo.emoji}</span>}
                               </span>
                               {isTop1Cidade && (
-                                <span className="text-xs sm:text-sm font-bold px-2 py-0.5 bg-yellow-400 text-yellow-900 rounded-full whitespace-nowrap">
-                                  TOP 1 {cidadeFormatada}
+                                <span className="text-xs sm:text-sm font-bold flex items-center gap-1 whitespace-nowrap" style={{ color: '#3b82f6', textShadow: '0 0 8px rgba(59, 130, 246, 0.6)' }}>
+                                  TOP 1 {cidadeFormatada} 👑
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs sm:text-sm font-semibold mt-1" style={{ color: '#22c55e' }}>{autopeca.quantidade} venda{autopeca.quantidade > 1 ? 's' : ''}</p>
+                            <p 
+                              className="text-xs sm:text-sm font-semibold mt-1" 
+                              style={index === 0 ? {
+                                color: '#3b82f6',
+                                textShadow: '0 0 8px rgba(59, 130, 246, 0.6)'
+                              } : {
+                                color: '#22c55e'
+                              }}
+                            >
+                              {autopeca.quantidade} venda{autopeca.quantidade > 1 ? 's' : ''}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0 ml-4">
-                          <p className="text-lg sm:text-2xl font-black" style={{ color: '#16a34a', textShadow: '0 0 8px rgba(34, 197, 94, 0.4)' }}>R$ {autopeca.total.toFixed(2)}</p>
+                          <p 
+                            className="text-lg sm:text-2xl font-black" 
+                            style={index === 0 ? {
+                              color: '#3b82f6',
+                              textShadow: '0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.5)'
+                            } : {
+                              color: '#16a34a',
+                              textShadow: '0 0 8px rgba(34, 197, 94, 0.4)'
+                            }}
+                          >
+                            R$ {autopeca.total.toFixed(2)}
+                          </p>
                         </div>
                       </div>
                     </div>
