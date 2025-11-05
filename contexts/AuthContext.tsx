@@ -77,35 +77,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Verificar se já existe uma sessão válida para este dispositivo
               const sessaoAtual = sessionId ? sessoesAtivas.find(s => s.id === sessionId) : null;
               
-              if (sessaoAtual && sessaoAtual.exists()) {
-                // Sessão já existe e é válida, apenas atualizar lastActivity
-                console.log('✅ Sessão já existe, atualizando lastActivity...');
-                await updateDoc(sessaoAtual.ref, {
-                  lastActivity: Timestamp.now(),
-                });
-                return;
-              }
-
-              // Se já existem 3 ou mais sessões, remover a mais antiga ANTES de criar nova
+              // SEMPRE verificar o limite, mesmo se já existe uma sessão
+              // Se já existem 3 ou mais sessões, remover a mais antiga (que NÃO seja a atual)
               if (sessoesAtivas.length >= 3) {
-                console.log(`⚠️ LIMITE ATINGIDO! Removendo a sessão mais antiga...`);
-                const sessoesOrdenadas = [...sessoesAtivas].sort((a, b) => {
+                console.log(`⚠️ LIMITE ATINGIDO! ${sessoesAtivas.length} sessões encontradas. Removendo a mais antiga...`);
+                
+                // Filtrar sessões que não são a atual (se houver)
+                const sessoesParaRemover = sessionId 
+                  ? sessoesAtivas.filter(s => s.id !== sessionId)
+                  : sessoesAtivas;
+                
+                // Ordenar por lastActivity (mais antiga primeiro)
+                const sessoesOrdenadas = [...sessoesParaRemover].sort((a, b) => {
                   const aTime = a.data().lastActivity?.toMillis() || 0;
                   const bTime = b.data().lastActivity?.toMillis() || 0;
                   return aTime - bTime;
                 });
-                const sessaoMaisAntiga = sessoesOrdenadas[0];
-                console.log(`🗑️ Removendo sessão: ${sessaoMaisAntiga.id} (última atividade: ${sessaoMaisAntiga.data().lastActivity?.toDate()})`);
-                try {
-                  await deleteDoc(sessaoMaisAntiga.ref);
-                  console.log(`✅ Sessão mais antiga removida com sucesso!`);
-                  toast.info('Uma sessão antiga foi removida. Limite: 3 dispositivos simultâneos.');
-                } catch (e: any) {
-                  console.error('❌ Erro ao remover sessão antiga:', e.code, e.message);
+                
+                // Remover a sessão mais antiga (que não é a atual)
+                if (sessoesOrdenadas.length > 0) {
+                  const sessaoMaisAntiga = sessoesOrdenadas[0];
+                  console.log(`🗑️ Removendo sessão: ${sessaoMaisAntiga.id} (última atividade: ${sessaoMaisAntiga.data().lastActivity?.toDate()})`);
+                  try {
+                    await deleteDoc(sessaoMaisAntiga.ref);
+                    console.log(`✅ Sessão mais antiga removida com sucesso!`);
+                    toast.info('Uma sessão antiga foi removida. Limite: 3 dispositivos simultâneos.');
+                  } catch (e: any) {
+                    console.error('❌ Erro ao remover sessão antiga:', e.code, e.message);
+                  }
                 }
               }
 
-              // Criar nova sessão para este dispositivo
+              // Se já existe uma sessão válida para este dispositivo, apenas atualizar
+              if (sessaoAtual && sessaoAtual.exists()) {
+                console.log('✅ Sessão já existe, atualizando lastActivity...');
+                await updateDoc(sessaoAtual.ref, {
+                  lastActivity: Timestamp.now(),
+                });
+                
+                // Iniciar intervalo de atualização se não existir
+                if (!activityInterval) {
+                  activityInterval = setInterval(async () => {
+                    try {
+                      const sessaoRefAtual = doc(db, 'user_sessions', sessionId!);
+                      const sessaoDocAtual = await getDoc(sessaoRefAtual);
+                      
+                      if (!sessaoDocAtual.exists()) {
+                        console.log('⚠️ Sessão removida! Fazendo logout...');
+                        if (activityInterval) {
+                          clearInterval(activityInterval);
+                          activityInterval = null;
+                        }
+                        toast.error('Sua sessão foi encerrada. Limite de 3 dispositivos atingido.');
+                        await firebaseSignOut(auth);
+                        localStorage.removeItem('sessionId');
+                        localStorage.removeItem('userId');
+                        return;
+                      }
+                      
+                      await updateDoc(sessaoRefAtual, {
+                        lastActivity: Timestamp.now(),
+                      });
+                    } catch (error) {
+                      console.error('Erro ao atualizar atividade da sessão:', error);
+                      if (activityInterval) {
+                        clearInterval(activityInterval);
+                        activityInterval = null;
+                      }
+                    }
+                  }, 60 * 1000); // 1 minuto
+                }
+                return; // Não criar nova sessão se já existe
+              }
+
+              // Criar nova sessão para este dispositivo (se não existe)
               const novoSessionId = generateSessionId();
               const agora = Timestamp.now();
               const sessaoData = {
