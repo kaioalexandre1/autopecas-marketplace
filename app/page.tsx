@@ -20,8 +20,8 @@ export default function Home() {
 
   return (
     <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 overflow-auto">
-      {/* Elementos decorativos removidos para evitar animações */}
-      <div className="absolute inset-0 overflow-hidden" style={{ display: 'none' }}>
+      {/* Elementos decorativos de fundo */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {/* Círculos grandes desfocados */}
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-400 rounded-full opacity-20 blur-3xl"></div>
         <div className="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl"></div>
