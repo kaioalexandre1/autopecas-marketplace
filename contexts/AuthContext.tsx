@@ -8,7 +8,7 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc, Timestamp, orderBy } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User, UserType } from '@/types';
 import toast from 'react-hot-toast';
@@ -38,10 +38,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let activityInterval: NodeJS.Timeout | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       
+      // Limpar intervalo anterior se existir
+      if (activityInterval) {
+        clearInterval(activityInterval);
+        activityInterval = null;
+      }
+      
       if (user) {
+        // Verificar se a sessão ainda é válida
+        if (typeof window !== 'undefined') {
+          const sessionId = localStorage.getItem('sessionId');
+          const userId = localStorage.getItem('userId');
+          
+          if (sessionId && userId && userId === user.uid) {
+            // Verificar se a sessão ainda existe no Firestore
+            try {
+              const sessaoRef = doc(db, 'user_sessions', sessionId);
+              const sessaoDoc = await getDoc(sessaoRef);
+              
+              if (!sessaoDoc.exists()) {
+                // Sessão foi removida (limite de 3 dispositivos atingido)
+                toast.error('Sua sessão foi encerrada. Você pode ter apenas 3 dispositivos logados simultaneamente.');
+                await firebaseSignOut(auth);
+                localStorage.removeItem('sessionId');
+                localStorage.removeItem('userId');
+                return;
+              }
+              
+              // Atualizar lastActivity inicialmente
+              await updateDoc(sessaoRef, {
+                lastActivity: Timestamp.now(),
+              });
+
+              // Atualizar atividade periodicamente (a cada 5 minutos)
+              activityInterval = setInterval(async () => {
+                try {
+                  const sessaoRefAtual = doc(db, 'user_sessions', sessionId);
+                  const sessaoDocAtual = await getDoc(sessaoRefAtual);
+                  
+                  if (!sessaoDocAtual.exists()) {
+                    // Sessão foi removida, fazer logout
+                    if (activityInterval) {
+                      clearInterval(activityInterval);
+                      activityInterval = null;
+                    }
+                    toast.error('Sua sessão foi encerrada. Limite de 3 dispositivos atingido.');
+                    await firebaseSignOut(auth);
+                    localStorage.removeItem('sessionId');
+                    localStorage.removeItem('userId');
+                    return;
+                  }
+                  
+                  await updateDoc(sessaoRefAtual, {
+                    lastActivity: Timestamp.now(),
+                  });
+                } catch (error) {
+                  console.error('Erro ao atualizar atividade da sessão:', error);
+                  if (activityInterval) {
+                    clearInterval(activityInterval);
+                    activityInterval = null;
+                  }
+                }
+              }, 5 * 60 * 1000); // 5 minutos
+            } catch (error) {
+              console.error('Erro ao verificar sessão:', error);
+            }
+          } else {
+            // Não há sessão válida, fazer logout
+            toast.error('Sessão inválida. Por favor, faça login novamente.');
+            await firebaseSignOut(auth);
+            localStorage.removeItem('sessionId');
+            localStorage.removeItem('userId');
+            return;
+          }
+        }
+
         // Buscar dados do usuário no Firestore
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
@@ -118,7 +194,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (activityInterval) {
+        clearInterval(activityInterval);
+      }
+    };
   }, []);
 
   const signUp = async (
@@ -161,9 +242,90 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Função para gerar um ID único de sessão
+  const generateSessionId = (): string => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  };
+
+  // Função para limpar sessões expiradas (mais de 24 horas sem atividade)
+  const limparSessoesExpiradas = async (userId: string) => {
+    try {
+      const agora = Timestamp.now();
+      const vinteQuatroHorasAtras = new Date(agora.toMillis() - 24 * 60 * 60 * 1000);
+      const vinteQuatroHorasAtrasTimestamp = Timestamp.fromDate(vinteQuatroHorasAtras);
+
+      const sessoesRef = collection(db, 'user_sessions');
+      const q = query(
+        sessoesRef,
+        where('userId', '==', userId),
+        where('lastActivity', '<', vinteQuatroHorasAtrasTimestamp)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const deletePromises = querySnapshot.docs.map(docSnapshot => deleteDoc(docSnapshot.ref));
+      await Promise.all(deletePromises);
+    } catch (error) {
+      console.error('Erro ao limpar sessões expiradas:', error);
+    }
+  };
+
   const signIn = async (email: string, senha: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, senha);
+      // Fazer login no Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+      const userId = userCredential.user.uid;
+
+      // Limpar sessões expiradas primeiro
+      await limparSessoesExpiradas(userId);
+
+      // Verificar quantas sessões ativas existem
+      const sessoesRef = collection(db, 'user_sessions');
+      const q = query(
+        sessoesRef,
+        where('userId', '==', userId),
+        orderBy('lastActivity', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const sessoesAtivas = querySnapshot.docs;
+
+      // Se já existem 3 ou mais sessões, remover a mais antiga
+      if (sessoesAtivas.length >= 3) {
+        // Ordenar por lastActivity (mais antiga primeiro)
+        const sessoesOrdenadas = sessoesAtivas.sort((a, b) => {
+          const aTime = a.data().lastActivity?.toMillis() || 0;
+          const bTime = b.data().lastActivity?.toMillis() || 0;
+          return aTime - bTime;
+        });
+
+        // Remover a sessão mais antiga
+        const sessaoMaisAntiga = sessoesOrdenadas[0];
+        await deleteDoc(sessaoMaisAntiga.ref);
+        
+        // Fazer logout da sessão removida (invalidação do token)
+        // Nota: O Firebase Auth não permite invalidar tokens de outros dispositivos diretamente
+        // Mas podemos registrar isso para que o sistema saiba que a sessão foi removida
+        toast.info('Uma sessão antiga foi removida para permitir este login. Limite: 3 dispositivos simultâneos.');
+      }
+
+      // Criar nova sessão
+      const sessionId = generateSessionId();
+      const agora = Timestamp.now();
+      
+      await setDoc(doc(db, 'user_sessions', sessionId), {
+        userId,
+        sessionId,
+        createdAt: agora,
+        lastActivity: agora,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+      });
+
+      // Armazenar sessionId no localStorage para validação posterior
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sessionId', sessionId);
+        localStorage.setItem('userId', userId);
+      }
+
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {
       console.error('Erro no login:', error);
@@ -178,6 +340,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Remover sessão do Firestore
+      if (typeof window !== 'undefined') {
+        const sessionId = localStorage.getItem('sessionId');
+        const userId = localStorage.getItem('userId');
+        
+        if (sessionId && userId) {
+          try {
+            const sessaoRef = doc(db, 'user_sessions', sessionId);
+            await deleteDoc(sessaoRef);
+          } catch (error) {
+            console.error('Erro ao remover sessão do Firestore:', error);
+          }
+          
+          localStorage.removeItem('sessionId');
+          localStorage.removeItem('userId');
+        }
+      }
+
       await firebaseSignOut(auth);
       setUserData(null);
       toast.success('Logout realizado com sucesso!');
