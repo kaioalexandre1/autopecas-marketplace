@@ -1291,62 +1291,62 @@ export default function ChatsPage() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-gray-100 p-4">
+              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-gray-100 p-3 sm:p-4">
                 <div className="w-full max-w-3xl">
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-r-lg">
-                      <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2 text-base">💬 Sobre os Chats</h3>
-                      <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
+                  <div className="space-y-3">
+                    <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 p-3 rounded-r-lg">
+                      <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-1.5 text-sm">💬 Sobre os Chats</h3>
+                      <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
                         Os chats são criados automaticamente quando uma autopeça faz uma oferta em um pedido que você criou, 
                         ou quando você faz uma oferta em um pedido. Use esta área para negociar diretamente com seus parceiros de negócio.
                       </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r-lg">
-                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2 text-base">
-                          <Phone size={18} />
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-3 rounded-r-lg">
+                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-1.5 flex items-center gap-2 text-sm">
+                          <Phone size={16} />
                           WhatsApp
                         </h4>
-                        <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed">
+                        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
                           Abra uma conversa no WhatsApp com o número cadastrado do outro usuário, já com uma mensagem pré-formatada pronta para enviar.
                         </p>
                       </div>
 
-                      <div className="bg-yellow-50 dark:bg-yellow-950/40 border-l-4 border-yellow-500 dark:border-yellow-400 p-4 rounded-r-lg">
-                        <h4 className="font-bold text-yellow-900 dark:text-yellow-100 mb-2 flex items-center gap-2 text-base">
-                          <Truck size={18} />
+                      <div className="bg-yellow-50 dark:bg-yellow-950/40 border-l-4 border-yellow-500 dark:border-yellow-400 p-3 rounded-r-lg">
+                        <h4 className="font-bold text-yellow-900 dark:text-yellow-100 mb-1.5 flex items-center gap-2 text-sm">
+                          <Truck size={16} />
                           Entregador
                         </h4>
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed">
+                        <p className="text-xs text-yellow-800 dark:text-yellow-200 leading-relaxed">
                           Solicite um entregador para buscar ou entregar a peça. Você pode escolher entre os entregadores disponíveis na sua região.
                         </p>
                       </div>
 
-                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r-lg">
-                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2 text-base">
-                          <CheckCircle size={18} />
+                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-3 rounded-r-lg">
+                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-1.5 flex items-center gap-2 text-sm">
+                          <CheckCircle size={16} />
                           Negócio Fechado
                         </h4>
-                        <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed">
+                        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
                           Marque o chat como "Negócio Fechado" quando a negociação for finalizada com sucesso. Isso encerra o chat e registra o negócio.
                         </p>
                       </div>
 
-                      <div className="bg-red-50 dark:bg-red-950/40 border-l-4 border-red-500 dark:border-red-400 p-4 rounded-r-lg">
-                        <h4 className="font-bold text-red-900 dark:text-red-100 mb-2 flex items-center gap-2 text-base">
-                          <XCircle size={18} />
+                      <div className="bg-red-50 dark:bg-red-950/40 border-l-4 border-red-500 dark:border-red-400 p-3 rounded-r-lg">
+                        <h4 className="font-bold text-red-900 dark:text-red-100 mb-1.5 flex items-center gap-2 text-sm">
+                          <XCircle size={16} />
                           Cancelar
                         </h4>
-                        <p className="text-sm text-red-800 dark:text-red-200 leading-relaxed">
+                        <p className="text-xs text-red-800 dark:text-red-200 leading-relaxed">
                           Cancele e exclua o chat se a negociação não for adiante. Esta ação não pode ser desfeita.
                         </p>
                       </div>
                     </div>
 
-                    <div className="bg-purple-50 dark:bg-purple-950/40 border-l-4 border-purple-500 dark:border-purple-400 p-4 rounded-r-lg">
-                      <h4 className="font-bold text-purple-900 dark:text-purple-100 mb-2 text-base">📋 Dica</h4>
-                      <p className="text-sm text-purple-800 dark:text-purple-200 leading-relaxed">
+                    <div className="bg-purple-50 dark:bg-purple-950/40 border-l-4 border-purple-500 dark:border-purple-400 p-3 rounded-r-lg">
+                      <h4 className="font-bold text-purple-900 dark:text-purple-100 mb-1.5 text-sm">📋 Dica</h4>
+                      <p className="text-xs text-purple-800 dark:text-purple-200 leading-relaxed">
                         Chats encerrados podem ser excluídos usando o botão "Excluir Encerrados" na lista de conversas. 
                         Uma barra verde vertical indica chats ativos, facilitando a identificação das negociações em andamento.
                       </p>
