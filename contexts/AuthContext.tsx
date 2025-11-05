@@ -271,8 +271,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Se for erro de permissão, não bloquear o login - apenas logar silenciosamente
       if (error.code === 'permission-denied') {
         console.warn('Permissões do Firestore não configuradas para sessões. Configure as regras de segurança.');
+      } else if (error.code === 'failed-precondition') {
+        // Erro de índice não criado - não é um problema crítico
+        console.warn('Índice do Firestore não criado ainda. As sessões funcionarão normalmente.');
       } else {
-        console.error('Erro ao limpar sessões expiradas:', error);
+        console.error('Erro ao limpar sessões expiradas:', error.code, error.message);
       }
     }
   };
@@ -298,19 +301,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           try {
             // Verificar quantas sessões ativas existem
-            const sessoesRef = collection(db, 'user_sessions');
-            const q = query(
-              sessoesRef,
-              where('userId', '==', userId)
-            );
-            
-            const querySnapshot = await getDocs(q);
-            const sessoesAtivas = querySnapshot.docs;
+            let sessoesAtivas: any[] = [];
+            try {
+              const sessoesRef = collection(db, 'user_sessions');
+              const q = query(
+                sessoesRef,
+                where('userId', '==', userId),
+                orderBy('lastActivity', 'desc')
+              );
+              const querySnapshot = await getDocs(q);
+              sessoesAtivas = querySnapshot.docs;
+            } catch (queryError: any) {
+              // Se o índice não existir, tenta sem orderBy
+              if (queryError.code === 'failed-precondition') {
+                console.warn('⚠️ Índice composto não criado. Buscando sessões sem orderBy...');
+                const sessoesRef = collection(db, 'user_sessions');
+                const q = query(
+                  sessoesRef,
+                  where('userId', '==', userId)
+                );
+                const querySnapshot = await getDocs(q);
+                sessoesAtivas = querySnapshot.docs;
+              } else {
+                throw queryError;
+              }
+            }
 
             // Se já existem 3 ou mais sessões, remover a mais antiga
             if (sessoesAtivas.length >= 3) {
               // Ordenar por lastActivity (mais antiga primeiro) no código
-              const sessoesOrdenadas = sessoesAtivas.sort((a, b) => {
+              // Como já ordenamos pela query, a última é a mais antiga
+              const sessoesOrdenadas = [...sessoesAtivas].sort((a, b) => {
                 const aTime = a.data().lastActivity?.toMillis() || 0;
                 const bTime = b.data().lastActivity?.toMillis() || 0;
                 return aTime - bTime;
@@ -330,13 +351,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const sessionId = generateSessionId();
             const agora = Timestamp.now();
             
-            await setDoc(doc(db, 'user_sessions', sessionId), {
-              userId,
-              sessionId,
+            // Criar documento com dados corretos
+            const sessaoData = {
+              userId: userId,
+              sessionId: sessionId,
               createdAt: agora,
               lastActivity: agora,
               userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-            });
+            };
+            
+            console.log('Tentando criar sessão:', sessaoData);
+            await setDoc(doc(db, 'user_sessions', sessionId), sessaoData);
+            console.log('Sessão criada com sucesso!');
 
             // Armazenar sessionId no localStorage para validação posterior
             if (typeof window !== 'undefined') {
@@ -345,10 +371,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (sessionError: any) {
             // Se houver erro de permissão, apenas logar - não bloquear login
-            if (sessionError.code === 'permission-denied' || sessionError.code === 'failed-precondition') {
-              console.warn('⚠️ Regras do Firestore não configuradas. Configure as regras para ativar o limite de sessões.');
+            if (sessionError.code === 'permission-denied') {
+              console.warn('⚠️ Erro de permissão ao criar sessão. Verifique as regras do Firestore.');
+            } else if (sessionError.code === 'failed-precondition') {
+              // Erro de índice - tenta criar sem orderBy
+              console.warn('⚠️ Índice composto não criado ainda. Criando sessão sem orderBy...');
+              try {
+                const sessionId = generateSessionId();
+                const agora = Timestamp.now();
+                const sessaoData = {
+                  userId: userId,
+                  sessionId: sessionId,
+                  createdAt: agora,
+                  lastActivity: agora,
+                  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+                };
+                await setDoc(doc(db, 'user_sessions', sessionId), sessaoData);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('sessionId', sessionId);
+                  localStorage.setItem('userId', userId);
+                }
+                console.log('✅ Sessão criada com sucesso (sem índice)!');
+              } catch (retryError: any) {
+                console.error('Erro ao criar sessão (retry):', retryError);
+              }
             } else {
-              console.error('Erro ao gerenciar sessão:', sessionError);
+              console.error('Erro ao gerenciar sessão:', sessionError.code, sessionError.message);
             }
           }
         } catch (error) {
