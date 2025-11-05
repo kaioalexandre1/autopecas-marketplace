@@ -294,17 +294,16 @@ export default function RankingPage() {
           
           {/* Card com título em verde neon */}
           <div 
-            className="bg-white border-2 border-green-400 rounded-xl p-4 sm:p-6 shadow-lg mb-4"
+            className="bg-green-600 border-2 border-green-400 rounded-xl p-4 sm:p-6 shadow-lg mb-4"
             style={{
-              boxShadow: '0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3), inset 0 0 20px rgba(34, 197, 94, 0.1)'
+              boxShadow: '0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.6), inset 0 0 20px rgba(34, 197, 94, 0.3)'
             }}
           >
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase flex items-center justify-center gap-3">
               <span 
-                className="inline-block"
+                className="inline-block text-white"
                 style={{
-                  color: '#22c55e',
-                  textShadow: '0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4)',
+                  textShadow: '0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.5)',
                   letterSpacing: '0.05em'
                 }}
               >
