@@ -89,7 +89,7 @@ export default function ChatsPage() {
     if (!q) return;
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const chatsData: Chat[] = [];
+      let chatsData: Chat[] = [];
       const chatsParaVerificar: string[] = [];
       
       snapshot.forEach((doc) => {
@@ -119,6 +119,35 @@ export default function ChatsPage() {
           chatsParaVerificar.push(doc.id);
         }
       });
+      
+      // Verificar e excluir chats de suporte expirados (48 horas)
+      const chatsSuporteExpirados: string[] = [];
+      chatsData.forEach((chat) => {
+        if (chat.isSuporte) {
+          const criacao = chat.createdAt;
+          const agora = new Date();
+          const horasPassadas = (agora.getTime() - criacao.getTime()) / (1000 * 60 * 60);
+          
+          if (horasPassadas >= 48) {
+            chatsSuporteExpirados.push(chat.id);
+          }
+        }
+      });
+      
+      // Excluir chats de suporte expirados
+      if (chatsSuporteExpirados.length > 0) {
+        console.log(`⏰ ${chatsSuporteExpirados.length} chat(s) de suporte expirado(s) - excluindo...`);
+        for (const chatId of chatsSuporteExpirados) {
+          try {
+            await deleteDoc(doc(db, 'chats', chatId));
+            console.log(`✅ Chat de suporte ${chatId} excluído (expirado após 48h)`);
+          } catch (error) {
+            console.error(`❌ Erro ao excluir chat de suporte ${chatId}:`, error);
+          }
+        }
+        // Filtrar chats expirados da lista local
+        chatsData = chatsData.filter(c => !chatsSuporteExpirados.includes(c.id));
+      }
       
       // Verificar se os pedidos relacionados aos chats ainda existem
       if (chatsParaVerificar.length > 0) {
@@ -1092,25 +1121,22 @@ export default function ChatsPage() {
                             <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
                           )}
                           
-                          {/* Informações do Pedido ou Suporte */}
-                          {chatSelecionado.isSuporte ? (
-                            <div>
-                              <p className="text-blue-100 text-xs font-bold truncate uppercase flex items-center gap-1">
-                                🎧 Suporte
-                              </p>
-                              {chatSelecionado.motivoLabel && (
-                                <p className="text-blue-200 text-xs font-semibold truncate mt-0.5">
-                                  {chatSelecionado.motivoLabel}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
+                          {/* Informações do Pedido (ocultar para chats de suporte) */}
+                          {!chatSelecionado.isSuporte && (
                             <div>
                               <p className="text-blue-100 text-xs font-bold truncate uppercase">
                                 {chatSelecionado.nomePeca}
                               </p>
                               <p className="text-blue-200 text-xs font-semibold truncate mt-0.5 uppercase">
                                 {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
+                              </p>
+                            </div>
+                          )}
+                          {/* Motivo do Suporte (apenas para chats de suporte) */}
+                          {chatSelecionado.isSuporte && chatSelecionado.motivoLabel && (
+                            <div>
+                              <p className="text-blue-200 text-xs font-semibold truncate mt-0.5">
+                                {chatSelecionado.motivoLabel}
                               </p>
                             </div>
                           )}

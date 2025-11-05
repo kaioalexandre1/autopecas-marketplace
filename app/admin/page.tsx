@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc, setDoc, getDoc, onSnapshot, deleteDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User, NegocioFechado, Pedido, PlanoAssinatura, PRECOS_PLANOS } from '@/types';
 import { 
@@ -81,9 +81,14 @@ export default function AdminPage() {
   useEffect(() => {
     if (!mostrarSuporte || userData?.role !== 'admin') return;
 
-    const suporteQuery = query(collection(db, 'suporte_chats'), orderBy('updatedAt', 'desc'));
+    // Buscar chats de suporte da coleção 'chats' onde isSuporte === true
+    const suporteQuery = query(
+      collection(db, 'chats'),
+      where('isSuporte', '==', true),
+      orderBy('updatedAt', 'desc')
+    );
     
-    const unsubscribe = onSnapshot(suporteQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(suporteQuery, async (snapshot) => {
       const chatsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -93,18 +98,50 @@ export default function AdminPage() {
           updatedAt: data.updatedAt?.toDate() || new Date(),
         };
       });
-      setChatsSuporte(chatsData);
+      
+      // Verificar e excluir chats de suporte expirados (48 horas)
+      const chatsSuporteExpirados: string[] = [];
+      for (const chat of chatsData) {
+        const criacao = chat.createdAt;
+        const agora = new Date();
+        const horasPassadas = (agora.getTime() - criacao.getTime()) / (1000 * 60 * 60);
+        
+        if (horasPassadas >= 48) {
+          chatsSuporteExpirados.push(chat.id);
+        }
+      }
+      
+      // Excluir chats de suporte expirados
+      if (chatsSuporteExpirados.length > 0) {
+        console.log(`⏰ ${chatsSuporteExpirados.length} chat(s) de suporte expirado(s) - excluindo...`);
+        for (const chatId of chatsSuporteExpirados) {
+          try {
+            await deleteDoc(doc(db, 'chats', chatId));
+            console.log(`✅ Chat de suporte ${chatId} excluído (expirado após 48h)`);
+          } catch (error) {
+            console.error(`❌ Erro ao excluir chat de suporte ${chatId}:`, error);
+          }
+        }
+      }
+      
+      // Filtrar chats expirados da lista
+      const chatsFiltrados = chatsData.filter(c => !chatsSuporteExpirados.includes(c.id));
+      setChatsSuporte(chatsFiltrados);
       
       // Se não há chat selecionado e há chats, selecionar o primeiro
       setChatSelecionado(prev => {
-        if (!prev && chatsData.length > 0) {
-          return chatsData[0];
+        if (!prev && chatsFiltrados.length > 0) {
+          return chatsFiltrados[0];
         }
         // Se o chat selecionado foi atualizado, atualizar o estado
         if (prev) {
-          const chatAtualizado = chatsData.find(c => c.id === prev.id);
+          const chatAtualizado = chatsFiltrados.find(c => c.id === prev.id);
           if (chatAtualizado) {
             return chatAtualizado;
+          }
+          // Se o chat selecionado foi excluído, limpar seleção
+          if (chatsSuporteExpirados.includes(prev.id)) {
+            return null;
           }
         }
         return prev;
@@ -116,7 +153,12 @@ export default function AdminPage() {
 
   const carregarChatsSuporte = async () => {
     try {
-      const suporteSnapshot = await getDocs(query(collection(db, 'suporte_chats'), orderBy('updatedAt', 'desc')));
+      // Buscar chats de suporte da coleção 'chats' onde isSuporte === true
+      const suporteSnapshot = await getDocs(query(
+        collection(db, 'chats'),
+        where('isSuporte', '==', true),
+        orderBy('updatedAt', 'desc')
+      ));
       const chatsData = suporteSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -126,11 +168,39 @@ export default function AdminPage() {
           updatedAt: data.updatedAt?.toDate() || new Date(),
         };
       });
-      setChatsSuporte(chatsData);
+      
+      // Verificar e excluir chats de suporte expirados (48 horas)
+      const chatsSuporteExpirados: string[] = [];
+      for (const chat of chatsData) {
+        const criacao = chat.createdAt;
+        const agora = new Date();
+        const horasPassadas = (agora.getTime() - criacao.getTime()) / (1000 * 60 * 60);
+        
+        if (horasPassadas >= 48) {
+          chatsSuporteExpirados.push(chat.id);
+        }
+      }
+      
+      // Excluir chats de suporte expirados
+      if (chatsSuporteExpirados.length > 0) {
+        console.log(`⏰ ${chatsSuporteExpirados.length} chat(s) de suporte expirado(s) - excluindo...`);
+        for (const chatId of chatsSuporteExpirados) {
+          try {
+            await deleteDoc(doc(db, 'chats', chatId));
+            console.log(`✅ Chat de suporte ${chatId} excluído (expirado após 48h)`);
+          } catch (error) {
+            console.error(`❌ Erro ao excluir chat de suporte ${chatId}:`, error);
+          }
+        }
+      }
+      
+      // Filtrar chats expirados da lista
+      const chatsFiltrados = chatsData.filter(c => !chatsSuporteExpirados.includes(c.id));
+      setChatsSuporte(chatsFiltrados);
       
       // Se não há chat selecionado e há chats, selecionar o primeiro
-      if (!chatSelecionado && chatsData.length > 0) {
-        setChatSelecionado(chatsData[0]);
+      if (!chatSelecionado && chatsFiltrados.length > 0) {
+        setChatSelecionado(chatsFiltrados[0]);
       }
     } catch (error) {
       console.error('Erro ao carregar chats de suporte:', error);
