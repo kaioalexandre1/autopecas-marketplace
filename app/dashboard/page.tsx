@@ -1070,7 +1070,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Conteúdo principal (com z-index para ficar acima do fundo) */}
-      <div className="relative z-10 min-h-screen pt-20 sm:pt-24 p-3 sm:p-6">
+      <div className="relative z-10 min-h-screen pt-2 sm:pt-3 p-3 sm:p-6">
         {/* Header com Banner Horizontal */}
         <div className="flex flex-col lg:flex-row items-stretch gap-2 sm:gap-3 mb-3 sm:mb-4">
         {/* Título à Esquerda - Quadrado Moderno */}
