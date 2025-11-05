@@ -108,8 +108,11 @@ export interface NegocioFechado {
   marcaCarro?: string;
   modeloCarro?: string;
   anoCarro?: string;
+  especificacaoMotor?: string;
   valorFinal: number;
   createdAt: Date;
+  cidade?: string;
+  plano?: string;
 }
 
 export interface Entregador {

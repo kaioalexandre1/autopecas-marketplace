@@ -180,9 +180,9 @@ export default function NegociosFechadosPage() {
       
       <div className="relative z-10 p-3 sm:p-6">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-2 uppercase">
           <CheckCircle className="mr-2 sm:mr-3 text-green-600" size={28} />
-          Negócios Fechados
+          NEGÓCIOS FECHADOS
         </h1>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
           <div className="flex items-center text-gray-600 dark:text-white">
@@ -196,7 +196,7 @@ export default function NegociosFechadosPage() {
           <div className="flex gap-2 w-full sm:w-auto">
             <button
               onClick={() => setPeriodoSelecionado('hoje')}
-              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base uppercase ${
                 periodoSelecionado === 'hoje'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -206,7 +206,7 @@ export default function NegociosFechadosPage() {
             </button>
             <button
               onClick={() => setPeriodoSelecionado('semana')}
-              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base uppercase ${
                 periodoSelecionado === 'semana'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -216,7 +216,7 @@ export default function NegociosFechadosPage() {
             </button>
             <button
               onClick={() => setPeriodoSelecionado('mes')}
-              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base uppercase ${
                 periodoSelecionado === 'mes'
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -231,18 +231,18 @@ export default function NegociosFechadosPage() {
       {/* Estatísticas */}
       {negociosFiltrados.length > 0 && (
         <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg p-4 sm:p-6 text-white">
-          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center uppercase">
             <TrendingUp className="mr-2" size={22} />
-            Estatísticas - {getTituloPeriodo()}
+            ESTATÍSTICAS - {getTituloPeriodo().toUpperCase()}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             <div className="bg-white bg-opacity-20 rounded-lg p-3 sm:p-4">
-              <p className="text-green-100 text-xs sm:text-sm mb-1">Total de Negócios</p>
+              <p className="text-green-100 text-xs sm:text-sm mb-1 uppercase">TOTAL DE NEGÓCIOS</p>
               <p className="text-2xl sm:text-3xl font-bold">{negociosFiltrados.length}</p>
             </div>
 
             <div className="bg-white bg-opacity-20 rounded-lg p-3 sm:p-4">
-              <p className="text-green-100 text-xs sm:text-sm mb-1">Valor Total</p>
+              <p className="text-green-100 text-xs sm:text-sm mb-1 uppercase">VALOR TOTAL</p>
               <p className="text-2xl sm:text-3xl font-bold">
                 R$ {negociosFiltrados.reduce((total, n) => total + (n.valorFinal || 0), 0).toFixed(2)}
               </p>
@@ -251,11 +251,11 @@ export default function NegociosFechadosPage() {
             {userData?.tipo === 'oficina' && (
               <>
                 <div className="bg-white bg-opacity-20 rounded-lg p-3 sm:p-4">
-                  <p className="text-green-100 text-xs sm:text-sm mb-1">Peças Compradas</p>
+                  <p className="text-green-100 text-xs sm:text-sm mb-1 uppercase">PEÇAS COMPRADAS</p>
                   <p className="text-2xl sm:text-3xl font-bold">{negociosFiltrados.length}</p>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-lg p-3 sm:p-4">
-                  <p className="text-green-100 text-xs sm:text-sm mb-1">Fornecedores</p>
+                  <p className="text-green-100 text-xs sm:text-sm mb-1 uppercase">FORNECEDORES</p>
                   <p className="text-2xl sm:text-3xl font-bold">
                     {new Set(negociosFiltrados.map(n => n.autopecaId)).size}
                   </p>
@@ -266,11 +266,11 @@ export default function NegociosFechadosPage() {
             {userData?.tipo === 'autopeca' && (
               <>
                 <div className="bg-white bg-opacity-20 rounded-lg p-3 sm:p-4">
-                  <p className="text-green-100 text-xs sm:text-sm mb-1">Peças Vendidas</p>
+                  <p className="text-green-100 text-xs sm:text-sm mb-1 uppercase">PEÇAS VENDIDAS</p>
                   <p className="text-2xl sm:text-3xl font-bold">{negociosFiltrados.length}</p>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-lg p-3 sm:p-4">
-                  <p className="text-green-100 text-xs sm:text-sm mb-1">Clientes</p>
+                  <p className="text-green-100 text-xs sm:text-sm mb-1 uppercase">CLIENTES</p>
                   <p className="text-2xl sm:text-3xl font-bold">
                     {new Set(negociosFiltrados.map(n => n.oficinaId)).size}
                   </p>
@@ -281,68 +281,76 @@ export default function NegociosFechadosPage() {
         </div>
       )}
 
-      {/* Lista de Negócios Fechados */}
+      {/* Lista de Negócios Fechados - Tabela */}
       {negociosFiltrados.length === 0 ? (
         <div className="text-center py-12 sm:py-20 bg-white dark:bg-gray-800 rounded-xl shadow mt-6 sm:mt-8 border border-gray-200 dark:border-gray-700">
           <CheckCircle size={56} className="mx-auto text-gray-300 dark:text-gray-600 mb-3 sm:mb-4" />
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-600 dark:text-white mb-2 px-3">
-            Nenhum negócio fechado {periodoSelecionado === 'hoje' ? 'hoje' : periodoSelecionado === 'semana' ? 'esta semana' : 'este mês'}
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-600 dark:text-white mb-2 px-3 uppercase">
+            NENHUM NEGÓCIO FECHADO {periodoSelecionado === 'hoje' ? 'HOJE' : periodoSelecionado === 'semana' ? 'ESTA SEMANA' : 'ESTE MÊS'}
           </h3>
-          <p className="text-sm sm:text-base text-gray-900 dark:text-gray-200">
-            Os negócios fechados aparecerão aqui
+          <p className="text-sm sm:text-base text-gray-900 dark:text-gray-200 uppercase">
+            OS NEGÓCIOS FECHADOS APARECERÃO AQUI
           </p>
         </div>
       ) : (
-        <div className="space-y-3 sm:space-y-4 mt-6 sm:mt-8">
-          {negociosFiltrados.map((negocio) => (
-            <div
-              key={negocio.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-6 border-l-4 border-green-500 dark:border-green-600 animate-slide-in border border-gray-200 dark:border-gray-700"
-            >
-              <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-0">
-                <div className="flex-1 w-full">
-                  <div className="flex items-center mb-2 sm:mb-3">
-                    <CheckCircle className="text-green-600 mr-2 flex-shrink-0" size={20} />
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+        <div className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gradient-to-r from-green-600 to-green-700 text-white">
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold uppercase border-b border-green-800">
+                    {userData?.tipo === 'oficina' ? 'AUTOPEÇA' : 'OFICINA'}
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold uppercase border-b border-green-800">
+                    NOME DA PEÇA
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold uppercase border-b border-green-800">
+                    INFORMAÇÕES DO CARRO
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold uppercase border-b border-green-800">
+                    PREÇO VENDIDO
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-bold uppercase border-b border-green-800">
+                    DATA
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {negociosFiltrados.map((negocio, index) => (
+                  <tr 
+                    key={negocio.id}
+                    className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                      index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-800/50'
+                    }`}
+                  >
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900 dark:text-white uppercase">
+                      {userData?.tipo === 'oficina' ? negocio.autopecaNome : negocio.oficinaNome}
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900 dark:text-white uppercase">
                       {negocio.nomePeca}
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mb-2 sm:mb-3">
-                    <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-2.5 sm:p-3">
-                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Oficina</p>
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{negocio.oficinaNome}</p>
-                    </div>
-
-                    <div className="bg-green-50 dark:bg-green-900 rounded-lg p-2.5 sm:p-3">
-                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Autopeça</p>
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">{negocio.autopecaNome}</p>
-                    </div>
-
-                    <div className="bg-yellow-50 dark:bg-yellow-900 rounded-lg p-2.5 sm:p-3">
-                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 mb-0.5 sm:mb-1">Valor Final</p>
-                      <p className="font-bold text-green-700 text-base sm:text-lg">
-                        R$ {negocio.valorFinal?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-white">
-                    <Calendar size={14} className="mr-2 flex-shrink-0" />
-                    <span>
-                      Fechado às {format(negocio.createdAt, 'HH:mm', { locale: ptBR })}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="ml-0 sm:ml-4 self-center">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="text-green-600" size={24} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold uppercase">
+                          {negocio.marcaCarro} {negocio.modeloCarro}
+                        </span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          {negocio.anoCarro}
+                          {negocio.especificacaoMotor && ` | ${negocio.especificacaoMotor}`}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-bold text-green-700 dark:text-green-400">
+                      R$ {negocio.valorFinal?.toFixed(2) || '0.00'}
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      {format(negocio.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       </div>
