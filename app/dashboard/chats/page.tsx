@@ -52,6 +52,7 @@ export default function ChatsPage() {
   const [enviando, setEnviando] = useState(false);
   const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [excluindoChatSuporte, setExcluindoChatSuporte] = useState<string | null>(null);
   const [telefoneOutroUsuario, setTelefoneOutroUsuario] = useState<string | null>(null);
   const [planosAutopecas, setPlanosAutopecas] = useState<{[key: string]: string}>({});
   const [mostrarModalEndereco, setMostrarModalEndereco] = useState(false);
@@ -669,7 +670,7 @@ export default function ChatsPage() {
   };
 
   const excluirChatsEncerrados = async () => {
-    const chatsEncerrados = chats.filter(chat => chat.encerrado);
+    const chatsEncerrados = chats.filter(chat => chat.encerrado && !chat.isSuporte);
     
     if (chatsEncerrados.length === 0) {
       toast.error('Não há chats encerrados para excluir');
@@ -774,6 +775,62 @@ export default function ChatsPage() {
     }
   };
 
+  // Excluir chat de suporte individual
+  const excluirChatSuporte = async (chatId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation(); // Evitar que o clique selecione o chat
+    }
+    
+    if (!window.confirm('Tem certeza que deseja excluir este chat de suporte? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    setExcluindoChatSuporte(chatId);
+    try {
+      await deleteDoc(doc(db, 'chats', chatId));
+      toast.success('Chat de suporte excluído com sucesso!');
+      
+      // Se o chat excluído era o selecionado, limpar seleção
+      if (chatSelecionado?.id === chatId) {
+        setChatSelecionado(null);
+      }
+    } catch (error) {
+      console.error('Erro ao excluir chat de suporte:', error);
+      toast.error('Erro ao excluir chat de suporte');
+    } finally {
+      setExcluindoChatSuporte(null);
+    }
+  };
+
+  // Excluir todos os chats de suporte
+  const excluirTodosChatsSuporte = async () => {
+    const chatsSuporte = chats.filter(chat => chat.isSuporte);
+    
+    if (chatsSuporte.length === 0) {
+      toast.error('Não há chats de suporte para excluir');
+      return;
+    }
+
+    if (!window.confirm(`Tem certeza que deseja excluir TODOS os ${chatsSuporte.length} chat(s) de suporte? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setExcluindoChatSuporte('todos');
+    try {
+      const promessas = chatsSuporte.map(chat => deleteDoc(doc(db, 'chats', chat.id)));
+      await Promise.all(promessas);
+      toast.success(`${chatsSuporte.length} chat(s) de suporte excluído(s) com sucesso!`);
+      if (chatSelecionado && chatsSuporte.some(c => c.id === chatSelecionado.id)) {
+        setChatSelecionado(null);
+      }
+    } catch (error) {
+      console.error('Erro ao excluir chats de suporte:', error);
+      toast.error('Erro ao excluir chats de suporte');
+    } finally {
+      setExcluindoChatSuporte(null);
+    }
+  };
+
   const temMensagensNaoLidas = (chat: Chat) => {
     if (!userData || chat.mensagens.length === 0) return false;
     
@@ -872,18 +929,32 @@ export default function ChatsPage() {
                   <h2 className="font-semibold text-white text-base sm:text-lg">Suas Conversas</h2>
                   <p className="text-blue-100 text-xs sm:text-sm mt-0.5 sm:mt-1">{chats.length} conversa{chats.length !== 1 ? 's' : ''}</p>
                 </div>
-                {chats.filter(c => c.encerrado).length > 0 && (
-                  <button
-                    onClick={excluirChatsEncerrados}
-                    disabled={excluindo}
-                    className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
-                    title="Excluir chats encerrados"
-                  >
-                    <Trash2 size={14} className="mr-1" />
-                    <span className="hidden sm:inline">Excluir Encerrados</span>
-                    <span className="sm:hidden">Excluir</span>
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {chats.filter(chat => chat.isSuporte).length > 0 && (
+                    <button
+                      onClick={excluirTodosChatsSuporte}
+                      disabled={excluindoChatSuporte === 'todos'}
+                      className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                      title="Excluir todos os chats de suporte"
+                    >
+                      <Trash2 size={14} className="mr-1" />
+                      <span className="hidden sm:inline">Excluir Suporte</span>
+                      <span className="sm:hidden">Suporte</span>
+                    </button>
+                  )}
+                  {chats.filter(c => c.encerrado && !c.isSuporte).length > 0 && (
+                    <button
+                      onClick={excluirChatsEncerrados}
+                      disabled={excluindo}
+                      className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                      title="Excluir chats encerrados"
+                    >
+                      <Trash2 size={14} className="mr-1" />
+                      <span className="hidden sm:inline">Excluir Encerrados</span>
+                      <span className="sm:hidden">Excluir</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -923,9 +994,27 @@ export default function ChatsPage() {
                           ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700'
                           : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
+                      onClick={() => {
+                        if (!excluindoChatSuporte) {
+                          setChatSelecionado(chat);
+                          marcarComoLido(chat);
+                        }
+                      }}
                     >
+                      {/* Botão de excluir para chats de suporte */}
+                      {chat.isSuporte && (
+                        <button
+                          onClick={(e) => excluirChatSuporte(chat.id, e)}
+                          disabled={excluindoChatSuporte === chat.id}
+                          className="absolute top-3 right-3 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed z-10"
+                          title="Excluir este chat de suporte"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                      
                       {/* Nome da Loja ou Suporte */}
-                      <div className="mb-1.5 flex justify-between items-center">
+                      <div className="mb-1.5 flex justify-between items-center pr-8">
                         <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
                           {chat.isSuporte ? (
                             <h3 className="font-bold text-xs text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1">

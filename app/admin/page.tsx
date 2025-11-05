@@ -23,7 +23,8 @@ import {
   Crown,
   Ban,
   Headphones,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -204,6 +205,61 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Erro ao carregar chats de suporte:', error);
+    }
+  };
+
+  // Excluir chat de suporte individual
+  const excluirChatSuporte = async (chatId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation(); // Evitar que o clique selecione o chat
+    }
+    
+    const chat = chatsSuporte.find(c => c.id === chatId);
+    const nomeUsuario = chat?.oficinaNome || chat?.autopecaNome || 'este chat';
+    
+    if (!window.confirm(`Tem certeza que deseja excluir o chat de suporte de ${nomeUsuario}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setExcluindoChat(chatId);
+    try {
+      await deleteDoc(doc(db, 'chats', chatId));
+      toast.success('Chat de suporte excluído com sucesso!');
+      
+      // Se o chat excluído era o selecionado, limpar seleção
+      if (chatSelecionado?.id === chatId) {
+        setChatSelecionado(null);
+      }
+    } catch (error) {
+      console.error('Erro ao excluir chat de suporte:', error);
+      toast.error('Erro ao excluir chat de suporte');
+    } finally {
+      setExcluindoChat(null);
+    }
+  };
+
+  // Excluir todos os chats de suporte
+  const excluirTodosChatsSuporte = async () => {
+    if (chatsSuporte.length === 0) {
+      toast.error('Não há chats de suporte para excluir');
+      return;
+    }
+
+    if (!window.confirm(`Tem certeza que deseja excluir TODOS os ${chatsSuporte.length} chat(s) de suporte? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setExcluindoChat('todos');
+    try {
+      const promessas = chatsSuporte.map(chat => deleteDoc(doc(db, 'chats', chat.id)));
+      await Promise.all(promessas);
+      toast.success(`${chatsSuporte.length} chat(s) de suporte excluído(s) com sucesso!`);
+      setChatSelecionado(null);
+    } catch (error) {
+      console.error('Erro ao excluir chats de suporte:', error);
+      toast.error('Erro ao excluir chats de suporte');
+    } finally {
+      setExcluindoChat(null);
     }
   };
 
@@ -936,15 +992,28 @@ export default function AdminPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setMostrarSuporte(false);
-                  setChatSelecionado(null);
-                }}
-                className="text-white hover:bg-white/20 rounded-full p-2"
-              >
-                <Ban size={24} />
-              </button>
+              <div className="flex items-center gap-2">
+                {chatsSuporte.length > 0 && (
+                  <button
+                    onClick={excluirTodosChatsSuporte}
+                    disabled={excluindoChat === 'todos'}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Excluir todos os chats de suporte"
+                  >
+                    <Trash2 size={18} />
+                    <span className="hidden sm:inline">Excluir Todos</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setMostrarSuporte(false);
+                    setChatSelecionado(null);
+                  }}
+                  className="text-white hover:bg-white/20 rounded-full p-2"
+                >
+                  <Ban size={24} />
+                </button>
+              </div>
             </div>
 
             {/* Conteúdo */}
@@ -959,19 +1028,22 @@ export default function AdminPage() {
                     </div>
                   ) : (
                     chatsSuporte.map((chat) => (
-                      <button
+                      <div
                         key={chat.id}
-                        onClick={() => setChatSelecionado(chat)}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                        className={`relative w-full p-4 rounded-lg border-2 transition-all ${
                           chatSelecionado?.id === chat.id
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
                             : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 bg-white dark:bg-gray-800'
                         }`}
                       >
-                        <div className="flex items-start justify-between mb-2">
+                        <button
+                          onClick={() => setChatSelecionado(chat)}
+                          className="w-full text-left pr-10"
+                        >
+                          <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-gray-900 dark:text-white text-sm truncate">
-                              {chat.usuarioNome}
+                              {chat.usuarioNome || chat.oficinaNome || chat.autopecaNome}
                             </p>
                             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                               {chat.motivoLabel}
@@ -999,6 +1071,14 @@ export default function AdminPage() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                           {format(chat.updatedAt, "dd/MM/yyyy HH:mm", { locale: ptBR })}
                         </p>
+                      </button>
+                      <button
+                        onClick={(e) => excluirChatSuporte(chat.id, e)}
+                        disabled={excluindoChat === chat.id}
+                        className="absolute top-4 right-4 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Excluir este chat de suporte"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     ))
                   )}
