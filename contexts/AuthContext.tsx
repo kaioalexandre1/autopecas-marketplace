@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 lastActivity: Timestamp.now(),
               });
 
-              // Atualizar atividade periodicamente (a cada 5 minutos)
+              // Atualizar atividade periodicamente (a cada 1 minuto)
               activityInterval = setInterval(async () => {
                 try {
                   const sessaoRefAtual = doc(db, 'user_sessions', sessionId);
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     activityInterval = null;
                   }
                 }
-              }, 5 * 60 * 1000); // 5 minutos
+              }, 60 * 1000); // 1 minuto
             } catch (error) {
               console.error('Erro ao verificar sessão:', error);
               // Não fazer logout em caso de erro, apenas logar
