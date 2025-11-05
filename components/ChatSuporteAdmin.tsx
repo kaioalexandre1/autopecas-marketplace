@@ -31,7 +31,7 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
   useEffect(() => {
     if (!chatId || !userData) return;
 
-    const chatRef = doc(db, 'suporte_chats', chatId);
+    const chatRef = doc(db, 'chats', chatId);
     
     // Listener em tempo real
     const unsubscribe = onSnapshot(chatRef, (docSnap) => {
@@ -59,11 +59,20 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
 
   // Buscar telefone do usuário que pediu suporte
   useEffect(() => {
-    if (!chat?.usuarioId) return;
+    if (!chat) return;
+
+    // Obter o ID do usuário (oficinaId ou autopecaId dependendo do tipo)
+    const usuarioId = chat.oficinaId && chat.oficinaId !== 'suporte' 
+      ? chat.oficinaId 
+      : chat.autopecaId && chat.autopecaId !== 'suporte' 
+        ? chat.autopecaId 
+        : null;
+
+    if (!usuarioId) return;
 
     const buscarTelefone = async () => {
       try {
-        const userDoc = await getDoc(doc(db, 'users', chat.usuarioId));
+        const userDoc = await getDoc(doc(db, 'users', usuarioId));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setTelefoneUsuario(userData.telefone || null);
@@ -75,7 +84,7 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
     };
 
     buscarTelefone();
-  }, [chat?.usuarioId]);
+  }, [chat]);
 
   const enviarMensagem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +92,7 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
 
     setEnviando(true);
     try {
-      const chatRef = doc(db, 'suporte_chats', chat.id);
+      const chatRef = doc(db, 'chats', chat.id);
       const novaMensagem = {
         id: `${Date.now()}-${userData.id}`,
         remetenteId: userData.id,
@@ -112,7 +121,7 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
     if (!chat || !userData) return;
     
     try {
-      await updateDoc(doc(db, 'suporte_chats', chat.id), {
+      await updateDoc(doc(db, 'chats', chat.id), {
         status: novoStatus,
         updatedAt: Timestamp.now(),
       });
@@ -136,7 +145,8 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
     }
 
     const telefoneFormatado = formatarTelefoneParaWhatsApp(telefoneUsuario);
-    const mensagem = encodeURIComponent(`Olá ${chat.usuarioNome}, estou entrando em contato referente ao seu pedido de suporte.`);
+    const nomeUsuario = chat.oficinaNome || chat.autopecaNome || 'Usuário';
+    const mensagem = encodeURIComponent(`Olá ${nomeUsuario}, estou entrando em contato referente ao seu pedido de suporte.`);
     const url = `https://api.whatsapp.com/send/?phone=${telefoneFormatado}&text=${mensagem}&type=phone_number&app_absent=0`;
     
     window.open(url, '_blank');
@@ -156,7 +166,7 @@ export default function ChatSuporteAdmin({ chatId, userData }: ChatSuporteAdminP
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30">
         <div className="flex items-center justify-between mb-2">
           <div className="flex-1">
-            <h3 className="font-bold text-gray-900 dark:text-white">{chat.usuarioNome}</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white">{chat.oficinaNome || chat.autopecaNome || 'Usuário'}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300">{chat.motivoLabel}</p>
           </div>
           <div className="flex items-center gap-2">

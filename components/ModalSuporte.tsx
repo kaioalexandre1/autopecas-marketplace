@@ -64,6 +64,7 @@ export default function ModalSuporte({ aberto, onFechar }: ModalSuporteProps) {
             texto: mensagemInicial || `Olá, preciso de ajuda com: ${motivo?.label || 'Outro'}`,
             createdAt: Timestamp.now(),
           }),
+          status: 'aberto', // Reabrir o chat se estava fechado
           updatedAt: Timestamp.now(),
         });
       } else {
@@ -81,6 +82,7 @@ export default function ModalSuporte({ aberto, onFechar }: ModalSuporteProps) {
           anoCarro: '',
           motivo: motivoSelecionado,
           motivoLabel: motivo?.label || 'Outro',
+          status: 'aberto', // Status inicial do chat de suporte
           mensagens: [
             {
               id: `inicial-${Date.now()}`,
