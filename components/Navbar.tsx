@@ -293,7 +293,6 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Pedidos ao Vivo', icon: Radio },
     { href: '/dashboard/chats', label: 'Chats', icon: MessageSquare },
     { href: '/dashboard/negocios-fechados', label: 'Negócios Fechados', icon: CheckCircle },
-    { href: '/dashboard/ranking', label: 'Ranking', icon: Trophy },
     ...(userData?.role === 'admin' ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
@@ -938,16 +937,6 @@ export default function Navbar() {
                   );
                 })}
               </div>
-
-              {/* Botão de Ranking Mobile */}
-              <Link
-                href="/dashboard/ranking"
-                onClick={() => setMenuMobileAberto(false)}
-                className="w-full flex items-center px-4 py-3.5 mt-4 bg-blue-700 text-white rounded-lg font-semibold text-base"
-              >
-                <Trophy size={24} className="mr-3" />
-                Ranking
-              </Link>
 
               {/* Botão de Suporte Mobile (apenas para autopeças) */}
               {userData?.tipo === 'autopeca' && (
