@@ -55,91 +55,84 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const sessionId = localStorage.getItem('sessionId');
           const userId = localStorage.getItem('userId');
           
-          // Se não há sessão no localStorage, criar uma nova sessão
-          if (!sessionId || !userId || userId !== user.uid) {
-            // Criar sessão para usuário já autenticado (dispositivos que já estavam logados)
-            console.log('📝 Criando sessão para usuário já autenticado...');
-            setTimeout(async () => {
-              try {
-                // Verificar quantas sessões ativas existem
-                let sessoesAtivas: any[] = [];
-                try {
-                  const sessoesRef = collection(db, 'user_sessions');
-                  const q = query(
-                    sessoesRef,
-                    where('userId', '==', user.uid)
-                  );
-                  const querySnapshot = await getDocs(q);
-                  sessoesAtivas = querySnapshot.docs;
-                  console.log(`📊 Sessões existentes: ${sessoesAtivas.length}`);
-                } catch (queryError: any) {
-                  if (queryError.code !== 'failed-precondition') {
-                    console.error('Erro ao buscar sessões:', queryError);
-                  }
-                }
-
-                // Se já existem 3 ou mais sessões, remover a mais antiga
-                if (sessoesAtivas.length >= 3) {
-                  const sessoesOrdenadas = [...sessoesAtivas].sort((a, b) => {
-                    const aTime = a.data().lastActivity?.toMillis() || 0;
-                    const bTime = b.data().lastActivity?.toMillis() || 0;
-                    return aTime - bTime;
-                  });
-                  const sessaoMaisAntiga = sessoesOrdenadas[0];
-                  try {
-                    await deleteDoc(sessaoMaisAntiga.ref);
-                    console.log(`✅ Sessão antiga removida!`);
-                  } catch (e) {
-                    console.error('Erro ao remover sessão antiga:', e);
-                  }
-                }
-
-                // Criar nova sessão
-                const novoSessionId = generateSessionId();
-                const agora = Timestamp.now();
-                const sessaoData = {
-                  userId: user.uid,
-                  sessionId: novoSessionId,
-                  createdAt: agora,
-                  lastActivity: agora,
-                  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-                };
-                await setDoc(doc(db, 'user_sessions', novoSessionId), sessaoData);
-                localStorage.setItem('sessionId', novoSessionId);
-                localStorage.setItem('userId', user.uid);
-                console.log('✅ Sessão criada para usuário já autenticado!');
-              } catch (error: any) {
-                console.error('Erro ao criar sessão para usuário autenticado:', error);
-              }
-            }, 500);
-          } else if (userId === user.uid) {
-            // Verificar se a sessão ainda existe no Firestore
+          // Sempre verificar e criar/atualizar sessão
+          const criarOuAtualizarSessao = async () => {
             try {
-              const sessaoRef = doc(db, 'user_sessions', sessionId);
-              const sessaoDoc = await getDoc(sessaoRef);
-              
-              if (!sessaoDoc.exists()) {
-                // Sessão foi removida (limite de 3 dispositivos atingido)
-                toast.error('Sua sessão foi encerrada. Você pode ter apenas 3 dispositivos logados simultaneamente.');
-                await firebaseSignOut(auth);
-                localStorage.removeItem('sessionId');
-                localStorage.removeItem('userId');
+              // Verificar quantas sessões ativas existem para este usuário
+              let sessoesAtivas: any[] = [];
+              try {
+                const sessoesRef = collection(db, 'user_sessions');
+                const q = query(
+                  sessoesRef,
+                  where('userId', '==', user.uid)
+                );
+                const querySnapshot = await getDocs(q);
+                sessoesAtivas = querySnapshot.docs;
+                console.log(`📊 Total de sessões encontradas para ${user.uid}: ${sessoesAtivas.length}`);
+              } catch (queryError: any) {
+                console.error('Erro ao buscar sessões:', queryError);
                 return;
               }
-              
-              // Atualizar lastActivity inicialmente
-              await updateDoc(sessaoRef, {
-                lastActivity: Timestamp.now(),
-              });
 
-              // Atualizar atividade periodicamente (a cada 1 minuto)
+              // Verificar se já existe uma sessão válida para este dispositivo
+              const sessaoAtual = sessionId ? sessoesAtivas.find(s => s.id === sessionId) : null;
+              
+              if (sessaoAtual && sessaoAtual.exists()) {
+                // Sessão já existe e é válida, apenas atualizar lastActivity
+                console.log('✅ Sessão já existe, atualizando lastActivity...');
+                await updateDoc(sessaoAtual.ref, {
+                  lastActivity: Timestamp.now(),
+                });
+                return;
+              }
+
+              // Se já existem 3 ou mais sessões, remover a mais antiga ANTES de criar nova
+              if (sessoesAtivas.length >= 3) {
+                console.log(`⚠️ LIMITE ATINGIDO! Removendo a sessão mais antiga...`);
+                const sessoesOrdenadas = [...sessoesAtivas].sort((a, b) => {
+                  const aTime = a.data().lastActivity?.toMillis() || 0;
+                  const bTime = b.data().lastActivity?.toMillis() || 0;
+                  return aTime - bTime;
+                });
+                const sessaoMaisAntiga = sessoesOrdenadas[0];
+                console.log(`🗑️ Removendo sessão: ${sessaoMaisAntiga.id} (última atividade: ${sessaoMaisAntiga.data().lastActivity?.toDate()})`);
+                try {
+                  await deleteDoc(sessaoMaisAntiga.ref);
+                  console.log(`✅ Sessão mais antiga removida com sucesso!`);
+                  toast.info('Uma sessão antiga foi removida. Limite: 3 dispositivos simultâneos.');
+                } catch (e: any) {
+                  console.error('❌ Erro ao remover sessão antiga:', e.code, e.message);
+                }
+              }
+
+              // Criar nova sessão para este dispositivo
+              const novoSessionId = generateSessionId();
+              const agora = Timestamp.now();
+              const sessaoData = {
+                userId: user.uid,
+                sessionId: novoSessionId,
+                createdAt: agora,
+                lastActivity: agora,
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+              };
+              
+              console.log('📝 Criando nova sessão:', novoSessionId);
+              await setDoc(doc(db, 'user_sessions', novoSessionId), sessaoData);
+              localStorage.setItem('sessionId', novoSessionId);
+              localStorage.setItem('userId', user.uid);
+              console.log('✅ Nova sessão criada com sucesso!');
+              
+              // Iniciar intervalo de atualização
+              if (activityInterval) {
+                clearInterval(activityInterval);
+              }
               activityInterval = setInterval(async () => {
                 try {
-                  const sessaoRefAtual = doc(db, 'user_sessions', sessionId);
+                  const sessaoRefAtual = doc(db, 'user_sessions', novoSessionId);
                   const sessaoDocAtual = await getDoc(sessaoRefAtual);
                   
                   if (!sessaoDocAtual.exists()) {
-                    // Sessão foi removida, fazer logout
+                    console.log('⚠️ Sessão removida! Fazendo logout...');
                     if (activityInterval) {
                       clearInterval(activityInterval);
                       activityInterval = null;
@@ -162,15 +155,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   }
                 }
               }, 60 * 1000); // 1 minuto
-            } catch (error) {
-              console.error('Erro ao verificar sessão:', error);
-              // Não fazer logout em caso de erro, apenas logar
+            } catch (error: any) {
+              console.error('❌ Erro ao criar/atualizar sessão:', error.code, error.message);
             }
-          } else {
-            // userId não corresponde, limpar e permitir novo login
-            localStorage.removeItem('sessionId');
-            localStorage.removeItem('userId');
-          }
+          };
+
+          // SEMPRE executar verificação e criação/atualização de sessão
+          setTimeout(criarOuAtualizarSessao, 500);
         }
 
         // Buscar dados do usuário no Firestore
