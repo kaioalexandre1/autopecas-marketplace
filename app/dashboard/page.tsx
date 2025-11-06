@@ -2465,7 +2465,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setMostrarModal(false)}
-                  className="flex-1 px-4 py-3.5 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold text-base"
+                  className="flex-1 px-4 py-3.5 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold text-base text-gray-900 dark:text-gray-900 bg-white"
                 >
                   Cancelar
                 </button>
@@ -2589,7 +2589,7 @@ export default function DashboardPage() {
                     setPreco('');
                     setObservacaoOferta('');
                   }}
-                  className="flex-1 px-4 py-3.5 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold text-base"
+                  className="flex-1 px-4 py-3.5 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold text-base text-gray-900 dark:text-gray-900 bg-white"
                 >
                   Cancelar
                 </button>
