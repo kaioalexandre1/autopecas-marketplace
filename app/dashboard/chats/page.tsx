@@ -844,14 +844,30 @@ export default function ChatsPage() {
 
   // Função para confirmar negócio (oficina)
   const confirmarNegocio = async () => {
-    if (!chatSelecionado || !userData || userData.tipo !== 'oficina') return;
+    if (!chatSelecionado || !userData || userData.tipo !== 'oficina') {
+      console.error('❌ Validação falhou:', { chatSelecionado: !!chatSelecionado, userData: !!userData, tipo: userData?.tipo });
+      return;
+    }
+
+    if (!chatSelecionado.pedidoId) {
+      console.error('❌ pedidoId não encontrado no chat');
+      toast.error('Erro: Pedido não encontrado no chat');
+      return;
+    }
 
     try {
+      console.log('✅ Iniciando confirmação de negócio:', {
+        chatId: chatSelecionado.id,
+        pedidoId: chatSelecionado.pedidoId,
+        autopecaId: chatSelecionado.autopecaId,
+      });
+
       // Buscar o pedido para pegar o valor da oferta
       const pedidoRef = doc(db, 'pedidos', chatSelecionado.pedidoId);
       const pedidoSnap = await getDoc(pedidoRef);
       
       if (!pedidoSnap.exists()) {
+        console.error('❌ Pedido não existe no Firestore:', chatSelecionado.pedidoId);
         toast.error('Pedido não encontrado');
         return;
       }
@@ -860,15 +876,26 @@ export default function ChatsPage() {
       const ofertas = pedidoData.ofertas || [];
       const oficinaId = pedidoData.oficinaId || chatSelecionado.oficinaId;
       
+      console.log('📦 Dados do pedido:', {
+        ofertasCount: ofertas.length,
+        oficinaId,
+        autopecaId: chatSelecionado.autopecaId,
+      });
+      
       // Encontrar a oferta da autopeça deste chat
       const oferta = ofertas.find((o: any) => o.autopecaId === chatSelecionado.autopecaId);
       
       if (!oferta || !oferta.preco) {
-        toast.error('Oferta não encontrada');
+        console.error('❌ Oferta não encontrada:', {
+          ofertas: ofertas.map((o: any) => ({ autopecaId: o.autopecaId, preco: o.preco })),
+          autopecaIdProcurado: chatSelecionado.autopecaId,
+        });
+        toast.error('Oferta não encontrada. Verifique se a autopeça fez uma oferta válida.');
         return;
       }
 
       const valorFinal = oferta.preco;
+      console.log('💰 Valor final encontrado:', valorFinal);
 
       // 0. Excluir fotos do Storage antes de fechar o pedido
       try {
@@ -880,20 +907,21 @@ export default function ChatsPage() {
       // 1. Criar registro de negócio fechado
       const negocioFechado = {
         pedidoId: chatSelecionado.pedidoId,
-        oficinaId: chatSelecionado.oficinaId,
-        oficinaNome: chatSelecionado.oficinaNome,
+        oficinaId: chatSelecionado.oficinaId || oficinaId,
+        oficinaNome: chatSelecionado.oficinaNome || userData.nome || 'Oficina',
         autopecaId: chatSelecionado.autopecaId,
-        autopecaNome: chatSelecionado.autopecaNome,
-        nomePeca: chatSelecionado.nomePeca,
-        marcaCarro: chatSelecionado.marcaCarro,
-        modeloCarro: chatSelecionado.modeloCarro,
-        anoCarro: chatSelecionado.anoCarro,
-        especificacaoMotor: chatSelecionado.especificacaoMotor,
+        autopecaNome: chatSelecionado.autopecaNome || 'Autopeça',
+        nomePeca: chatSelecionado.nomePeca || pedidoData.nomePeca || 'Peça',
+        marcaCarro: chatSelecionado.marcaCarro || pedidoData.marcaCarro || '',
+        modeloCarro: chatSelecionado.modeloCarro || pedidoData.modeloCarro || '',
+        anoCarro: chatSelecionado.anoCarro || pedidoData.anoCarro || '',
+        especificacaoMotor: chatSelecionado.especificacaoMotor || pedidoData.especificacaoMotor || '',
         valorFinal: valorFinal,
         chatId: chatSelecionado.id,
         createdAt: Timestamp.now(),
       };
 
+      console.log('📝 Criando negócio fechado:', negocioFechado);
       await addDoc(collection(db, 'negocios_fechados'), negocioFechado);
       console.log('✅ Negócio fechado registrado! Valor:', valorFinal);
 
@@ -918,9 +946,14 @@ export default function ChatsPage() {
 
       toast.success(`Negócio confirmado e fechado: R$ ${valorFinal.toFixed(2)}`);
       setChatSelecionado(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Erro ao confirmar negócio:', error);
-      toast.error('Erro ao confirmar negócio');
+      console.error('❌ Detalhes do erro:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack,
+      });
+      toast.error(`Erro ao confirmar negócio: ${error.message || 'Erro desconhecido'}`);
     }
   };
 
