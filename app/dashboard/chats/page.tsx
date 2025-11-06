@@ -826,17 +826,34 @@ export default function ChatsPage() {
       await addDoc(collection(db, 'negocios_fechados'), negocioFechado);
       console.log('✅ Negócio fechado registrado! Valor:', valorFinal);
 
-      // 2. Marcar chat como encerrado
+      // 2. Marcar chat como encerrado (verificar se ainda existe antes de atualizar)
       const chatRef = doc(db, 'chats', chatSelecionado.id);
-      await updateDoc(chatRef, {
-        encerrado: true,
-        encerradoPor: userData.id,
-        encerradoEm: Timestamp.now(),
-        aguardandoConfirmacao: false,
-        confirmadoPor: userData.id,
-        dataConfirmacao: Timestamp.now(),
-      });
-      console.log('✅ Chat marcado como encerrado!');
+      const chatSnap = await getDoc(chatRef);
+      
+      if (!chatSnap.exists()) {
+        console.warn('⚠️ Chat não encontrado ao tentar encerrar. Pode ter sido deletado.');
+        // Mesmo assim, continuar com o fechamento do pedido
+      } else {
+        try {
+          await updateDoc(chatRef, {
+            encerrado: true,
+            encerradoPor: userData.id,
+            encerradoEm: Timestamp.now(),
+            aguardandoConfirmacao: false,
+            confirmadoPor: userData.id,
+            dataConfirmacao: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+          });
+          console.log('✅ Chat marcado como encerrado!');
+        } catch (updateError: any) {
+          // Se o erro for "document not found", apenas logar e continuar
+          if (updateError.code === 'not-found' || updateError.message?.includes('No document to update')) {
+            console.warn('⚠️ Chat não encontrado ao atualizar. Pode ter sido deletado durante o processo.');
+          } else {
+            throw updateError; // Re-lançar outros erros
+          }
+        }
+      }
 
       // 3. Marcar pedido como fechado
       await updateDoc(pedidoRef, {
@@ -846,7 +863,12 @@ export default function ChatsPage() {
       console.log('✅ Pedido marcado como fechado!');
 
       toast.success(`Negócio fechado: R$ ${valorFinal.toFixed(2)}`);
+      
+      // Limpar o chat selecionado para que desapareça da lista
       setChatSelecionado(null);
+      
+      // Redirecionar para a lista de chats para atualizar a visualização
+      router.push('/dashboard/chats');
     } catch (error) {
       console.error('❌ Erro ao finalizar negociação:', error);
       toast.error('Erro ao finalizar negociação');
@@ -956,7 +978,12 @@ export default function ChatsPage() {
       console.log('✅ Pedido marcado como fechado!');
 
       toast.success(`Negócio confirmado e fechado: R$ ${valorFinal.toFixed(2)}`);
+      
+      // Limpar o chat selecionado para que desapareça da lista
       setChatSelecionado(null);
+      
+      // Redirecionar para a lista de chats para atualizar a visualização
+      router.push('/dashboard/chats');
     } catch (error: any) {
       console.error('❌ Erro ao confirmar negócio:', error);
       console.error('❌ Detalhes do erro:', {
