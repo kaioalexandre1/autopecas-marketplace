@@ -51,6 +51,12 @@ export default function ChatsPage() {
   const [imagemUpload, setImagemUpload] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
+  const [dadosEntregador, setDadosEntregador] = useState<{
+    nomeAutopeca?: string;
+    enderecoAutopeca?: string;
+    nomeOficina?: string;
+    enderecoOficina?: string;
+  } | null>(null);
   const [excluindo, setExcluindo] = useState(false);
   const [excluindoChatSuporte, setExcluindoChatSuporte] = useState<string | null>(null);
   const [telefoneOutroUsuario, setTelefoneOutroUsuario] = useState<string | null>(null);
@@ -514,6 +520,61 @@ export default function ChatsPage() {
       }
 
       setImagemUpload(file);
+    }
+  };
+
+  // Função para buscar dados da autopeça e oficina para entregador
+  const buscarDadosParaEntregador = async () => {
+    if (!chatSelecionado || !userData) return;
+
+    try {
+      // Buscar dados da autopeça
+      let nomeAutopeca = '';
+      let enderecoAutopeca = '';
+      
+      if (chatSelecionado.autopecaId) {
+        const autopecaDoc = await getDoc(doc(db, 'users', chatSelecionado.autopecaId));
+        if (autopecaDoc.exists()) {
+          const autopecaData = autopecaDoc.data();
+          nomeAutopeca = autopecaData.nome || autopecaData.nomeLoja || '';
+          const enderecoCompleto = [
+            autopecaData.endereco || '',
+            autopecaData.numero || '',
+            autopecaData.bairro || '',
+            autopecaData.cidade || ''
+          ].filter(Boolean).join(', ');
+          enderecoAutopeca = enderecoCompleto;
+        }
+      }
+
+      // Buscar dados da oficina
+      let nomeOficina = '';
+      let enderecoOficina = '';
+      
+      if (chatSelecionado.oficinaId) {
+        const oficinaDoc = await getDoc(doc(db, 'users', chatSelecionado.oficinaId));
+        if (oficinaDoc.exists()) {
+          const oficinaData = oficinaDoc.data();
+          nomeOficina = oficinaData.nome || oficinaData.nomeLoja || '';
+          const enderecoCompleto = [
+            oficinaData.endereco || '',
+            oficinaData.numero || '',
+            oficinaData.bairro || '',
+            oficinaData.cidade || ''
+          ].filter(Boolean).join(', ');
+          enderecoOficina = enderecoCompleto;
+        }
+      }
+
+      setDadosEntregador({
+        nomeAutopeca,
+        enderecoAutopeca,
+        nomeOficina,
+        enderecoOficina,
+      });
+    } catch (error) {
+      console.error('Erro ao buscar dados para entregador:', error);
+      toast.error('Erro ao carregar informações');
     }
   };
 
@@ -1313,7 +1374,10 @@ export default function ChatsPage() {
                                 )}
                                 
                                 <button
-                                  onClick={() => {
+                                  onClick={async () => {
+                                    if (chatSelecionado) {
+                                      await buscarDadosParaEntregador();
+                                    }
                                     setMostrarEntregadores(true);
                                     setMostrarMenuMaisInfo(false);
                                   }}
@@ -1566,8 +1630,15 @@ export default function ChatsPage() {
       {/* Modal de Entregadores */}
       <EntregadoresModal 
         isOpen={mostrarEntregadores}
-        onClose={() => setMostrarEntregadores(false)}
+        onClose={() => {
+          setMostrarEntregadores(false);
+          setDadosEntregador(null);
+        }}
         nomePeca={chatSelecionado?.nomePeca}
+        nomeAutopeca={dadosEntregador?.nomeAutopeca}
+        enderecoAutopeca={dadosEntregador?.enderecoAutopeca}
+        nomeOficina={dadosEntregador?.nomeOficina}
+        enderecoOficina={dadosEntregador?.enderecoOficina}
       />
 
       {/* Modal - Endereço da Loja/Oficina */}

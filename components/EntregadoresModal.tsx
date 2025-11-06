@@ -12,9 +12,21 @@ interface EntregadoresModalProps {
   isOpen: boolean;
   onClose: () => void;
   nomePeca?: string;
+  nomeAutopeca?: string;
+  enderecoAutopeca?: string;
+  nomeOficina?: string;
+  enderecoOficina?: string;
 }
 
-export default function EntregadoresModal({ isOpen, onClose, nomePeca }: EntregadoresModalProps) {
+export default function EntregadoresModal({ 
+  isOpen, 
+  onClose, 
+  nomePeca,
+  nomeAutopeca,
+  enderecoAutopeca,
+  nomeOficina,
+  enderecoOficina
+}: EntregadoresModalProps) {
   const [entregadores, setEntregadores] = useState<Entregador[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,9 +40,8 @@ export default function EntregadoresModal({ isOpen, onClose, nomePeca }: Entrega
     setLoading(true);
     try {
       const q = query(
-        collection(db, 'entregadores'),
-        where('cidade', '==', 'Maringá-PR'),
-        where('ativo', '==', true)
+        collection(db, 'users'),
+        where('tipo', '==', 'entregador')
       );
 
       const snapshot = await getDocs(q);
@@ -38,12 +49,18 @@ export default function EntregadoresModal({ isOpen, onClose, nomePeca }: Entrega
       
       snapshot.forEach((doc) => {
         const data = doc.data();
-        // @ts-ignore - Firestore data includes all Entregador properties
-        entregadoresData.push({
-          id: doc.id,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          ...data,
-        } as Entregador);
+        if (data.nome || data.nomeLoja) {
+          entregadoresData.push({
+            id: doc.id,
+            nome: data.nome || data.nomeLoja || 'Entregador',
+            telefone: data.telefone || '',
+            whatsapp: data.whatsapp || data.telefone?.replace(/\D/g, '') || '',
+            valorDentroCidade: data.valorDentroCidade || 0,
+            cidade: data.cidade || 'Maringá-PR',
+            ativo: true,
+            createdAt: data.createdAt?.toDate() || new Date(),
+          } as Entregador);
+        }
       });
 
       // Se não houver entregadores cadastrados, usar dados de exemplo
@@ -93,14 +110,21 @@ export default function EntregadoresModal({ isOpen, onClose, nomePeca }: Entrega
   };
 
   const abrirWhatsApp = (entregador: Entregador) => {
-    const telLimpo = entregador.whatsapp.replace(/[^\d]/g, '');
-    const mensagem = nomePeca 
-      ? `Olá ${entregador.nome}, preciso de uma entrega para a peça: ${nomePeca}`
-      : `Olá ${entregador.nome}, preciso de uma entrega`;
+    const whatsapp = entregador.whatsapp || entregador.telefone?.replace(/\D/g, '');
+    if (!whatsapp) {
+      toast.error('WhatsApp não disponível para este entregador');
+      return;
+    }
+
+    let mensagem = 'Bom dia, vim pelo grupão das autopeças e quero saber quanto você cobra de um frete';
     
-    const mensagemEncoded = encodeURIComponent(mensagem);
-    const url = `https://wa.me/55${telLimpo}?text=${mensagemEncoded}`;
-    
+    if (nomeAutopeca && enderecoAutopeca && nomeOficina && enderecoOficina) {
+      mensagem += ` saindo de ${nomeAutopeca} - ${enderecoAutopeca} para ${nomeOficina} - ${enderecoOficina} e qual prazo de coleta e entrega.`;
+    } else {
+      mensagem += ' e qual prazo de coleta e entrega.';
+    }
+
+    const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
     toast.success('WhatsApp aberto!');
   };
