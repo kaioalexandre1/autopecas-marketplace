@@ -182,7 +182,7 @@ export default function NegociosFechadosPage() {
       <div className="mb-6 sm:mb-8">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center uppercase mb-6" style={{ 
           color: '#22c55e',
-          textShadow: '0 0 10px #22c55e, 0 0 20px #22c55e, 0 0 30px #22c55e, -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff, -2px -2px 0 #ffffff, 2px -2px 0 #ffffff, -2px 2px 0 #ffffff, 2px 2px 0 #ffffff'
+          textShadow: '0 0 10px #22c55e, 0 0 20px #22c55e, 0 0 30px #22c55e, -3px -3px 0 #ffffff, 3px -3px 0 #ffffff, -3px 3px 0 #ffffff, 3px 3px 0 #ffffff, -2px -3px 0 #ffffff, 2px -3px 0 #ffffff, -3px -2px 0 #ffffff, 3px -2px 0 #ffffff, -2px 3px 0 #ffffff, 2px 3px 0 #ffffff, -3px 2px 0 #ffffff, 3px 2px 0 #ffffff, -4px -4px 0 #ffffff, 4px -4px 0 #ffffff, -4px 4px 0 #ffffff, 4px 4px 0 #ffffff'
         }}>
           <CheckCircle className="inline-block mr-3 sm:mr-4" size={36} style={{ 
             color: '#22c55e',
