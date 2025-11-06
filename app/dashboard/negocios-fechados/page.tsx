@@ -180,10 +180,15 @@ export default function NegociosFechadosPage() {
       
       <div className="relative z-10 p-3 sm:p-6">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center mb-2 uppercase">
-          <CheckCircle className="mr-2 sm:mr-3 text-green-600" size={28} />
-          NEGÓCIOS FECHADOS
-        </h1>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 mb-6 border-4 border-green-500 dark:border-green-600">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 dark:from-green-400 dark:via-green-300 dark:to-emerald-400 flex items-center justify-center sm:justify-start mb-3 uppercase tracking-tight drop-shadow-lg">
+            <CheckCircle className="mr-3 sm:mr-4 text-green-600 dark:text-green-400 drop-shadow-md" size={40} />
+            <span className="relative">
+              NEGÓCIOS FECHADOS
+              <span className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></span>
+            </span>
+          </h1>
+        </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
           <div className="flex items-center text-gray-600 dark:text-white">
             <Calendar size={16} className="mr-2" />
