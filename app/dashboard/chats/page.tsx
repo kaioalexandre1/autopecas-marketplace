@@ -228,14 +228,28 @@ export default function ChatsPage() {
               console.log(`⚠️ Pedido ${pedidoId} não encontrado - excluindo chats relacionados...`);
               await excluirChatsDoPedido(pedidoId);
             } else {
-              // Verificar se o pedido está expirado ou cancelado
+              // Verificar se o pedido está expirado, cancelado ou fechado
               const pedidoData = pedidoDoc.data();
               const criacao = pedidoData.createdAt?.toDate() || new Date();
               const agora = new Date();
               const horasPassadas = (agora.getTime() - criacao.getTime()) / (1000 * 60 * 60);
               
-              if (horasPassadas >= 24 || pedidoData.status !== 'ativo') {
+              // Se o pedido está fechado, remover chats da lista local imediatamente
+              if (pedidoData.status === 'fechado') {
+                console.log(`⚠️ Pedido ${pedidoId} está fechado - removendo chats da lista local...`);
+                // Remover chats deste pedido da lista local imediatamente
+                const chatsRemovidos = chatsData.filter(c => c.pedidoId === pedidoId);
+                chatsData = chatsData.filter(c => c.pedidoId !== pedidoId);
+                console.log(`✅ ${chatsRemovidos.length} chat(s) removido(s) da lista local (pedido fechado)`);
+                // Excluir do Firestore também (assíncrono, não bloqueia)
+                excluirChatsDoPedido(pedidoId).catch(err => 
+                  console.error(`❌ Erro ao excluir chats do pedido ${pedidoId}:`, err)
+                );
+              } else if (horasPassadas >= 24 || pedidoData.status !== 'ativo') {
                 console.log(`⚠️ Pedido ${pedidoId} expirado ou inativo - excluindo chats relacionados...`);
+                // Remover da lista local imediatamente
+                chatsData = chatsData.filter(c => c.pedidoId !== pedidoId);
+                // Excluir do Firestore também
                 await excluirChatsDoPedido(pedidoId);
               }
             }
