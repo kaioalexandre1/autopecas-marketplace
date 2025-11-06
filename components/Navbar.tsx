@@ -793,8 +793,8 @@ export default function Navbar() {
               🏆
             </Link>
             
-            {/* Botão de Suporte (apenas para autopeças) */}
-            {userData?.tipo === 'autopeca' && (
+            {/* Botão de Suporte (para autopeças e oficinas) */}
+            {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
               <button
                 onClick={() => setModalSuporteAberto(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-white/30 text-white hover:bg-white/20 transition-all text-xl"
@@ -952,8 +952,8 @@ export default function Navbar() {
                 </Link>
               </div>
 
-              {/* Botão de Suporte Mobile (apenas para autopeças) */}
-              {userData?.tipo === 'autopeca' && (
+              {/* Botão de Suporte Mobile (para autopeças e oficinas) */}
+              {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
                 <button
                   onClick={() => {
                     setModalSuporteAberto(true);

@@ -2292,7 +2292,7 @@ export default function DashboardPage() {
                       type="text"
                       value={nomePeca}
                       onChange={(e) => setNomePeca(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
                       placeholder="Ex: Filtro de óleo"
                       required
                     />
@@ -2306,7 +2306,7 @@ export default function DashboardPage() {
                       type="text"
                       value={marcaCarro}
                       onChange={(e) => setMarcaCarro(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
                       placeholder="Ex: Toyota"
                       required
                     />
@@ -2320,7 +2320,7 @@ export default function DashboardPage() {
                       type="text"
                       value={modeloCarro}
                       onChange={(e) => setModeloCarro(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
                       placeholder="Ex: Corolla"
                       required
                     />
@@ -2334,7 +2334,7 @@ export default function DashboardPage() {
                       type="text"
                       value={anoCarro}
                       onChange={(e) => setAnoCarro(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
                       placeholder="Ex: 2020"
                       required
                     />
@@ -2347,7 +2347,7 @@ export default function DashboardPage() {
                     <select
                       value={condicaoPeca}
                       onChange={(e) => setCondicaoPeca(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 dark:text-gray-900"
                       required
                     >
                       <option value="">Selecione...</option>
@@ -2376,7 +2376,7 @@ export default function DashboardPage() {
                       type="text"
                       value={especificacaoMotor}
                       onChange={(e) => setEspecificacaoMotor(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
                       placeholder="Ex: 1.0, 2.0, 1.6"
                     />
                   </div>
@@ -2388,7 +2388,7 @@ export default function DashboardPage() {
                     <select
                       value={notaFiscal}
                       onChange={(e) => setNotaFiscal(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 dark:text-gray-900"
                     >
                       <option value="">Selecione...</option>
                       <option value="com nota">Com nota</option>
@@ -2403,7 +2403,7 @@ export default function DashboardPage() {
                     <textarea
                       value={observacao}
                       onChange={(e) => setObservacao(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 dark:text-gray-900 bg-white"
                       placeholder="Observação extra..."
                       rows={3}
                     />
@@ -2551,7 +2551,7 @@ export default function DashboardPage() {
                   type="text"
                   value={preco}
                   onChange={(e) => setPreco(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg font-semibold"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg font-semibold text-gray-900 dark:text-gray-900 bg-white"
                   placeholder="0.00"
                   required
                 />
@@ -2569,7 +2569,7 @@ export default function DashboardPage() {
                   onChange={(e) => setObservacaoOferta(e.target.value)}
                   maxLength={150}
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none text-gray-900 dark:text-gray-900 bg-white"
                   placeholder="Ex: Produto original, entrega em 2 dias, garantia de 6 meses..."
                 />
                 <p className="text-xs text-gray-900 dark:text-gray-300 mt-1">

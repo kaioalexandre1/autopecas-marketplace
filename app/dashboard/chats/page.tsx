@@ -69,6 +69,7 @@ export default function ChatsPage() {
   const [mostrarMenuMaisInfo, setMostrarMenuMaisInfo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selecaoManualRef = useRef<string | null>(null); // Rastrear seleção manual para evitar sobrescrita
 
   useEffect(() => {
     if (!userData) return;
@@ -241,37 +242,52 @@ export default function ChatsPage() {
   }, [userData]);
 
   // Atualizar chat selecionado em tempo real quando chats mudarem
-  // Mas apenas atualizar dados, não mudar a seleção
+  // Mas apenas atualizar dados, NUNCA mudar a seleção manual do usuário
   useEffect(() => {
-    if (chatSelecionado && chats.length > 0) {
-      const chatAtualizado = chats.find(c => c.id === chatSelecionado.id);
-      if (chatAtualizado) {
-        // Verificar se há novas mensagens ou se a última mensagem mudou
-        // IMPORTANTE: Só atualizar se o ID do chat selecionado for o mesmo (evitar mudanças indesejadas)
-        if (chatAtualizado.id === chatSelecionado.id) {
-          const ultimaMsgAtual = chatAtualizado.mensagens[chatAtualizado.mensagens.length - 1];
-          const ultimaMsgSelecionado = chatSelecionado.mensagens[chatSelecionado.mensagens.length - 1];
-          
-          if (chatAtualizado.mensagens.length !== chatSelecionado.mensagens.length ||
-              ultimaMsgAtual?.id !== ultimaMsgSelecionado?.id) {
-            console.log('🔄 Atualizando chat selecionado:', {
-              chatId: chatSelecionado.id,
-              mensagensAntes: chatSelecionado.mensagens.length,
-              mensagensDepois: chatAtualizado.mensagens.length
-            });
-            // Atualizar apenas os dados, mantendo a mesma referência de seleção
-            setChatSelecionado(chatAtualizado);
-          } else if (chatAtualizado.encerrado !== chatSelecionado.encerrado) {
-            // Atualizar se o status de encerrado mudou
-            setChatSelecionado(chatAtualizado);
-          }
-        }
-      } else {
-        // Chat não encontrado, pode ter sido excluído
-        setChatSelecionado(null);
-      }
+    // Só atualizar se já houver um chat selecionado (não selecionar automaticamente)
+    if (!chatSelecionado || chats.length === 0) {
+      return;
     }
-  }, [chats]); // Remover chatSelecionado?.id das dependências para evitar loop
+
+    // Se há uma seleção manual recente, não atualizar para evitar sobrescrever
+    if (selecaoManualRef.current && selecaoManualRef.current === chatSelecionado.id) {
+      // Limpar a flag após um tempo para permitir atualizações futuras
+      setTimeout(() => {
+        if (selecaoManualRef.current === chatSelecionado.id) {
+          selecaoManualRef.current = null;
+        }
+      }, 1000);
+      return;
+    }
+
+    const chatAtualizado = chats.find(c => c.id === chatSelecionado.id);
+    if (chatAtualizado) {
+      // Verificar se há novas mensagens ou se a última mensagem mudou
+      // IMPORTANTE: Só atualizar se o ID do chat selecionado for o mesmo (evitar mudanças indesejadas)
+      if (chatAtualizado.id === chatSelecionado.id) {
+        const ultimaMsgAtual = chatAtualizado.mensagens[chatAtualizado.mensagens.length - 1];
+        const ultimaMsgSelecionado = chatSelecionado.mensagens[chatSelecionado.mensagens.length - 1];
+        
+        // Só atualizar se realmente houver mudanças (mensagens ou status)
+        if (chatAtualizado.mensagens.length !== chatSelecionado.mensagens.length ||
+            ultimaMsgAtual?.id !== ultimaMsgSelecionado?.id ||
+            chatAtualizado.encerrado !== chatSelecionado.encerrado) {
+          console.log('🔄 Atualizando dados do chat selecionado (sem mudar seleção):', {
+            chatId: chatSelecionado.id,
+            mensagensAntes: chatSelecionado.mensagens.length,
+            mensagensDepois: chatAtualizado.mensagens.length
+          });
+          // Atualizar apenas os dados, mantendo a mesma referência de seleção
+          setChatSelecionado(chatAtualizado);
+        }
+      }
+    } else {
+      // Chat não encontrado, pode ter sido excluído
+      console.log('⚠️ Chat selecionado não encontrado mais, limpando seleção');
+      setChatSelecionado(null);
+      selecaoManualRef.current = null;
+    }
+  }, [chats]); // Remover chatSelecionado das dependências para evitar loop
 
   // Buscar telefone do outro usuário quando um chat é selecionado
   useEffect(() => {
@@ -320,31 +336,39 @@ export default function ChatsPage() {
   };
 
   // Selecionar automaticamente o chat quando vindo da URL
+  // IMPORTANTE: Só executar uma vez quando os parâmetros da URL mudarem, não quando chats mudarem
   useEffect(() => {
     const pedidoId = searchParams.get('pedidoId');
     const autopecaId = searchParams.get('autopecaId');
 
-    console.log('🔍 Verificando seleção automática de chat:', {
+    // Só executar se houver parâmetros na URL (vindo de outra página)
+    if (!pedidoId || !autopecaId) {
+      return;
+    }
+
+    console.log('🔍 Verificando seleção automática de chat (URL):', {
       pedidoId,
       autopecaId,
       totalChats: chats.length,
       chatSelecionado: chatSelecionado?.id
     });
 
-    if (pedidoId && autopecaId && chats.length > 0) {
+    if (chats.length > 0) {
       const chatEncontrado = chats.find(
         chat => chat.pedidoId === pedidoId && chat.autopecaId === autopecaId
       );
       
       console.log('✅ Chat encontrado:', chatEncontrado?.id);
       
+      // Só selecionar se não houver chat selecionado OU se o chat selecionado for diferente
+      // E se o chat encontrado for diferente do atual
       if (chatEncontrado && (!chatSelecionado || chatSelecionado.id !== chatEncontrado.id)) {
-        console.log('🎯 Selecionando chat automaticamente');
+        console.log('🎯 Selecionando chat automaticamente (URL)');
         setChatSelecionado(chatEncontrado);
         marcarComoLido(chatEncontrado);
       }
     }
-  }, [chats, searchParams]);
+  }, [searchParams]); // Remover chats das dependências para evitar seleção automática indesejada
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -999,12 +1023,17 @@ export default function ChatsPage() {
                         e.preventDefault();
                         e.stopPropagation();
                         if (!excluindoChatSuporte) {
-                          console.log('🖱️ Selecionando chat:', chat.id, chat.nomePeca || 'Suporte');
-                          // Usar setTimeout para garantir que a seleção aconteça após qualquer atualização pendente
-                          setTimeout(() => {
-                            setChatSelecionado(chat);
-                            marcarComoLido(chat);
-                          }, 0);
+                          console.log('🖱️ Seleção MANUAL do chat:', {
+                            chatId: chat.id,
+                            nomePeca: chat.nomePeca || 'Suporte',
+                            pedidoId: chat.pedidoId,
+                            chatSelecionadoAtual: chatSelecionado?.id
+                          });
+                          // Marcar como seleção manual para evitar sobrescrita pelo useEffect
+                          selecaoManualRef.current = chat.id;
+                          // Selecionar imediatamente
+                          setChatSelecionado(chat);
+                          marcarComoLido(chat);
                         }
                       }}
                     >
