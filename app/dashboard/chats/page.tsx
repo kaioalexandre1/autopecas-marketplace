@@ -170,7 +170,7 @@ export default function ChatsPage() {
             ...m,
             createdAt: m.createdAt?.toDate() || new Date(),
           })) || [],
-          aguardandoConfirmacao: data.aguardandoConfirmacao === true,
+          aguardandoConfirmacao: !!data.aguardandoConfirmacao,
           dataSolicitacaoConfirmacao: data.dataSolicitacaoConfirmacao?.toDate(),
           confirmadoPor: data.confirmadoPor || undefined,
           dataConfirmacao: data.dataConfirmacao?.toDate(),
@@ -310,10 +310,13 @@ export default function ChatsPage() {
       console.log('🔍 Chat selecionado (oficina):', {
         id: chatSelecionado.id,
         aguardandoConfirmacao: chatSelecionado.aguardandoConfirmacao,
+        tipoAguardandoConfirmacao: typeof chatSelecionado.aguardandoConfirmacao,
         confirmadoPor: chatSelecionado.confirmadoPor,
         negadoPor: chatSelecionado.negadoPor,
         encerrado: chatSelecionado.encerrado,
         dataSolicitacaoConfirmacao: chatSelecionado.dataSolicitacaoConfirmacao,
+        // Verificar se é exatamente true
+        isAguardandoTrue: chatSelecionado.aguardandoConfirmacao === true,
       });
     }
   }, [chatSelecionado, userData]);
@@ -1685,11 +1688,31 @@ export default function ChatsPage() {
                 {/* Mensagens */}
                 <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
                   {/* Card de confirmação para oficina */}
-                  {chatSelecionado && 
-                   userData?.tipo === 'oficina' && 
-                   chatSelecionado.aguardandoConfirmacao === true && 
-                   !chatSelecionado.confirmadoPor && 
-                   !chatSelecionado.negadoPor && (
+                  {(() => {
+                    const condicao1 = chatSelecionado && userData?.tipo === 'oficina';
+                    // Usar !! para garantir que seja tratado como booleano
+                    const condicao2 = !!chatSelecionado?.aguardandoConfirmacao;
+                    const condicao3 = !chatSelecionado?.confirmadoPor;
+                    const condicao4 = !chatSelecionado?.negadoPor;
+                    const deveMostrar = condicao1 && condicao2 && condicao3 && condicao4;
+                    
+                    if (userData?.tipo === 'oficina' && chatSelecionado) {
+                      console.log('🔍 Verificando card de confirmação:', {
+                        condicao1,
+                        condicao2,
+                        condicao3,
+                        condicao4,
+                        deveMostrar,
+                        aguardandoConfirmacao: chatSelecionado.aguardandoConfirmacao,
+                        tipoAguardandoConfirmacao: typeof chatSelecionado.aguardandoConfirmacao,
+                        confirmadoPor: chatSelecionado.confirmadoPor,
+                        negadoPor: chatSelecionado.negadoPor,
+                        encerrado: chatSelecionado.encerrado,
+                      });
+                    }
+                    
+                    return deveMostrar;
+                  })() && (
                     <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-400 dark:border-blue-500 rounded-xl p-6 mb-4 shadow-lg">
                       <div className="flex items-start mb-4">
                         <AlertCircle className="text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" size={28} />
