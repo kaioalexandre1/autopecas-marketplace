@@ -37,6 +37,15 @@ export async function GET(request: Request) {
 
       // Se aprovado, adicionar +10 ofertas
       if (status === 'approved') {
+        // Verificar se o pagamento já foi processado (evitar duplicação)
+        const externalRef = payment?.external_reference || '';
+        const pagamentoDoc = await adminDb.collection('pagamentos').where('external_reference', '==', externalRef).where('statusPagamento', '==', 'aprovado').get();
+        
+        if (!pagamentoDoc.empty) {
+          console.log(`[Status API] ⚠️ Pagamento já foi processado anteriormente. Ignorando para evitar duplicação.`);
+          return NextResponse.json({ ok: true, status, paymentId, tipo: 'ofertas_extras', jaProcessado: true });
+        }
+        
         const userDoc = await adminDb.collection('users').doc(autopecaId).get();
         const userData = userDoc.data();
 
@@ -120,9 +129,17 @@ export async function GET(request: Request) {
 
     // IMPORTANTE: Verificar se é ofertas extras antes de processar como plano
     if (externalRef && externalRef.includes('|ofertas_extras|')) {
-      console.log(`[Status API] ⚠️ Pagamento detectado como ofertas extras, mas tipo não foi especificado. Processando como ofertas extras...`);
+      console.log(`[Status API] ⚠️ Pagamento detectado como ofertas extras, mas tipo não foi especificado. Verificando se já foi processado...`);
       
       if (status === 'approved') {
+        // Verificar se o pagamento já foi processado (evitar duplicação)
+        const pagamentoDoc = await adminDb.collection('pagamentos').where('external_reference', '==', externalRef).where('statusPagamento', '==', 'aprovado').get();
+        
+        if (!pagamentoDoc.empty) {
+          console.log(`[Status API] ⚠️ Pagamento já foi processado anteriormente. Ignorando para evitar duplicação.`);
+          return NextResponse.json({ ok: true, status, paymentId, tipo: 'ofertas_extras', jaProcessado: true });
+        }
+        
         const userDoc = await adminDb.collection('users').doc(autopecaId).get();
         const userData = userDoc.data();
 

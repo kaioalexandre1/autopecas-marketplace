@@ -289,7 +289,15 @@ export async function POST(request: Request) {
           // Verificar se é ofertas extras
           if (parts.length >= 2 && parts[1] === 'ofertas_extras') {
             const autopecaId = parts[0];
-            console.log(`Processando pagamento de ofertas extras aprovado - Autopeça: ${autopecaId}`);
+            console.log(`[Webhook] Processando pagamento de ofertas extras aprovado - Autopeça: ${autopecaId}`);
+
+            // Verificar se o pagamento já foi processado (evitar duplicação)
+            const pagamentoDoc = await adminDb.collection('pagamentos').where('external_reference', '==', external_reference).where('statusPagamento', '==', 'aprovado').get();
+            
+            if (!pagamentoDoc.empty) {
+              console.log(`[Webhook] ⚠️ Pagamento já foi processado anteriormente. Ignorando para evitar duplicação.`);
+              return NextResponse.json({ ok: true, status, paymentId, tipo: 'ofertas_extras', jaProcessado: true });
+            }
 
             const userDoc = await adminDb.collection('users').doc(autopecaId).get();
             const userData = userDoc.data();
@@ -307,7 +315,7 @@ export async function POST(request: Request) {
                 mesReferenciaOfertas: mesAtual,
               });
 
-              console.log(`✅ +10 ofertas adicionadas para autopeça ${autopecaId}`);
+              console.log(`[Webhook] ✅ +10 ofertas adicionadas para autopeça ${autopecaId}`);
 
               // Atualizar registro de pagamento
               const snap = await adminDb.collection('pagamentos').where('external_reference', '==', external_reference).get();
