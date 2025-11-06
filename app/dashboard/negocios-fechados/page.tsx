@@ -179,9 +179,9 @@ export default function NegociosFechadosPage() {
       </div>
       
       <div className="relative z-10 p-3 sm:p-6">
-      <div className="mb-6 sm:mb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 mb-6">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center uppercase" style={{ 
+      <div className="mb-6 sm:mb-8 flex justify-center">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 mb-6 inline-block">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center uppercase whitespace-nowrap" style={{ 
             color: '#22c55e',
             textShadow: '0 0 10px #22c55e, 0 0 20px #22c55e, 0 0 30px #22c55e'
           }}>
