@@ -217,8 +217,8 @@ export default function Home() {
               {/* Efeito de brilho atrás do texto */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-xl"></div>
               
-              <div className="relative">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-black bg-gradient-to-r from-white via-yellow-200 to-yellow-400 bg-clip-text text-transparent drop-shadow-2xl tracking-wide leading-tight">
+              <div className="relative py-1 overflow-visible">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-black bg-gradient-to-r from-white via-yellow-200 to-yellow-400 bg-clip-text text-transparent drop-shadow-2xl tracking-wide leading-normal overflow-visible">
                   GRUPÃO DAS AUTOPEÇAS
                 </h1>
                 <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 sm:mt-2">
