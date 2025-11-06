@@ -241,32 +241,37 @@ export default function ChatsPage() {
   }, [userData]);
 
   // Atualizar chat selecionado em tempo real quando chats mudarem
+  // Mas apenas atualizar dados, não mudar a seleção
   useEffect(() => {
     if (chatSelecionado && chats.length > 0) {
       const chatAtualizado = chats.find(c => c.id === chatSelecionado.id);
       if (chatAtualizado) {
-        // Sempre atualizar para pegar a versão mais recente do chat
-        const ultimaMsgAtual = chatAtualizado.mensagens[chatAtualizado.mensagens.length - 1];
-        const ultimaMsgSelecionado = chatSelecionado.mensagens[chatSelecionado.mensagens.length - 1];
-        
         // Verificar se há novas mensagens ou se a última mensagem mudou
-        if (chatAtualizado.mensagens.length !== chatSelecionado.mensagens.length ||
-            ultimaMsgAtual?.id !== ultimaMsgSelecionado?.id) {
-          console.log('🔄 Atualizando chat selecionado:', {
-            mensagensAntes: chatSelecionado.mensagens.length,
-            mensagensDepois: chatAtualizado.mensagens.length
-          });
-          setChatSelecionado(chatAtualizado);
-        } else if (chatAtualizado.encerrado !== chatSelecionado.encerrado) {
-          // Atualizar se o status de encerrado mudou
-          setChatSelecionado(chatAtualizado);
+        // IMPORTANTE: Só atualizar se o ID do chat selecionado for o mesmo (evitar mudanças indesejadas)
+        if (chatAtualizado.id === chatSelecionado.id) {
+          const ultimaMsgAtual = chatAtualizado.mensagens[chatAtualizado.mensagens.length - 1];
+          const ultimaMsgSelecionado = chatSelecionado.mensagens[chatSelecionado.mensagens.length - 1];
+          
+          if (chatAtualizado.mensagens.length !== chatSelecionado.mensagens.length ||
+              ultimaMsgAtual?.id !== ultimaMsgSelecionado?.id) {
+            console.log('🔄 Atualizando chat selecionado:', {
+              chatId: chatSelecionado.id,
+              mensagensAntes: chatSelecionado.mensagens.length,
+              mensagensDepois: chatAtualizado.mensagens.length
+            });
+            // Atualizar apenas os dados, mantendo a mesma referência de seleção
+            setChatSelecionado(chatAtualizado);
+          } else if (chatAtualizado.encerrado !== chatSelecionado.encerrado) {
+            // Atualizar se o status de encerrado mudou
+            setChatSelecionado(chatAtualizado);
+          }
         }
       } else {
         // Chat não encontrado, pode ter sido excluído
         setChatSelecionado(null);
       }
     }
-  }, [chats]);
+  }, [chats]); // Remover chatSelecionado?.id das dependências para evitar loop
 
   // Buscar telefone do outro usuário quando um chat é selecionado
   useEffect(() => {
@@ -990,10 +995,16 @@ export default function ChatsPage() {
                           ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700'
                           : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         if (!excluindoChatSuporte) {
-                          setChatSelecionado(chat);
-                          marcarComoLido(chat);
+                          console.log('🖱️ Selecionando chat:', chat.id, chat.nomePeca || 'Suporte');
+                          // Usar setTimeout para garantir que a seleção aconteça após qualquer atualização pendente
+                          setTimeout(() => {
+                            setChatSelecionado(chat);
+                            marcarComoLido(chat);
+                          }, 0);
                         }
                       }}
                     >
