@@ -170,11 +170,11 @@ export default function ChatsPage() {
             ...m,
             createdAt: m.createdAt?.toDate() || new Date(),
           })) || [],
-          aguardandoConfirmacao: data.aguardandoConfirmacao || false,
+          aguardandoConfirmacao: data.aguardandoConfirmacao === true,
           dataSolicitacaoConfirmacao: data.dataSolicitacaoConfirmacao?.toDate(),
-          confirmadoPor: data.confirmadoPor,
+          confirmadoPor: data.confirmadoPor || undefined,
           dataConfirmacao: data.dataConfirmacao?.toDate(),
-          negadoPor: data.negadoPor,
+          negadoPor: data.negadoPor || undefined,
           dataNegacao: data.dataNegacao?.toDate(),
         } as Chat);
         
@@ -303,6 +303,20 @@ export default function ChatsPage() {
 
     return () => unsubscribe();
   }, [userData]);
+
+  // Debug: verificar dados do chat selecionado
+  useEffect(() => {
+    if (chatSelecionado && userData?.tipo === 'oficina') {
+      console.log('🔍 Chat selecionado (oficina):', {
+        id: chatSelecionado.id,
+        aguardandoConfirmacao: chatSelecionado.aguardandoConfirmacao,
+        confirmadoPor: chatSelecionado.confirmadoPor,
+        negadoPor: chatSelecionado.negadoPor,
+        encerrado: chatSelecionado.encerrado,
+        dataSolicitacaoConfirmacao: chatSelecionado.dataSolicitacaoConfirmacao,
+      });
+    }
+  }, [chatSelecionado, userData]);
 
   // Atualizar chat selecionado em tempo real quando chats mudarem
   // Mas apenas atualizar dados, NUNCA mudar a seleção manual do usuário
@@ -730,13 +744,18 @@ export default function ChatsPage() {
       // Se for autopeça, apenas solicita confirmação da oficina
       if (userData.tipo === 'autopeca') {
         const chatRef = doc(db, 'chats', chatSelecionado.id);
-        await updateDoc(chatRef, {
+        const updateData = {
           aguardandoConfirmacao: true,
           dataSolicitacaoConfirmacao: Timestamp.now(),
           encerrado: true, // Encerrado apenas para a autopeça
           encerradoPor: userData.id,
           encerradoEm: Timestamp.now(),
-        });
+          updatedAt: Timestamp.now(),
+        };
+        
+        console.log('💼 Autopeça fechando negócio - salvando:', updateData);
+        await updateDoc(chatRef, updateData);
+        console.log('✅ Dados salvos com sucesso!');
         
         toast.success('Negócio fechado! Aguardando confirmação da oficina.');
         return;
@@ -1633,8 +1652,9 @@ export default function ChatsPage() {
                 {/* Mensagens */}
                 <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
                   {/* Card de confirmação para oficina */}
-                  {chatSelecionado.aguardandoConfirmacao && 
+                  {chatSelecionado && 
                    userData?.tipo === 'oficina' && 
+                   chatSelecionado.aguardandoConfirmacao === true && 
                    !chatSelecionado.confirmadoPor && 
                    !chatSelecionado.negadoPor && (
                     <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-400 dark:border-blue-500 rounded-xl p-6 mb-4 shadow-lg">
