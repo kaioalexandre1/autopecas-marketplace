@@ -47,7 +47,7 @@ export default function EntregadoresModal({
       const snapshot = await getDocs(q);
       const entregadoresData: Entregador[] = [];
       
-      snapshot.forEach((doc) => {
+        snapshot.forEach((doc) => {
         const data = doc.data();
         if (data.nome || data.nomeLoja) {
           entregadoresData.push({
@@ -55,7 +55,7 @@ export default function EntregadoresModal({
             nome: data.nome || data.nomeLoja || 'Entregador',
             telefone: data.telefone || '',
             whatsapp: data.whatsapp || data.telefone?.replace(/\D/g, '') || '',
-            valorDentroCidade: data.valorDentroCidade || 0,
+            valorDentroCidade: data.valorFreteDentroCidade || data.valorDentroCidade || 0,
             cidade: data.cidade || 'Maringá-PR',
             ativo: true,
             createdAt: data.createdAt?.toDate() || new Date(),

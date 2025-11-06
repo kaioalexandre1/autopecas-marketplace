@@ -77,6 +77,48 @@ export default function ChatsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selecaoManualRef = useRef<string | null>(null); // Rastrear seleção manual para evitar sobrescrita
 
+  // Verificar timeout de 24h para confirmações pendentes
+  useEffect(() => {
+    if (!userData || !chats.length) return;
+
+    const verificarTimeouts = async () => {
+      const agora = new Date();
+      const chatsPendentes = chats.filter(
+        chat => chat.aguardandoConfirmacao && 
+        chat.dataSolicitacaoConfirmacao && 
+        !chat.confirmadoPor && 
+        !chat.negadoPor
+      );
+
+      for (const chat of chatsPendentes) {
+        if (chat.dataSolicitacaoConfirmacao) {
+          const horasPassadas = (agora.getTime() - chat.dataSolicitacaoConfirmacao.getTime()) / (1000 * 60 * 60);
+          
+          if (horasPassadas >= 24) {
+            // Timeout: encerrar chat sem registrar venda
+            try {
+              const chatRef = doc(db, 'chats', chat.id);
+              await updateDoc(chatRef, {
+                encerrado: true,
+                aguardandoConfirmacao: false,
+                negadoPor: 'timeout',
+                dataNegacao: Timestamp.now(),
+              });
+              console.log(`⏰ Timeout de 24h: Chat ${chat.id} encerrado automaticamente`);
+            } catch (error) {
+              console.error('Erro ao processar timeout:', error);
+            }
+          }
+        }
+      }
+    };
+
+    verificarTimeouts();
+    const interval = setInterval(verificarTimeouts, 60000); // Verificar a cada minuto
+
+    return () => clearInterval(interval);
+  }, [chats, userData]);
+
   useEffect(() => {
     if (!userData) return;
 
@@ -106,7 +148,16 @@ export default function ChatsPage() {
         
         chatsData.push({
           id: doc.id,
-          ...data,
+          pedidoId: data.pedidoId || '',
+          oficinaId: data.oficinaId || '',
+          autopecaId: data.autopecaId || '',
+          oficinaNome: data.oficinaNome || '',
+          autopecaNome: data.autopecaNome || '',
+          nomePeca: data.nomePeca || '',
+          marcaCarro: data.marcaCarro || '',
+          modeloCarro: data.modeloCarro || '',
+          anoCarro: data.anoCarro || '',
+          especificacaoMotor: data.especificacaoMotor,
           isSuporte: isSuporte,
           motivo: data.motivo,
           motivoLabel: data.motivoLabel,
@@ -119,6 +170,12 @@ export default function ChatsPage() {
             ...m,
             createdAt: m.createdAt?.toDate() || new Date(),
           })) || [],
+          aguardandoConfirmacao: data.aguardandoConfirmacao || false,
+          dataSolicitacaoConfirmacao: data.dataSolicitacaoConfirmacao?.toDate(),
+          confirmadoPor: data.confirmadoPor,
+          dataConfirmacao: data.dataConfirmacao?.toDate(),
+          negadoPor: data.negadoPor,
+          dataNegacao: data.dataNegacao?.toDate(),
         } as Chat);
         
         // Coletar IDs de chats com pedidoId para verificar se o pedido ainda existe
@@ -417,7 +474,13 @@ export default function ChatsPage() {
       return;
     }
     
-    if (chatSelecionado.encerrado) {
+    // Para autopeça: chat encerrado se ela fechou
+    // Para oficina: chat encerrado apenas se não estiver aguardando confirmação
+    const chatEncerradoParaUsuario = userData?.tipo === 'autopeca' 
+      ? chatSelecionado.encerrado
+      : chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao;
+
+    if (chatEncerradoParaUsuario) {
       toast.error('Este chat está encerrado');
       return;
     }
@@ -664,6 +727,22 @@ export default function ChatsPage() {
     if (!chatSelecionado || !userData) return;
 
     try {
+      // Se for autopeça, apenas solicita confirmação da oficina
+      if (userData.tipo === 'autopeca') {
+        const chatRef = doc(db, 'chats', chatSelecionado.id);
+        await updateDoc(chatRef, {
+          aguardandoConfirmacao: true,
+          dataSolicitacaoConfirmacao: Timestamp.now(),
+          encerrado: true, // Encerrado apenas para a autopeça
+          encerradoPor: userData.id,
+          encerradoEm: Timestamp.now(),
+        });
+        
+        toast.success('Negócio fechado! Aguardando confirmação da oficina.');
+        return;
+      }
+
+      // Se for oficina, confirma o negócio (lógica antiga mantida para compatibilidade)
       console.log('💼 Finalizando negociação:', chatSelecionado);
 
       // Buscar o pedido para pegar o valor da oferta
@@ -708,6 +787,7 @@ export default function ChatsPage() {
         marcaCarro: chatSelecionado.marcaCarro,
         modeloCarro: chatSelecionado.modeloCarro,
         anoCarro: chatSelecionado.anoCarro,
+        especificacaoMotor: chatSelecionado.especificacaoMotor,
         valorFinal: valorFinal,
         chatId: chatSelecionado.id,
         createdAt: Timestamp.now(),
@@ -722,6 +802,9 @@ export default function ChatsPage() {
         encerrado: true,
         encerradoPor: userData.id,
         encerradoEm: Timestamp.now(),
+        aguardandoConfirmacao: false,
+        confirmadoPor: userData.id,
+        dataConfirmacao: Timestamp.now(),
       });
       console.log('✅ Chat marcado como encerrado!');
 
@@ -737,6 +820,112 @@ export default function ChatsPage() {
     } catch (error) {
       console.error('❌ Erro ao finalizar negociação:', error);
       toast.error('Erro ao finalizar negociação');
+    }
+  };
+
+  // Função para confirmar negócio (oficina)
+  const confirmarNegocio = async () => {
+    if (!chatSelecionado || !userData || userData.tipo !== 'oficina') return;
+
+    try {
+      // Buscar o pedido para pegar o valor da oferta
+      const pedidoRef = doc(db, 'pedidos', chatSelecionado.pedidoId);
+      const pedidoSnap = await getDoc(pedidoRef);
+      
+      if (!pedidoSnap.exists()) {
+        toast.error('Pedido não encontrado');
+        return;
+      }
+
+      const pedidoData = pedidoSnap.data();
+      const ofertas = pedidoData.ofertas || [];
+      const oficinaId = pedidoData.oficinaId || chatSelecionado.oficinaId;
+      
+      // Encontrar a oferta da autopeça deste chat
+      const oferta = ofertas.find((o: any) => o.autopecaId === chatSelecionado.autopecaId);
+      
+      if (!oferta || !oferta.preco) {
+        toast.error('Oferta não encontrada');
+        return;
+      }
+
+      const valorFinal = oferta.preco;
+
+      // 0. Excluir fotos do Storage antes de fechar o pedido
+      try {
+        await excluirFotosDoPedido(chatSelecionado.pedidoId, oficinaId);
+      } catch (fotoError) {
+        console.error('⚠️ Erro ao excluir fotos do pedido (continuando com fechamento):', fotoError);
+      }
+
+      // 1. Criar registro de negócio fechado
+      const negocioFechado = {
+        pedidoId: chatSelecionado.pedidoId,
+        oficinaId: chatSelecionado.oficinaId,
+        oficinaNome: chatSelecionado.oficinaNome,
+        autopecaId: chatSelecionado.autopecaId,
+        autopecaNome: chatSelecionado.autopecaNome,
+        nomePeca: chatSelecionado.nomePeca,
+        marcaCarro: chatSelecionado.marcaCarro,
+        modeloCarro: chatSelecionado.modeloCarro,
+        anoCarro: chatSelecionado.anoCarro,
+        especificacaoMotor: chatSelecionado.especificacaoMotor,
+        valorFinal: valorFinal,
+        chatId: chatSelecionado.id,
+        createdAt: Timestamp.now(),
+      };
+
+      await addDoc(collection(db, 'negocios_fechados'), negocioFechado);
+      console.log('✅ Negócio fechado registrado! Valor:', valorFinal);
+
+      // 2. Marcar chat como encerrado e confirmado
+      const chatRef = doc(db, 'chats', chatSelecionado.id);
+      await updateDoc(chatRef, {
+        encerrado: true,
+        encerradoPor: userData.id,
+        encerradoEm: Timestamp.now(),
+        aguardandoConfirmacao: false,
+        confirmadoPor: userData.id,
+        dataConfirmacao: Timestamp.now(),
+      });
+      console.log('✅ Chat confirmado e encerrado!');
+
+      // 3. Marcar pedido como fechado
+      await updateDoc(pedidoRef, {
+        status: 'fechado',
+        updatedAt: Timestamp.now(),
+      });
+      console.log('✅ Pedido marcado como fechado!');
+
+      toast.success(`Negócio confirmado e fechado: R$ ${valorFinal.toFixed(2)}`);
+      setChatSelecionado(null);
+    } catch (error) {
+      console.error('❌ Erro ao confirmar negócio:', error);
+      toast.error('Erro ao confirmar negócio');
+    }
+  };
+
+  // Função para negar negócio (oficina)
+  const negarNegocio = async () => {
+    if (!chatSelecionado || !userData || userData.tipo !== 'oficina') return;
+
+    try {
+      // Apenas encerrar o chat sem registrar venda
+      const chatRef = doc(db, 'chats', chatSelecionado.id);
+      await updateDoc(chatRef, {
+        encerrado: true,
+        encerradoPor: userData.id,
+        encerradoEm: Timestamp.now(),
+        aguardandoConfirmacao: false,
+        negadoPor: userData.id,
+        dataNegacao: Timestamp.now(),
+      });
+      
+      toast.success('Negócio não confirmado. Chat encerrado.');
+      setChatSelecionado(null);
+    } catch (error) {
+      console.error('❌ Erro ao negar negócio:', error);
+      toast.error('Erro ao processar');
     }
   };
 
@@ -760,7 +949,17 @@ export default function ChatsPage() {
   };
 
   const excluirChatsEncerrados = async () => {
-    const chatsEncerrados = chats.filter(chat => chat.encerrado && !chat.isSuporte);
+    // Filtrar chats encerrados considerando o tipo de usuário
+    const chatsEncerrados = chats.filter(chat => {
+      if (chat.isSuporte) return false;
+      if (userData?.tipo === 'autopeca') {
+        return chat.encerrado === true;
+      }
+      if (userData?.tipo === 'oficina') {
+        return chat.encerrado === true && !chat.aguardandoConfirmacao;
+      }
+      return false;
+    });
     
     if (chatsEncerrados.length === 0) {
       toast.error('Não há chats encerrados para excluir');
@@ -1071,12 +1270,14 @@ export default function ChatsPage() {
                         chat.isSuporte 
                           ? chatSelecionado?.id === chat.id
                             ? 'bg-blue-100 dark:bg-blue-900/50 border-l-4 border-l-blue-600 dark:border-l-blue-500'
-                            : chat.encerrado
+                            : ((userData?.tipo === 'autopeca' && chat.encerrado) ||
+                               (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao))
                             ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700 border-l-4 border-l-gray-400'
                             : 'bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 border-l-4 border-l-blue-500 dark:border-l-blue-400'
                           : chatSelecionado?.id === chat.id 
                           ? 'bg-green-100 dark:bg-green-900/50 border-l-4 border-l-green-600 dark:border-l-green-500' 
-                          : chat.encerrado
+                          : ((userData?.tipo === 'autopeca' && chat.encerrado) ||
+                             (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao))
                           ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700'
                           : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
                       }`}
@@ -1189,9 +1390,17 @@ export default function ChatsPage() {
                             <span className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
                               {chat.nomePeca}
                             </span>
-                            {chat.encerrado && (
+                            {/* Para autopeça: mostrar encerrado se ela fechou
+                                Para oficina: mostrar encerrado apenas se não estiver aguardando confirmação */}
+                            {((userData?.tipo === 'autopeca' && chat.encerrado) ||
+                              (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao)) && (
                               <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
                                 Encerrado
+                              </span>
+                            )}
+                            {chat.aguardandoConfirmacao && userData?.tipo === 'oficina' && (
+                              <span className="px-1 py-0.5 bg-blue-200 dark:bg-blue-600 text-blue-700 dark:text-blue-200 rounded text-[10px] font-semibold">
+                                Aguardando Confirmação
                               </span>
                             )}
                           </div>
@@ -1387,7 +1596,7 @@ export default function ChatsPage() {
                                   <span>Entregador</span>
                                 </button>
                                 
-                                {!chatSelecionado.encerrado && (
+                                {!chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
                                   <button
                                     onClick={() => {
                                       finalizarNegociacao();
@@ -1423,7 +1632,48 @@ export default function ChatsPage() {
 
                 {/* Mensagens */}
                 <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
-                  {chatSelecionado.encerrado && (
+                  {/* Card de confirmação para oficina */}
+                  {chatSelecionado.aguardandoConfirmacao && 
+                   userData?.tipo === 'oficina' && 
+                   !chatSelecionado.confirmadoPor && 
+                   !chatSelecionado.negadoPor && (
+                    <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-400 dark:border-blue-500 rounded-xl p-6 mb-4 shadow-lg">
+                      <div className="flex items-start mb-4">
+                        <AlertCircle className="text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" size={28} />
+                        <div className="flex-1">
+                          <p className="font-bold text-lg text-blue-900 dark:text-blue-100 mb-2">
+                            Confirmação de Negócio
+                          </p>
+                          <p className="text-base text-blue-800 dark:text-blue-200">
+                            A <span className="font-bold">{chatSelecionado.autopecaNome}</span> informou que vocês fecharam negócio. Confirma?
+                          </p>
+                          {chatSelecionado.dataSolicitacaoConfirmacao && (
+                            <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
+                              Solicitado há {formatDistanceToNow(chatSelecionado.dataSolicitacaoConfirmacao, { addSuffix: true, locale: ptBR })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          onClick={confirmarNegocio}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
+                        >
+                          <CheckCircle size={20} className="mr-2" />
+                          Sim, Negócio Fechado
+                        </button>
+                        <button
+                          onClick={negarNegocio}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
+                        >
+                          <XCircle size={20} className="mr-2" />
+                          Não
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
                     <div className="bg-yellow-50 dark:bg-yellow-950/50 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 mb-4 rounded-r-lg">
                       <div className="flex items-center">
                         <AlertCircle className="text-yellow-600 dark:text-yellow-400 mr-3" size={24} />
@@ -1487,7 +1737,10 @@ export default function ChatsPage() {
 
                 {/* Input de Mensagem */}
                 <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-                  {chatSelecionado.encerrado ? (
+                  {/* Para autopeça: mostrar como encerrado se ela fechou
+                      Para oficina: mostrar como encerrado apenas se não estiver aguardando confirmação */}
+                  {((userData?.tipo === 'autopeca' && chatSelecionado.encerrado) ||
+                    (userData?.tipo === 'oficina' && chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao)) ? (
                     <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
                       <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-700 dark:text-gray-300" />
                       <p className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">Chat Encerrado</p>

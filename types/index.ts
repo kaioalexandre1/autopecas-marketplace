@@ -77,6 +77,7 @@ export interface Chat {
   marcaCarro: string;
   modeloCarro: string;
   anoCarro: string;
+  especificacaoMotor?: string;
   mensagens: Mensagem[];
   encerrado?: boolean;
   encerradoPor?: string;
@@ -90,6 +91,13 @@ export interface Chat {
   isSuporte?: boolean;
   motivo?: string;
   motivoLabel?: string;
+  // Confirmação de negócio
+  aguardandoConfirmacao?: boolean;
+  dataSolicitacaoConfirmacao?: Date;
+  confirmadoPor?: string;
+  dataConfirmacao?: Date;
+  negadoPor?: string;
+  dataNegacao?: Date;
 }
 
 export interface Mensagem {
