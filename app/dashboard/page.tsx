@@ -848,7 +848,7 @@ export default function DashboardPage() {
           marcaCarro: pedido.marcaCarro,
           modeloCarro: pedido.modeloCarro,
           anoCarro: pedido.anoCarro,
-          especificacaoMotor: pedido.especificacaoMotor,
+          especificacaoMotor: pedido.especificacaoMotor || null,
           mensagens: [],
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
