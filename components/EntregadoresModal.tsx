@@ -119,7 +119,7 @@ export default function EntregadoresModal({
     let mensagem = 'Bom dia, vim pelo grupão das autopeças e quero saber quanto você cobra de um frete';
     
     if (nomeAutopeca && enderecoAutopeca && nomeOficina && enderecoOficina) {
-      mensagem += ` saindo de ${nomeAutopeca} - ${enderecoAutopeca} para ${nomeOficina} - ${enderecoOficina} e qual prazo de coleta e entrega.`;
+      mensagem += ` saindo de ${nomeAutopeca} - *${enderecoAutopeca}* para ${nomeOficina} - *${enderecoOficina}* e qual prazo de coleta e entrega.`;
     } else {
       mensagem += ' e qual prazo de coleta e entrega.';
     }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones, Trophy } from 'lucide-react';
+import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones, Trophy, Truck } from 'lucide-react';
 import ModalSuporte from './ModalSuporte';
 import { useUnreadChats } from '@/hooks/useUnreadChats';
 
@@ -293,6 +293,7 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Pedidos ao Vivo', icon: Radio },
     { href: '/dashboard/chats', label: 'Chats', icon: MessageSquare },
     { href: '/dashboard/negocios-fechados', label: 'Negócios Fechados', icon: CheckCircle },
+    ...(userData?.tipo === 'entregador' ? [{ href: '/dashboard/configuracoes-frete', label: 'Configurações de Frete', icon: Truck }] : []),
     ...(userData?.role === 'admin' ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
