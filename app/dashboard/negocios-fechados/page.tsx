@@ -180,19 +180,17 @@ export default function NegociosFechadosPage() {
       
       <div className="relative z-10 p-3 sm:p-6">
       <div className="mb-6 sm:mb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 mb-6 border-2 border-green-500 dark:border-green-600">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-green-700 dark:text-green-400 flex items-center justify-center sm:justify-start uppercase">
-            <CheckCircle className="mr-3 sm:mr-4" size={36} />
-            NEGÓCIOS FECHADOS
-          </h1>
-        </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <div className="flex items-center text-gray-600 dark:text-white">
-            <Calendar size={16} className="mr-2" />
-            <span className="text-sm sm:text-base">
-              {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-            </span>
-          </div>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center uppercase mb-6" style={{ 
+          color: '#22c55e',
+          textShadow: '0 0 10px #22c55e, 0 0 20px #22c55e, 0 0 30px #22c55e'
+        }}>
+          <CheckCircle className="inline-block mr-3 sm:mr-4" size={36} style={{ 
+            color: '#22c55e',
+            filter: 'drop-shadow(0 0 8px #22c55e)'
+          }} />
+          NEGÓCIOS FECHADOS
+        </h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3 sm:gap-0">
 
           {/* Seletor de Período */}
           <div className="flex gap-2 w-full sm:w-auto">
