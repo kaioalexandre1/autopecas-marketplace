@@ -348,14 +348,19 @@ export default function ChatsPage() {
         const ultimaMsgAtual = chatAtualizado.mensagens[chatAtualizado.mensagens.length - 1];
         const ultimaMsgSelecionado = chatSelecionado.mensagens[chatSelecionado.mensagens.length - 1];
         
-        // Só atualizar se realmente houver mudanças (mensagens ou status)
+        // Só atualizar se realmente houver mudanças (mensagens, status ou aguardandoConfirmacao)
         if (chatAtualizado.mensagens.length !== chatSelecionado.mensagens.length ||
             ultimaMsgAtual?.id !== ultimaMsgSelecionado?.id ||
-            chatAtualizado.encerrado !== chatSelecionado.encerrado) {
+            chatAtualizado.encerrado !== chatSelecionado.encerrado ||
+            chatAtualizado.aguardandoConfirmacao !== chatSelecionado.aguardandoConfirmacao ||
+            chatAtualizado.confirmadoPor !== chatSelecionado.confirmadoPor ||
+            chatAtualizado.negadoPor !== chatSelecionado.negadoPor) {
           console.log('🔄 Atualizando dados do chat selecionado (sem mudar seleção):', {
             chatId: chatSelecionado.id,
             mensagensAntes: chatSelecionado.mensagens.length,
-            mensagensDepois: chatAtualizado.mensagens.length
+            mensagensDepois: chatAtualizado.mensagens.length,
+            aguardandoConfirmacaoAntes: chatSelecionado.aguardandoConfirmacao,
+            aguardandoConfirmacaoDepois: chatAtualizado.aguardandoConfirmacao,
           });
           // Atualizar apenas os dados, mantendo a mesma referência de seleção
           setChatSelecionado(chatAtualizado);
@@ -754,11 +759,14 @@ export default function ChatsPage() {
           encerradoPor: userData.id,
           encerradoEm: Timestamp.now(),
           updatedAt: Timestamp.now(),
+          // Garantir que confirmadoPor e negadoPor estejam undefined (não null)
+          confirmadoPor: null,
+          negadoPor: null,
         };
         
         console.log('💼 Autopeça fechando negócio - salvando:', updateData);
         await updateDoc(chatRef, updateData);
-        console.log('✅ Dados salvos com sucesso!');
+        console.log('✅ Dados salvos com sucesso! Aguardando confirmação da oficina...');
         
         toast.success('Negócio fechado! Aguardando confirmação da oficina.');
         return;
