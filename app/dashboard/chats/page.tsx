@@ -692,6 +692,21 @@ export default function ChatsPage() {
       return false;
     }
 
+  console.error(
+    '[DEBUG FRETE - INÍCIO]',
+    JSON.stringify(
+      {
+        userId: userData?.id,
+        userTipo: userData?.tipo,
+        autopecaId: chatSelecionado.autopecaId,
+        oficinaId: chatSelecionado.oficinaId,
+        pedidoId: chatSelecionado.pedidoId,
+      },
+      null,
+      2
+    )
+  );
+
     try {
       setCriandoPedidoFrete(true);
 
