@@ -64,8 +64,8 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Se for teste do Platinum, começar imediatamente. Se não, adicionar 1 dia
-    const startDate = new Date();
+    // Garantir start_date sempre no futuro (compensa diferenças de fuso/latência)
+    const startDate = new Date(Date.now() + 5 * 60 * 1000); // +5 minutos
     if (!isTestePlatinum) {
       startDate.setDate(startDate.getDate() + 1);
     }
