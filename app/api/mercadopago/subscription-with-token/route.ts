@@ -65,10 +65,7 @@ export async function POST(request: Request) {
     }
 
     // Garantir start_date sempre no futuro (compensa diferenças de fuso/latência)
-    const startDate = new Date(Date.now() + 5 * 60 * 1000); // +5 minutos
-    if (!isTestePlatinum) {
-      startDate.setDate(startDate.getDate() + 1);
-    }
+    const startDate = new Date(Date.now() + 5 * 60 * 1000); // +5 minutos para evitar data passada
 
     // Criar Preapproval com token do Secure Fields
     // IMPORTANTE: O Preapproval criado com token já inclui o cartão salvo
