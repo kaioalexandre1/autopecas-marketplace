@@ -101,7 +101,7 @@ service cloud.firestore {
                      resource.data.userId == request.auth.uid;
     }
 
-    // Pedidos de frete automáticos (criados por autopeças/oficinas e lidos por entregadores)
+    // Pedidos de frete automáticos
     match /pedidosFrete/{pedidoId} {
       allow create: if request.auth != null &&
         ((get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'autopeca' &&
@@ -110,7 +110,17 @@ service cloud.firestore {
           request.resource.data.oficinaId == request.auth.uid));
 
       allow read: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador';
+        (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador' ||
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'autopeca' &&
+            resource.data.autopecaId == request.auth.uid
+          ) ||
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'oficina' &&
+            resource.data.oficinaId == request.auth.uid
+          )
+        );
 
       allow update: if request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador' &&

@@ -196,7 +196,17 @@ service cloud.firestore {
       allow read: if request.auth != null &&
 
 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador';
+        (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador' ||
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'autopeca' &&
+            resource.data.autopecaId == request.auth.uid
+          ) ||
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'oficina' &&
+            resource.data.oficinaId == request.auth.uid
+          )
+        );
 
 
       allow update: if request.auth != null &&
