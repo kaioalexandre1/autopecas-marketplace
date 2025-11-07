@@ -77,3 +77,4 @@ Se o problema persistir, forneça:
 Enquanto isso, os usuários podem usar **PIX**, que está funcionando perfeitamente.
 
 
+

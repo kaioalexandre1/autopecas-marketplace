@@ -1005,19 +1005,25 @@ export default function CheckoutPage() {
                       
                       // Redirecionar para página de aprovação se houver init_point
                       const initPoint = data.init_point || data.sandbox_init_point;
-                      if (initPoint) {
-                        console.log('🔗 Redirecionando para aprovação da assinatura...');
+                      const statusAssinatura: string | undefined = data.status;
+
+                      if (statusAssinatura && (statusAssinatura === 'authorized' || statusAssinatura === 'approved')) {
+                        console.log('✅ Assinatura já autorizada pelo Mercado Pago. Iniciando verificação automática...');
+                        iniciarVerificacaoPagamento(subscriptionIdStr);
+                      } else if (initPoint) {
+                        console.log('🔗 Assinatura pendente de aprovação manual. Redirecionando para o Mercado Pago...');
                         setTimeout(() => {
                           window.location.href = initPoint;
-                        }, 2000);
+                        }, 1500);
                       } else {
-                        // Se não houver init_point, a assinatura pode já estar autorizada
-                        // Aguardar webhook processar
+                        console.log('ℹ️ Assinatura sem init_point. Iniciando verificação automática pelo webhook.');
                         iniciarVerificacaoPagamento(subscriptionIdStr);
                       }
                     } catch (error: any) {
                       console.error('Erro ao processar pagamento:', error);
                       toast.error(error?.message || 'Erro ao processar pagamento');
+                      setProcessandoSecureFields(false);
+                    } finally {
                       setProcessandoSecureFields(false);
                     }
                   }}
