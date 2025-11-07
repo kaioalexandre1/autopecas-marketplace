@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       reason: isTestePlatinum
         ? `Teste 30 dias grátis Platinum - Grupão das Autopeças`
         : `Assinatura ${plano} - Grupão das Autopeças`,
+      status: 'authorized',
       auto_recurring: {
         frequency: 1,
         frequency_type: 'months',
