@@ -22,6 +22,8 @@ export default function CheckoutPage() {
   const [linkPagamento, setLinkPagamento] = useState('');
   const [pixCopiaECola, setPixCopiaECola] = useState('');
   const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [linkAprovacaoAssinatura, setLinkAprovacaoAssinatura] = useState<string | null>(null);
+  const [subscriptionIdPendente, setSubscriptionIdPendente] = useState<string | null>(null);
   const [escutandoAtivacao, setEscutandoAtivacao] = useState(false);
   const [usandoSecureFields, setUsandoSecureFields] = useState(false); // Nova opção para Secure Fields
   const [processandoSecureFields, setProcessandoSecureFields] = useState(false);
@@ -108,12 +110,20 @@ export default function CheckoutPage() {
       return;
     }
     toastAprovadoRef.current = true;
+    setSubscriptionIdPendente(null);
+    setLinkAprovacaoAssinatura(null);
 
     // Mostrar toast apenas uma vez
     toast.success('🎉 Pagamento aprovado! Seu plano foi ativado!', { 
       duration: 3000,
       id: 'pagamento-aprovado-unico'
     });
+    try {
+      localStorage.removeItem('pendingSubscriptionId');
+      localStorage.removeItem('pendingSubscriptionPlano');
+    } catch (err) {
+      console.warn('Não foi possível limpar dados pendentes de assinatura:', err);
+    }
 
     // Fazer refresh forçado após 1 segundo para mostrar o plano atualizado
     setTimeout(() => {
@@ -127,6 +137,8 @@ export default function CheckoutPage() {
     if (!userData || escutandoAtivacao) return;
     setEscutandoAtivacao(true);
     setUsandoSecureFields(false); // Esconder formulário Secure Fields após iniciar verificação
+    setLinkAprovacaoAssinatura(null);
+    setSubscriptionIdPendente(paymentIdToCheck);
     toastAprovadoRef.current = false; // Resetar flag quando iniciar nova verificação
 
     let pollInterval: NodeJS.Timeout;
@@ -173,7 +185,7 @@ export default function CheckoutPage() {
       }
 
       try {
-        const resp = await fetch(`/api/mercadopago/status?paymentId=${paymentIdToCheck}&autopecaId=${userData.id}&plano=${plano}`);
+        const resp = await fetch(`/api/mercadopago/status?paymentId=${paymentIdToCheck}&autopecaId=${userData.id}&plano=${plano}&tipo=subscription`);
         if (!resp.ok) return;
 
         const data = await resp.json();
@@ -202,6 +214,26 @@ export default function CheckoutPage() {
     verificarPagamento();
     pollInterval = setInterval(verificarPagamento, 5000);
   };
+
+  // Retomar verificação quando usuário retorna do Mercado Pago
+  useEffect(() => {
+    if (!userData) return;
+
+    const checkoutStatus = searchParams?.get('checkout');
+    const pendingId = typeof window !== 'undefined' ? localStorage.getItem('pendingSubscriptionId') : null;
+    const pendingPlano = typeof window !== 'undefined' ? localStorage.getItem('pendingSubscriptionPlano') : null;
+
+    if (pendingId && pendingPlano === plano && !pagamentoAprovado && !escutandoAtivacao) {
+      console.log('[Checkout] 🔄 Retomando verificação da assinatura pendente (storage).');
+      iniciarVerificacaoPagamento(pendingId);
+    }
+
+    if (checkoutStatus === 'success') {
+      console.log('[Checkout] ✅ Retorno do Mercado Pago com checkout=success');
+      toast.success('Pagamento recebido! Estamos confirmando sua assinatura...');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userData, plano]);
 
   // Função para verificar pagamento de ofertas extras
   const iniciarVerificacaoOfertasExtras = (paymentIdToCheck: string) => {
@@ -916,6 +948,56 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               </div>
+            ) : linkAprovacaoAssinatura ? (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-gray-700 dark:to-gray-700 rounded-2xl p-6 border border-yellow-300 dark:border-yellow-500/50">
+                  <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-200 mb-2">
+                    Autorize sua assinatura no Mercado Pago
+                  </h3>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-100 mb-4">
+                    Abra o Mercado Pago em uma nova aba, confirme a autorização e depois clique em "Já autorizei" para continuarmos a verificação automática.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => {
+                        try {
+                          window.open(linkAprovacaoAssinatura, '_blank', 'noopener,noreferrer');
+                        } catch {
+                          window.location.href = linkAprovacaoAssinatura;
+                        }
+                      }}
+                      className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all"
+                    >
+                      Autorizar no Mercado Pago
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!subscriptionIdPendente) {
+                          toast.error('ID da assinatura não encontrado. Gere o pagamento novamente.');
+                          return;
+                        }
+                        toast.loading('Verificando assinatura...', { id: 'check-subscription' });
+                        iniciarVerificacaoPagamento(subscriptionIdPendente);
+                        toast.dismiss('check-subscription');
+                      }}
+                      className="flex-1 py-3 border border-blue-600 text-blue-600 rounded-lg font-bold hover:bg-blue-50 transition-all"
+                    >
+                      Já autorizei
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setLinkAprovacaoAssinatura(null);
+                    setUsandoSecureFields(true);
+                  }}
+                  className="text-sm text-gray-600 dark:text-gray-300 underline"
+                >
+                  Voltar para o cartão
+                </button>
+              </div>
             ) : usandoSecureFields && mpInstance ? (
               // Formulário Secure Fields (PCI)
               <div>
@@ -972,7 +1054,6 @@ export default function CheckoutPage() {
                         console.error('❌ Erro no pagamento:', data);
                         const errorMessage = data?.message || data?.details?.message || data?.error || 'Erro ao processar pagamento';
                         toast.error(errorMessage);
-                        setProcessandoSecureFields(false);
                         return;
                       }
                       
@@ -980,7 +1061,14 @@ export default function CheckoutPage() {
                       
                       // Criar registro de assinatura
                       const subscriptionIdStr = String(data.subscriptionId);
-                      
+                      setSubscriptionIdPendente(subscriptionIdStr);
+                      try {
+                        localStorage.setItem('pendingSubscriptionId', subscriptionIdStr);
+                        localStorage.setItem('pendingSubscriptionPlano', plano);
+                      } catch (err) {
+                        console.warn('Não foi possível armazenar dados pendentes da assinatura:', err);
+                      }
+
                       await addDoc(collection(db, 'pagamentos'), {
                         autopecaId: userData.id,
                         autopecaNome: userData.nome,
@@ -1010,19 +1098,19 @@ export default function CheckoutPage() {
                       if (statusAssinatura && (statusAssinatura === 'authorized' || statusAssinatura === 'approved')) {
                         console.log('✅ Assinatura já autorizada pelo Mercado Pago. Iniciando verificação automática...');
                         iniciarVerificacaoPagamento(subscriptionIdStr);
+                        setLinkAprovacaoAssinatura(null);
                       } else if (initPoint) {
-                        console.log('🔗 Assinatura pendente de aprovação manual. Redirecionando para o Mercado Pago...');
-                        setTimeout(() => {
-                          window.location.href = initPoint;
-                        }, 1500);
+                        console.log('🔗 Assinatura pendente de aprovação manual. Exibindo link para o Mercado Pago...');
+                        setLinkAprovacaoAssinatura(initPoint);
+                        toast('Clique em "Autorizar no Mercado Pago" para finalizar.', { icon: 'ℹ️', duration: 5000 });
                       } else {
                         console.log('ℹ️ Assinatura sem init_point. Iniciando verificação automática pelo webhook.');
                         iniciarVerificacaoPagamento(subscriptionIdStr);
+                        setLinkAprovacaoAssinatura(null);
                       }
                     } catch (error: any) {
                       console.error('Erro ao processar pagamento:', error);
                       toast.error(error?.message || 'Erro ao processar pagamento');
-                      setProcessandoSecureFields(false);
                     } finally {
                       setProcessandoSecureFields(false);
                     }

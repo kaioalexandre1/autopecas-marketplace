@@ -11,18 +11,105 @@ export async function GET(request: Request) {
     const paymentId = searchParams.get('paymentId');
     const autopecaId = searchParams.get('autopecaId');
     const plano = searchParams.get('plano');
-    const tipo = searchParams.get('tipo'); // 'ofertas_extras' ou null
+    const tipo = searchParams.get('tipo'); // 'ofertas_extras' | 'subscription' | null
 
     if (!paymentId || !autopecaId) {
       return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 });
     }
 
-    // Se for ofertas extras, não precisa do parâmetro plano
+    const accessToken = process.env.MP_ACCESS_TOKEN || '';
+    if (!accessToken) {
+      return NextResponse.json({ ok: false, error: 'missing_access_token' }, { status: 500 });
+    }
+
+  // Se for consulta de assinatura (preapproval)
+    if (tipo === 'subscription') {
+      if (!plano) {
+        return NextResponse.json({ ok: false, error: 'missing_plan' }, { status: 400 });
+      }
+
+      const preapprovalResp = await fetch(`https://api.mercadopago.com/preapproval/${paymentId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      });
+
+      if (!preapprovalResp.ok) {
+        const errorText = await preapprovalResp.text();
+        console.error(`[Status API] Erro ao buscar preapproval: ${preapprovalResp.status} - ${errorText}`);
+        return NextResponse.json({ ok: false, error: 'mp_preapproval_fetch_failed' }, { status: preapprovalResp.status });
+      }
+
+      const preapproval = await preapprovalResp.json();
+      const status: string = preapproval?.status || 'pending';
+      console.log(`[Status API] Preapproval ${paymentId}: status=${status}`);
+
+      if (status === 'authorized' || status === 'approved') {
+        const userDoc = await adminDb.collection('users').doc(autopecaId).get();
+        const userData = userDoc.data();
+
+        if (!userData?.assinaturaAtiva || userData?.plano !== plano) {
+          const mesAtual = new Date().toISOString().slice(0, 7);
+          const dataFim = new Date();
+          dataFim.setMonth(dataFim.getMonth() + 1);
+
+          await adminDb.collection('users').doc(autopecaId).update({
+            plano,
+            assinaturaAtiva: true,
+            ofertasUsadas: 0,
+            mesReferenciaOfertas: mesAtual,
+            dataProximoPagamento: Timestamp.fromDate(dataFim),
+          });
+
+          console.log(`[Status API] ✅ Plano ${plano} ativado via preapproval`);
+        } else {
+          console.log(`[Status API] Plano ${plano} já está ativo para o usuário ${autopecaId}`);
+        }
+
+        const pagamentosSnap = await adminDb
+          .collection('pagamentos')
+          .where('mercadoPagoId', '==', String(paymentId))
+          .limit(1)
+          .get();
+
+        if (!pagamentosSnap.empty) {
+          await adminDb.collection('pagamentos').doc(pagamentosSnap.docs[0].id).update({
+            statusPagamento: 'aprovado',
+            updatedAt: Timestamp.now(),
+          });
+        }
+
+        return NextResponse.json({
+          ok: true,
+          status: 'approved',
+          activated: true,
+          preapproval,
+        });
+      }
+
+      if (status === 'paused' || status === 'cancelled' || status === 'inactive') {
+        return NextResponse.json({
+          ok: true,
+          status,
+          activated: false,
+        });
+      }
+
+      return NextResponse.json({
+        ok: true,
+        status,
+        activated: false,
+      });
+    }
+
+  // Se for ofertas extras, não precisa do parâmetro plano
     if (tipo === 'ofertas_extras') {
       // Processar ofertas extras
       const resp = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
         headers: {
-          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN || ''}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         cache: 'no-store',
@@ -97,11 +184,6 @@ export async function GET(request: Request) {
     // Se não for ofertas extras, precisa do plano
     if (!plano) {
       return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 });
-    }
-
-    const accessToken = process.env.MP_ACCESS_TOKEN || '';
-    if (!accessToken) {
-      return NextResponse.json({ ok: false, error: 'missing_access_token' }, { status: 500 });
     }
 
     console.log(`[Status API] Verificando pagamento ${paymentId} para usuário ${autopecaId}, plano ${plano}`);
