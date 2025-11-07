@@ -232,3 +232,36 @@ Depois de completar estes passos, seu sistema de limitação de 3 sessões simul
 
 Se tiver qualquer dúvida durante o processo, me avise que eu te ajudo! 😊
 
+---
+
+## 🚚 (Novo) Registrar Corridas de Entregadores
+
+Para que os entregadores registrem corridas manualmente, precisamos de uma pequena configuração extra no Firestore.
+
+### 🔒 Regras de segurança para `fretesRealizados`
+
+Adicione este bloco junto com as suas regras:
+
+```javascript
+    // Corridas registradas pelos entregadores
+    match /fretesRealizados/{freteId} {
+      allow create: if request.auth != null && request.resource.data.entregadorId == request.auth.uid;
+      allow read: if request.auth != null && resource.data.entregadorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+```
+
+### 🧮 Índice necessário
+
+A tela de histórico usa uma consulta com filtro + ordenação. Crie um índice composto com os campos abaixo:
+
+```
+Coleção: fretesRealizados
+Campos:
+  • entregadorId (Ascendente ↑)
+  • data (Descendente ↓)
+Escopo: Collection
+```
+
+Depois que o índice ficar com status **Ativado**, os registros começarão a aparecer normalmente para cada entregador.
+

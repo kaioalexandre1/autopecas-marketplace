@@ -172,6 +172,16 @@ service cloud.firestore {
 
     }
 
+    match /fretesRealizados/{freteId} {
+
+      allow create: if request.auth != null && request.resource.data.entregadorId == request.auth.uid;
+
+      allow read: if request.auth != null && resource.data.entregadorId == request.auth.uid;
+
+      allow update, delete: if false;
+
+    }
+
   }
 
 }

@@ -189,3 +189,35 @@ Se encontrar algum problema:
 
 Depois de completar estes passos, seu sistema de limitação de 3 sessões simultâneas estará funcionando perfeitamente!
 
+---
+
+## 🚚 (NEW) Manual freight logging for couriers
+
+The new delivery log requires one extra rule and an index:
+
+### Security rule
+
+Add this block together with your existing rules:
+
+```javascript
+    match /fretesRealizados/{freteId} {
+      allow create: if request.auth != null && request.resource.data.entregadorId == request.auth.uid;
+      allow read: if request.auth != null && resource.data.entregadorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+```
+
+### Composite index
+
+Create a new index with the following configuration:
+
+```
+Collection ID: fretesRealizados
+Fields:
+  • entregadorId (Ascending ↑)
+  • data (Descending ↓)
+Scope: Collection
+```
+
+Once this index is enabled, the earnings list for each courier will load correctly.
+

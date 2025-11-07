@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, updateDoc, doc, getDoc, addDoc, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Truck, DollarSign, Clock, TrendingUp, Save } from 'lucide-react';
@@ -23,21 +23,6 @@ export default function ConfiguracoesFretePage() {
   // Estatísticas
   const [totalFretes, setTotalFretes] = useState(0);
   const [totalLucro, setTotalLucro] = useState(0);
-  const [historicoFretes, setHistoricoFretes] = useState<Array<{
-    id: string;
-    valor: number;
-    origem?: string;
-    destino?: string;
-    observacoes?: string;
-    data: Date;
-  }>>([]);
-
-  // Novo frete
-  const [novoFreteValor, setNovoFreteValor] = useState('');
-  const [novoFreteOrigem, setNovoFreteOrigem] = useState('');
-  const [novoFreteDestino, setNovoFreteDestino] = useState('');
-  const [novoFreteObservacoes, setNovoFreteObservacoes] = useState('');
-  const [registrandoFrete, setRegistrandoFrete] = useState(false);
 
   useEffect(() => {
     if (!userData) {
@@ -51,44 +36,6 @@ export default function ConfiguracoesFretePage() {
     }
 
     carregarDados();
-
-    let unsubscribeFretes: (() => void) | undefined;
-
-    if (userData?.id) {
-      const fretesQuery = query(
-        collection(db, 'fretesRealizados'),
-        where('entregadorId', '==', userData.id),
-        orderBy('data', 'desc')
-      );
-
-      unsubscribeFretes = onSnapshot(fretesQuery, (snapshot) => {
-        let total = 0;
-        const lista: Array<{ id: string; valor: number; origem?: string; destino?: string; observacoes?: string; data: Date; }> = [];
-
-        snapshot.forEach((freteDoc) => {
-          const data = freteDoc.data();
-          const valor = data.valor || 0;
-          total += valor;
-
-          lista.push({
-            id: freteDoc.id,
-            valor,
-            origem: data.origem || '',
-            destino: data.destino || '',
-            observacoes: data.observacoes || '',
-            data: data.data?.toDate ? data.data.toDate() : new Date(data.data || Date.now()),
-          });
-        });
-
-        setHistoricoFretes(lista);
-        setTotalFretes(lista.length);
-        setTotalLucro(total);
-      });
-    }
-
-    return () => {
-      if (unsubscribeFretes) unsubscribeFretes();
-    };
   }, [userData, router]);
 
   const carregarDados = async () => {
@@ -105,7 +52,25 @@ export default function ConfiguracoesFretePage() {
         setPrazoEntrega(data.prazoEntrega || '');
       }
 
-      // Carregar estatísticas de fretes aceitos
+      // Carregar estatísticas de fretes aceitos (ofertas confirmadas)
+      const ofertasQuery = query(
+        collection(db, 'ofertasFrete'),
+        where('entregadorId', '==', userData.id),
+        where('status', '==', 'aceita')
+      );
+
+      const snapshot = await getDocs(ofertasQuery);
+      let total = 0;
+      let lucro = 0;
+
+      snapshot.forEach((registro) => {
+        const data = registro.data();
+        total += 1;
+        lucro += data.valorFrete || 0;
+      });
+
+      setTotalFretes(total);
+      setTotalLucro(lucro);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar configurações');
@@ -143,40 +108,6 @@ export default function ConfiguracoesFretePage() {
       toast.error('Erro ao salvar configurações');
     } finally {
       setSalvando(false);
-    }
-  };
-
-  const registrarFrete = async () => {
-    if (!userData) return;
-
-    const valor = parseFloat(novoFreteValor.replace(',', '.'));
-    if (isNaN(valor) || valor <= 0) {
-      toast.error('Informe um valor válido para o frete');
-      return;
-    }
-
-    setRegistrandoFrete(true);
-    try {
-      await addDoc(collection(db, 'fretesRealizados'), {
-        entregadorId: userData.id,
-        valor: valor,
-        origem: novoFreteOrigem.trim(),
-        destino: novoFreteDestino.trim(),
-        observacoes: novoFreteObservacoes.trim(),
-        data: Timestamp.now(),
-        createdAt: Timestamp.now(),
-      });
-
-      toast.success('Corrida registrada com sucesso!');
-      setNovoFreteValor('');
-      setNovoFreteOrigem('');
-      setNovoFreteDestino('');
-      setNovoFreteObservacoes('');
-    } catch (error) {
-      console.error('Erro ao registrar frete:', error);
-      toast.error('Erro ao registrar corrida');
-    } finally {
-      setRegistrandoFrete(false);
     }
   };
 
