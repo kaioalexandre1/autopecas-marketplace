@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, getDoc, addDoc, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Truck, DollarSign, Clock, TrendingUp, Save } from 'lucide-react';
@@ -23,6 +23,21 @@ export default function ConfiguracoesFretePage() {
   // Estatísticas
   const [totalFretes, setTotalFretes] = useState(0);
   const [totalLucro, setTotalLucro] = useState(0);
+  const [historicoFretes, setHistoricoFretes] = useState<Array<{
+    id: string;
+    valor: number;
+    origem?: string;
+    destino?: string;
+    observacoes?: string;
+    data: Date;
+  }>>([]);
+
+  // Novo frete
+  const [novoFreteValor, setNovoFreteValor] = useState('');
+  const [novoFreteOrigem, setNovoFreteOrigem] = useState('');
+  const [novoFreteDestino, setNovoFreteDestino] = useState('');
+  const [novoFreteObservacoes, setNovoFreteObservacoes] = useState('');
+  const [registrandoFrete, setRegistrandoFrete] = useState(false);
 
   useEffect(() => {
     if (!userData) {
@@ -36,6 +51,44 @@ export default function ConfiguracoesFretePage() {
     }
 
     carregarDados();
+
+    let unsubscribeFretes: (() => void) | undefined;
+
+    if (userData?.id) {
+      const fretesQuery = query(
+        collection(db, 'fretesRealizados'),
+        where('entregadorId', '==', userData.id),
+        orderBy('data', 'desc')
+      );
+
+      unsubscribeFretes = onSnapshot(fretesQuery, (snapshot) => {
+        let total = 0;
+        const lista: Array<{ id: string; valor: number; origem?: string; destino?: string; observacoes?: string; data: Date; }> = [];
+
+        snapshot.forEach((freteDoc) => {
+          const data = freteDoc.data();
+          const valor = data.valor || 0;
+          total += valor;
+
+          lista.push({
+            id: freteDoc.id,
+            valor,
+            origem: data.origem || '',
+            destino: data.destino || '',
+            observacoes: data.observacoes || '',
+            data: data.data?.toDate ? data.data.toDate() : new Date(data.data || Date.now()),
+          });
+        });
+
+        setHistoricoFretes(lista);
+        setTotalFretes(lista.length);
+        setTotalLucro(total);
+      });
+    }
+
+    return () => {
+      if (unsubscribeFretes) unsubscribeFretes();
+    };
   }, [userData, router]);
 
   const carregarDados = async () => {
@@ -53,24 +106,6 @@ export default function ConfiguracoesFretePage() {
       }
 
       // Carregar estatísticas de fretes aceitos
-      const ofertasQuery = query(
-        collection(db, 'ofertasFrete'),
-        where('entregadorId', '==', userData.id),
-        where('status', '==', 'aceita')
-      );
-
-      const snapshot = await getDocs(ofertasQuery);
-      let total = 0;
-      let lucro = 0;
-
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        total += 1;
-        lucro += data.valorFrete || 0;
-      });
-
-      setTotalFretes(total);
-      setTotalLucro(lucro);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar configurações');
@@ -108,6 +143,40 @@ export default function ConfiguracoesFretePage() {
       toast.error('Erro ao salvar configurações');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const registrarFrete = async () => {
+    if (!userData) return;
+
+    const valor = parseFloat(novoFreteValor.replace(',', '.'));
+    if (isNaN(valor) || valor <= 0) {
+      toast.error('Informe um valor válido para o frete');
+      return;
+    }
+
+    setRegistrandoFrete(true);
+    try {
+      await addDoc(collection(db, 'fretesRealizados'), {
+        entregadorId: userData.id,
+        valor: valor,
+        origem: novoFreteOrigem.trim(),
+        destino: novoFreteDestino.trim(),
+        observacoes: novoFreteObservacoes.trim(),
+        data: Timestamp.now(),
+        createdAt: Timestamp.now(),
+      });
+
+      toast.success('Corrida registrada com sucesso!');
+      setNovoFreteValor('');
+      setNovoFreteOrigem('');
+      setNovoFreteDestino('');
+      setNovoFreteObservacoes('');
+    } catch (error) {
+      console.error('Erro ao registrar frete:', error);
+      toast.error('Erro ao registrar corrida');
+    } finally {
+      setRegistrandoFrete(false);
     }
   };
 
@@ -275,6 +344,123 @@ export default function ConfiguracoesFretePage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Registrar corrida */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 border-2 border-blue-400 mb-8">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6 flex items-center">
+              <Truck className="mr-2 text-blue-600" size={28} />
+              Registrar Corrida Concluída
+            </h2>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Valor recebido (R$) *
+                </label>
+                <input
+                  type="text"
+                  value={novoFreteValor}
+                  onChange={(e) => setNovoFreteValor(e.target.value.replace(/[^\\d,]/g, ''))}
+                  placeholder="Ex: 25,00"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Origem (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={novoFreteOrigem}
+                  onChange={(e) => setNovoFreteOrigem(e.target.value)}
+                  placeholder="Ex: Autopeças X"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Destino (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={novoFreteDestino}
+                  onChange={(e) => setNovoFreteDestino(e.target.value)}
+                  placeholder="Ex: Oficina Y"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Observações (opcional)
+                </label>
+                <textarea
+                  value={novoFreteObservacoes}
+                  onChange={(e) => setNovoFreteObservacoes(e.target.value)}
+                  placeholder="Ex: Pagamento em dinheiro, entrega urgente, etc."
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white min-h-[100px]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={registrarFrete}
+                disabled={registrandoFrete}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-lg shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {registrandoFrete ? 'Registrando...' : 'Registrar Corrida'}
+              </button>
+            </div>
+          </div>
+
+          {/* Histórico */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 border-2 border-blue-200">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Histórico de Corridas</h2>
+
+            {historicoFretes.length === 0 ? (
+              <div className="text-center py-10 text-gray-500 dark:text-gray-400 font-semibold">
+                Você ainda não registrou nenhuma corrida.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-blue-50 dark:bg-blue-900/40 text-left text-xs sm:text-sm uppercase tracking-wide text-blue-900 dark:text-blue-200">
+                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Data</th>
+                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Origem</th>
+                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Destino</th>
+                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Valor</th>
+                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Observações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historicoFretes.map((frete) => (
+                      <tr key={frete.id} className="border-b border-gray-100 dark:border-gray-700 text-sm">
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          {frete.data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                          {frete.origem || '--'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                          {frete.destino || '--'}
+                        </td>
+                        <td className="px-4 py-3 text-green-600 dark:text-green-300 font-bold">
+                          {formatarPreco(frete.valor)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                          {frete.observacoes || '--'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
