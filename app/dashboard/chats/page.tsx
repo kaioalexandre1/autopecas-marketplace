@@ -723,21 +723,28 @@ export default function ChatsPage() {
       const comporEndereco = (dados: any) =>
         [dados.endereco, dados.numero, dados.bairro, dados.cidade].filter(Boolean).join(', ');
 
-      console.error('[DEBUG FRETE]', {
-        userId: userData.id,
-        userTipo: userData.tipo,
-        autopecaId: chatSelecionado.autopecaId,
-        oficinaId: chatSelecionado.oficinaId,
-        payload: {
-          chatId: chatSelecionado.id,
-          pedidoId: chatSelecionado.pedidoId || '',
-          autopecaId: chatSelecionado.autopecaId,
-          oficinaId: chatSelecionado.oficinaId,
-          status: 'aberto',
-          solicitadoPor: userData.id,
-          solicitadoTipo: userData.tipo,
-        },
-      });
+      console.error(
+        '[DEBUG FRETE]',
+        JSON.stringify(
+          {
+            userId: userData.id,
+            userTipo: userData.tipo,
+            autopecaId: chatSelecionado.autopecaId,
+            oficinaId: chatSelecionado.oficinaId,
+            payload: {
+              chatId: chatSelecionado.id,
+              pedidoId: chatSelecionado.pedidoId || '',
+              autopecaId: chatSelecionado.autopecaId,
+              oficinaId: chatSelecionado.oficinaId,
+              status: 'aberto',
+              solicitadoPor: userData.id,
+              solicitadoTipo: userData.tipo,
+            },
+          },
+          null,
+          2
+        )
+      );
 
       await addDoc(collection(db, 'pedidosFrete'), {
         chatId: chatSelecionado.id,
