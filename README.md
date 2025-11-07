@@ -2,6 +2,8 @@
 
 Marketplace de autopeças em tempo real conectando oficinas, lojas de autopeças e entregadores em Maringá-PR.
 
+> Atualização rápida em 07/11/2025 para disparar novo deploy na Vercel.
+
 ## 🎯 Funcionalidades
 
 ### Para Oficinas
