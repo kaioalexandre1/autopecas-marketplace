@@ -291,9 +291,15 @@ export default function Navbar() {
 
   const navItems = [
     { href: '/dashboard', label: 'Pedidos ao Vivo', icon: Radio },
-    { href: '/dashboard/chats', label: 'Chats', icon: MessageSquare },
-    { href: '/dashboard/negocios-fechados', label: 'Negócios Fechados', icon: CheckCircle },
-    ...(userData?.tipo === 'entregador' ? [{ href: '/dashboard/configuracoes-frete', label: 'Configurações de Frete', icon: Truck }] : []),
+    ...(userData?.tipo !== 'entregador'
+      ? [
+          { href: '/dashboard/chats', label: 'Chats', icon: MessageSquare },
+          { href: '/dashboard/negocios-fechados', label: 'Negócios Fechados', icon: CheckCircle },
+        ]
+      : []),
+    ...(userData?.tipo === 'entregador'
+      ? [{ href: '/dashboard/configuracoes-frete', label: 'Configurações de Frete', icon: Truck }]
+      : []),
     ...(userData?.role === 'admin' ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
@@ -795,7 +801,7 @@ export default function Navbar() {
             </Link>
             
             {/* Botão de Suporte (para autopeças e oficinas) */}
-            {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
+            {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina' || userData?.tipo === 'entregador') && (
               <button
                 onClick={() => setModalSuporteAberto(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-white/30 text-white hover:bg-white/20 transition-all text-xl"
@@ -828,15 +834,17 @@ export default function Navbar() {
 
           {/* Botões Mobile - Chat e Pedidos */}
           <div className="lg:hidden flex items-center gap-2">
-            {/* Botão Chat */}
-            <Link
-              href="/dashboard/chats"
-              className="p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all"
-              style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
-              title="Chats"
-            >
-              💬
-            </Link>
+            {/* Botão Chat (não exibido para entregadores) */}
+            {userData?.tipo !== 'entregador' && (
+              <Link
+                href="/dashboard/chats"
+                className="p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all"
+                style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
+                title="Chats"
+              >
+                💬
+              </Link>
+            )}
 
             {/* Botão Pedidos */}
             <Link
@@ -954,7 +962,7 @@ export default function Navbar() {
               </div>
 
               {/* Botão de Suporte Mobile (para autopeças e oficinas) */}
-              {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
+              {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina' || userData?.tipo === 'entregador') && (
                 <button
                   onClick={() => {
                     setModalSuporteAberto(true);
