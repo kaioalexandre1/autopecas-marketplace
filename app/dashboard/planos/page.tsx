@@ -16,6 +16,7 @@ export default function PlanosPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState<PlanoAssinatura | null>(null);
+  const [cancelandoPlano, setCancelandoPlano] = useState(false);
 
   // Redirecionar se não for autopeça
   useEffect(() => {
@@ -164,6 +165,60 @@ export default function PlanosPage() {
     const isTestePlatinum = plano === 'platinum' && podeTestarPlatinum();
     setPlanoSelecionado(plano);
     router.push(`/dashboard/checkout?plano=${plano}${isTestePlatinum ? '&teste=1' : ''}`);
+  };
+
+  const handleCancelarPlano = async () => {
+    if (!userData || userData.plano === 'basico') return;
+    const confirmou = window.confirm(
+      'Tem certeza que deseja cancelar o plano atual e voltar para o Plano Básico? Você perderá os benefícios premium imediatamente.'
+    );
+    if (!confirmou) return;
+
+    setCancelandoPlano(true);
+    try {
+      if (userData.subscriptionId) {
+        const resp = await fetch('/api/mercadopago/subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'cancel',
+            subscriptionId: userData.subscriptionId,
+            autopecaId: userData.id,
+          }),
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || !data?.ok) {
+          const errorMessage =
+            data?.details?.message ||
+            data?.details?.cause?.[0]?.description ||
+            data?.message ||
+            data?.error ||
+            'Erro ao cancelar assinatura.';
+          throw new Error(errorMessage);
+        }
+      } else {
+        const mesAtual = new Date().toISOString().slice(0, 7);
+        await updateDoc(doc(db, 'users', userData.id), {
+          plano: 'basico',
+          assinaturaAtiva: true,
+          ofertasUsadas: 0,
+          mesReferenciaOfertas: mesAtual,
+          dataProximoPagamento: null,
+          subscriptionId: null,
+        });
+      }
+
+      toast.success('Plano cancelado com sucesso! Você voltou para o Plano Básico.');
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    } catch (error: any) {
+      console.error('Erro ao cancelar plano:', error);
+      toast.error(error?.message || 'Não foi possível cancelar o plano. Tente novamente.');
+    } finally {
+      setCancelandoPlano(false);
+    }
   };
 
   // Função para comprar ofertas extras - redireciona para checkout
@@ -718,6 +773,37 @@ export default function PlanosPage() {
                 )}
               </div>
             </div>
+
+            {userData.plano !== 'basico' && (
+              <div className="w-full max-w-3xl">
+                <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-6 backdrop-blur-sm">
+                  <h3 className="text-lg font-bold text-red-200 mb-2 flex items-center gap-2">
+                    <AlertTriangle size={20} />
+                    Cancelar plano atual
+                  </h3>
+                  <p className="text-sm text-red-100 mb-4">
+                    Ao cancelar, você voltará imediatamente para o Plano Básico (grátis) e perderá os benefícios do plano atual.
+                    Se estiver em uma assinatura automática, a cobrança será interrompida no Mercado Pago.
+                  </p>
+                  <button
+                    onClick={handleCancelarPlano}
+                    disabled={cancelandoPlano}
+                    className="w-full md:w-auto px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {cancelandoPlano ? (
+                      <>
+                        <Loader size={18} className="animate-spin" />
+                        Cancelando...
+                      </>
+                    ) : (
+                      <>
+                        Cancelar plano e voltar para o Básico
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
