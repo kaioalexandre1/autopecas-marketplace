@@ -234,34 +234,54 @@ Se tiver qualquer dúvida durante o processo, me avise que eu te ajudo! 😊
 
 ---
 
-## 🚚 (Novo) Registrar Corridas de Entregadores
+## 🚚 (Novo) Pedidos de Frete Automáticos
 
-Para que os entregadores registrem corridas manualmente, precisamos de uma pequena configuração extra no Firestore.
+Para que oficinas e autopeças solicitem fretes automáticos e os entregadores enxerguem esses pedidos, faça esta configuração extra no Firestore.
 
-### 🔒 Regras de segurança para `fretesRealizados`
+### 🔒 Regras de segurança para `pedidosFrete`
 
 Adicione este bloco junto com as suas regras:
 
 ```javascript
-    // Corridas registradas pelos entregadores
-    match /fretesRealizados/{freteId} {
-      allow create: if request.auth != null && request.resource.data.entregadorId == request.auth.uid;
-      allow read: if request.auth != null && resource.data.entregadorId == request.auth.uid;
-      allow update, delete: if false;
+    match /pedidosFrete/{pedidoId} {
+      allow create: if request.auth != null &&
+        ((get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'autopeca' &&
+          request.resource.data.autopecaId == request.auth.uid) ||
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'oficina' &&
+          request.resource.data.oficinaId == request.auth.uid));
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador';
+      allow update: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador' &&
+        resource.data.status == 'aberto' &&
+        request.resource.data.status == 'aceito' &&
+        request.resource.data.aceitoPor == request.auth.uid;
+      allow delete: if false;
     }
 ```
 
 ### 🧮 Índice necessário
 
-A tela de histórico usa uma consulta com filtro + ordenação. Crie um índice composto com os campos abaixo:
+A tela dos entregadores usa filtragem por status. Crie um índice composto com os campos abaixo:
 
 ```
-Coleção: fretesRealizados
+Coleção: pedidosFrete
 Campos:
-  • entregadorId (Ascendente ↑)
-  • data (Descendente ↓)
+  • status (Ascendente ↑)
+  • criadoEm (Descendente ↓)
 Escopo: Collection
 ```
 
-Depois que o índice ficar com status **Ativado**, os registros começarão a aparecer normalmente para cada entregador.
+Para evitar duplicidade ao criar pedidos automáticos pelo chat, crie também:
 
+```
+Coleção: pedidosFrete
+Campos:
+  • chatId (Ascendente ↑)
+  • status (Ascendente ↓)
+Escopo: Collection
+```
+
+Repita para acompanhar pedidos aceitos pelo entregador (opcional, mas recomendado):
+
+```

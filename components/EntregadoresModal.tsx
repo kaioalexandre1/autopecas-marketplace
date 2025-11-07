@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Entregador } from '@/types';
-import { Truck, Phone, X, MessageCircle } from 'lucide-react';
+import { Truck, Phone, X, MessageCircle, Package } from 'lucide-react';
 import { formatarPreco, formatarTelefone } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -16,6 +16,8 @@ interface EntregadoresModalProps {
   enderecoAutopeca?: string;
   nomeOficina?: string;
   enderecoOficina?: string;
+  onCriarPedidoFrete?: () => Promise<boolean>;
+  carregandoPedidoFrete?: boolean;
 }
 
 export default function EntregadoresModal({ 
@@ -25,7 +27,9 @@ export default function EntregadoresModal({
   nomeAutopeca,
   enderecoAutopeca,
   nomeOficina,
-  enderecoOficina
+  enderecoOficina,
+  onCriarPedidoFrete,
+  carregandoPedidoFrete
 }: EntregadoresModalProps) {
   const [entregadores, setEntregadores] = useState<Entregador[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,6 +154,26 @@ export default function EntregadoresModal({
             <X size={24} />
           </button>
         </div>
+
+        {onCriarPedidoFrete && (
+          <div className="px-6 pt-6">
+            <button
+              onClick={async () => {
+                if (onCriarPedidoFrete) {
+                  await onCriarPedidoFrete();
+                }
+              }}
+              disabled={carregandoPedidoFrete}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+            >
+              <Package size={20} />
+              {carregandoPedidoFrete ? 'Gerando pedido automático...' : 'Chamar frete automaticamente'}
+            </button>
+            <p className="text-xs text-purple-700 dark:text-purple-200 mt-2">
+              Um card será criado para os entregadores com os endereços de coleta e entrega.
+            </p>
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">

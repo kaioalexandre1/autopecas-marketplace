@@ -75,11 +75,24 @@ service cloud.firestore {
       allow update: if request.auth != null && resource.data.userId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
-
-    match /fretesRealizados/{freteId} {
-      allow create: if request.auth != null && request.resource.data.entregadorId == request.auth.uid;
-      allow read: if request.auth != null && resource.data.entregadorId == request.auth.uid;
-      allow update, delete: if false;
+    // Pedidos de frete automáticos
+    match /pedidosFrete/{pedidoId} {
+      allow create: if request.auth != null &&
+        ((get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'autopeca' &&
+          request.resource.data.autopecaId == request.auth.uid) ||
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'oficina' &&
+          request.resource.data.oficinaId == request.auth.uid));
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador';
+      allow update: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador' &&
+        resource.data.status == 'aberto' &&
+        request.resource.data.status == 'aceito' &&
+        request.resource.data.aceitoPor == request.auth.uid &&
+        request.resource.data.autopecaId == resource.data.autopecaId &&
+        request.resource.data.oficinaId == resource.data.oficinaId &&
+        request.resource.data.chatId == resource.data.chatId;
+      allow delete: if false;
     }
   }
 }

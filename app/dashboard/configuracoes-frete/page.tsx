@@ -14,13 +14,11 @@ export default function ConfiguracoesFretePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  
-  // Configurações
+
   const [valorFrete, setValorFrete] = useState<string>('');
   const [prazoColeta, setPrazoColeta] = useState<string>('');
   const [prazoEntrega, setPrazoEntrega] = useState<string>('');
-  
-  // Estatísticas
+
   const [totalFretes, setTotalFretes] = useState(0);
   const [totalLucro, setTotalLucro] = useState(0);
 
@@ -43,7 +41,6 @@ export default function ConfiguracoesFretePage() {
 
     setLoading(true);
     try {
-      // Carregar configurações do usuário
       const userDoc = await getDoc(doc(db, 'users', userData.id));
       if (userDoc.exists()) {
         const data = userDoc.data();
@@ -52,7 +49,6 @@ export default function ConfiguracoesFretePage() {
         setPrazoEntrega(data.prazoEntrega || '');
       }
 
-      // Carregar estatísticas de fretes aceitos (ofertas confirmadas)
       const ofertasQuery = query(
         collection(db, 'ofertasFrete'),
         where('entregadorId', '==', userData.id),
@@ -121,7 +117,6 @@ export default function ConfiguracoesFretePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 relative">
-      {/* Background decorativo */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-20 left-20 text-6xl opacity-20 animate-bounce">🚚</div>
         <div className="absolute top-40 right-32 text-5xl opacity-15 animate-bounce" style={{ animationDelay: '0.5s' }}>📦</div>
@@ -130,7 +125,6 @@ export default function ConfiguracoesFretePage() {
 
       <div className="relative z-10 container mx-auto px-4 py-8 sm:py-12">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="text-center mb-8 sm:mb-12">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-500 rounded-full mb-4 shadow-lg">
               <Truck className="text-white" size={40} />
@@ -144,7 +138,6 @@ export default function ConfiguracoesFretePage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 mb-8">
-            {/* Card de Configurações */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 border-2 border-yellow-400">
               <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6 flex items-center">
                 <DollarSign className="mr-2 text-yellow-600" size={28} />
@@ -152,7 +145,6 @@ export default function ConfiguracoesFretePage() {
               </h2>
 
               <div className="space-y-6">
-                {/* Valor do Frete */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                     Valor do Frete (Dentro da Cidade) *
@@ -173,7 +165,6 @@ export default function ConfiguracoesFretePage() {
                   <p className="text-xs text-gray-500 mt-1">Digite apenas números. Ex: 15 ou 15,50</p>
                 </div>
 
-                {/* Prazo de Coleta */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                     Prazo de Coleta *
@@ -187,7 +178,6 @@ export default function ConfiguracoesFretePage() {
                   />
                 </div>
 
-                {/* Prazo de Entrega */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                     Prazo de Entrega *
@@ -201,7 +191,6 @@ export default function ConfiguracoesFretePage() {
                   />
                 </div>
 
-                {/* Botão Salvar */}
                 <button
                   onClick={salvarConfiguracoes}
                   disabled={salvando}
@@ -222,7 +211,6 @@ export default function ConfiguracoesFretePage() {
               </div>
             </div>
 
-            {/* Card de Estatísticas */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 border-2 border-green-400">
               <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6 flex items-center">
                 <TrendingUp className="mr-2 text-green-600" size={28} />
@@ -230,7 +218,6 @@ export default function ConfiguracoesFretePage() {
               </h2>
 
               <div className="space-y-6">
-                {/* Total de Fretes */}
                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-700">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -243,7 +230,6 @@ export default function ConfiguracoesFretePage() {
                   </p>
                 </div>
 
-                {/* Total Lucro */}
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border-2 border-green-200 dark:border-green-700">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -256,7 +242,6 @@ export default function ConfiguracoesFretePage() {
                   </p>
                 </div>
 
-                {/* Prazo Médio */}
                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-6 border-2 border-yellow-200 dark:border-yellow-700">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -275,127 +260,6 @@ export default function ConfiguracoesFretePage() {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Registrar corrida */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 border-2 border-blue-400 mb-8">
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6 flex items-center">
-              <Truck className="mr-2 text-blue-600" size={28} />
-              Registrar Corrida Concluída
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Valor recebido (R$) *
-                </label>
-              <input
-                type="text"
-                value={novoFreteValor}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^\d.,]/g, '');
-                  const normalizado = raw.replace(/\./g, ',');
-                  setNovoFreteValor(normalizado);
-                }}
-                placeholder="Ex: 25,00"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
-              />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Origem (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={novoFreteOrigem}
-                  onChange={(e) => setNovoFreteOrigem(e.target.value)}
-                  placeholder="Ex: Autopeças X"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Destino (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={novoFreteDestino}
-                  onChange={(e) => setNovoFreteDestino(e.target.value)}
-                  placeholder="Ex: Oficina Y"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Observações (opcional)
-                </label>
-                <textarea
-                  value={novoFreteObservacoes}
-                  onChange={(e) => setNovoFreteObservacoes(e.target.value)}
-                  placeholder="Ex: Pagamento em dinheiro, entrega urgente, etc."
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white min-h-[100px]"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={registrarFrete}
-                disabled={registrandoFrete}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-lg shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {registrandoFrete ? 'Registrando...' : 'Registrar Corrida'}
-              </button>
-            </div>
-          </div>
-
-          {/* Histórico */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 border-2 border-blue-200">
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Histórico de Corridas</h2>
-
-            {historicoFretes.length === 0 ? (
-              <div className="text-center py-10 text-gray-500 dark:text-gray-400 font-semibold">
-                Você ainda não registrou nenhuma corrida.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-blue-50 dark:bg-blue-900/40 text-left text-xs sm:text-sm uppercase tracking-wide text-blue-900 dark:text-blue-200">
-                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Data</th>
-                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Origem</th>
-                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Destino</th>
-                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Valor</th>
-                      <th className="px-4 py-3 border-b border-blue-200 dark:border-blue-700">Observações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historicoFretes.map((frete) => (
-                      <tr key={frete.id} className="border-b border-gray-100 dark:border-gray-700 text-sm">
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                          {frete.data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                          {frete.origem || '--'}
-                        </td>
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                          {frete.destino || '--'}
-                        </td>
-                        <td className="px-4 py-3 text-green-600 dark:text-green-300 font-bold">
-                          {formatarPreco(frete.valor)}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                          {frete.observacoes || '--'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
         </div>
       </div>

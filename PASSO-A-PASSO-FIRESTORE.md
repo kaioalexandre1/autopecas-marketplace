@@ -191,33 +191,48 @@ Depois de completar estes passos, seu sistema de limitação de 3 sessões simul
 
 ---
 
-## 🚚 (NEW) Manual freight logging for couriers
+## 🚚 (NEW) Automatic freight requests
 
-The new delivery log requires one extra rule and an index:
+To allow workshops and auto parts stores to trigger freight requests and couriers to see them, add this extra configuration.
 
 ### Security rule
 
-Add this block together with your existing rules:
-
 ```javascript
-    match /fretesRealizados/{freteId} {
-      allow create: if request.auth != null && request.resource.data.entregadorId == request.auth.uid;
-      allow read: if request.auth != null && resource.data.entregadorId == request.auth.uid;
-      allow update, delete: if false;
+    match /pedidosFrete/{pedidoId} {
+      allow create: if request.auth != null &&
+        ((get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'autopeca' &&
+          request.resource.data.autopecaId == request.auth.uid) ||
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'oficina' &&
+          request.resource.data.oficinaId == request.auth.uid));
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador';
+      allow update: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tipo == 'entregador' &&
+        resource.data.status == 'aberto' &&
+        request.resource.data.status == 'aceito' &&
+        request.resource.data.aceitoPor == request.auth.uid;
+      allow delete: if false;
     }
 ```
 
-### Composite index
+### Composite indexes
 
-Create a new index with the following configuration:
+Create the following indexes:
 
 ```
-Collection ID: fretesRealizados
-Fields:
-  • entregadorId (Ascending ↑)
-  • data (Descending ↓)
+Collection ID: pedidosFrete
+Fields: status (Ascending ↑), criadoEm (Descending ↓)
 Scope: Collection
 ```
 
-Once this index is enabled, the earnings list for each courier will load correctly.
+To prevent duplicate jobs per chat, also create:
 
+```
+Collection ID: pedidosFrete
+Fields: chatId (Ascending ↑), status (Ascending ↓)
+Scope: Collection
+```
+
+Optional (recommended) to show accepted jobs:
+
+```

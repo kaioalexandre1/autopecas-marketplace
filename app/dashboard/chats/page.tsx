@@ -34,7 +34,8 @@ import {
   ArrowLeft,
   Phone,
   MapPin,
-  ChevronDown
+  ChevronDown,
+  Package
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -73,6 +74,7 @@ export default function ChatsPage() {
     telefone: string;
   } | null>(null);
   const [mostrarMenuMaisInfo, setMostrarMenuMaisInfo] = useState(false);
+  const [criandoPedidoFrete, setCriandoPedidoFrete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selecaoManualRef = useRef<string | null>(null); // Rastrear seleção manual para evitar sobrescrita
@@ -672,8 +674,83 @@ export default function ChatsPage() {
         enderecoOficina,
       });
     } catch (error) {
-      console.error('Erro ao buscar dados para entregador:', error);
-      toast.error('Erro ao carregar informações');
+      console.error('Erro ao buscar dados da autopeça e oficina:', error);
+      toast.error('Erro ao carregar dados do entregador');
+    }
+  };
+
+  const criarPedidoFreteAutomatico = async (): Promise<boolean> => {
+    if (!chatSelecionado || !userData) return false;
+
+    if (!chatSelecionado.autopecaId || !chatSelecionado.oficinaId) {
+      toast.error('Informações da autopeça ou oficina indisponíveis.');
+      return false;
+    }
+
+    if (chatSelecionado.encerrado) {
+      toast.error('Este chat está encerrado. Não é possível chamar um frete automático.');
+      return false;
+    }
+
+    try {
+      setCriandoPedidoFrete(true);
+
+      const pedidosAbertos = await getDocs(
+        query(
+          collection(db, 'pedidosFrete'),
+          where('chatId', '==', chatSelecionado.id),
+          where('status', '==', 'aberto')
+        )
+      );
+
+      if (!pedidosAbertos.empty) {
+        toast.error('Já existe um pedido de frete aberto para este chat.');
+        setMostrarMenuMaisInfo(false);
+        return false;
+      }
+
+      const autopecaDoc = await getDoc(doc(db, 'users', chatSelecionado.autopecaId));
+      const oficinaDoc = await getDoc(doc(db, 'users', chatSelecionado.oficinaId));
+
+      if (!autopecaDoc.exists() || !oficinaDoc.exists()) {
+        toast.error('Não foi possível coletar os dados necessários.');
+        return false;
+      }
+
+      const autopecaData = autopecaDoc.data();
+      const oficinaData = oficinaDoc.data();
+
+      const comporEndereco = (dados: any) =>
+        [dados.endereco, dados.numero, dados.bairro, dados.cidade].filter(Boolean).join(', ');
+
+      await addDoc(collection(db, 'pedidosFrete'), {
+        chatId: chatSelecionado.id,
+        pedidoId: chatSelecionado.pedidoId || '',
+        autopecaId: chatSelecionado.autopecaId,
+        autopecaNome: autopecaData.nome || autopecaData.nomeLoja || 'Autopeça',
+        autopecaTelefone: autopecaData.telefone || autopecaData.whatsapp || '',
+        autopecaEndereco: comporEndereco(autopecaData),
+        autopecaCidade: autopecaData.cidade || '',
+        oficinaId: chatSelecionado.oficinaId,
+        oficinaNome: oficinaData.nome || oficinaData.nomeLoja || 'Oficina',
+        oficinaTelefone: oficinaData.telefone || oficinaData.whatsapp || '',
+        oficinaEndereco: comporEndereco(oficinaData),
+        oficinaCidade: oficinaData.cidade || '',
+        status: 'aberto',
+        criadoEm: Timestamp.now(),
+        solicitadoPor: userData.id,
+        solicitadoTipo: userData.tipo,
+      });
+
+      toast.success('Pedido de frete enviado automaticamente aos entregadores!');
+      setMostrarMenuMaisInfo(false);
+      return true;
+    } catch (error) {
+      console.error('Erro ao criar pedido de frete:', error);
+      toast.error('Não foi possível criar o pedido de frete. Tente novamente.');
+      return false;
+    } finally {
+      setCriandoPedidoFrete(false);
     }
   };
 
@@ -1699,6 +1776,19 @@ export default function ChatsPage() {
                                   <Truck size={18} className="mr-2" />
                                   <span>Entregador</span>
                                 </button>
+
+                                {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
+                                  <button
+                                    onClick={async () => {
+                                      await criarPedidoFreteAutomatico();
+                                    }}
+                                    disabled={criandoPedidoFrete}
+                                    className="w-full px-4 py-3 bg-purple-500 text-white hover:bg-purple-600 font-medium flex items-center transition-all text-sm disabled:opacity-60"
+                                  >
+                                    <Package size={18} className="mr-2" />
+                                    <span>{criandoPedidoFrete ? 'Gerando pedido...' : 'Chamar frete automaticamente'}</span>
+                                  </button>
+                                )}
                                 
                                 {!chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
                                   <button
@@ -2017,6 +2107,14 @@ export default function ChatsPage() {
         enderecoAutopeca={dadosEntregador?.enderecoAutopeca}
         nomeOficina={dadosEntregador?.nomeOficina}
         enderecoOficina={dadosEntregador?.enderecoOficina}
+        onCriarPedidoFrete={async () => {
+          const sucesso = await criarPedidoFreteAutomatico();
+          if (sucesso) {
+            setMostrarEntregadores(false);
+            setDadosEntregador(null);
+          }
+        }}
+        carregandoPedidoFrete={criandoPedidoFrete}
       />
 
       {/* Modal - Endereço da Loja/Oficina */}
