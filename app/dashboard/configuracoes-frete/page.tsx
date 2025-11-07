@@ -358,13 +358,17 @@ export default function ConfiguracoesFretePage() {
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                   Valor recebido (R$) *
                 </label>
-                <input
-                  type="text"
-                  value={novoFreteValor}
-                  onChange={(e) => setNovoFreteValor(e.target.value.replace(/[^\\d,]/g, ''))}
-                  placeholder="Ex: 25,00"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
-                />
+              <input
+                type="text"
+                value={novoFreteValor}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^\d.,]/g, '');
+                  const normalizado = raw.replace(/\./g, ',');
+                  setNovoFreteValor(normalizado);
+                }}
+                placeholder="Ex: 25,00"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+              />
               </div>
 
               <div>
