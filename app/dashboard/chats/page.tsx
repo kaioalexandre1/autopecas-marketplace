@@ -356,8 +356,8 @@ export default function ChatsPage() {
       return;
     }
 
-    const chatAtualizado = chats.find(c => c.id === chatSelecionado.id);
-    if (chatAtualizado) {
+      const chatAtualizado = chats.find(c => c.id === chatSelecionado.id);
+      if (chatAtualizado) {
       // Verificar se há novas mensagens ou se a última mensagem mudou
       // IMPORTANTE: Só atualizar se o ID do chat selecionado for o mesmo (evitar mudanças indesejadas)
       if (chatAtualizado.id === chatSelecionado.id) {
@@ -381,13 +381,13 @@ export default function ChatsPage() {
           // Atualizar apenas os dados, mantendo a mesma referência de seleção
           setChatSelecionado(chatAtualizado);
         }
-      }
-    } else {
-      // Chat não encontrado, pode ter sido excluído
+        }
+      } else {
+        // Chat não encontrado, pode ter sido excluído
       console.log('⚠️ Chat selecionado não encontrado mais, limpando seleção');
-      setChatSelecionado(null);
+        setChatSelecionado(null);
       selecaoManualRef.current = null;
-    }
+      }
   }, [chats]); // Remover chatSelecionado das dependências para evitar loop
 
   // Buscar telefone do outro usuário quando um chat é selecionado
@@ -723,6 +723,22 @@ export default function ChatsPage() {
       const comporEndereco = (dados: any) =>
         [dados.endereco, dados.numero, dados.bairro, dados.cidade].filter(Boolean).join(', ');
 
+      console.log('[DEBUG FRETE]', {
+        userId: userData.id,
+        userTipo: userData.tipo,
+        autopecaId: chatSelecionado.autopecaId,
+        oficinaId: chatSelecionado.oficinaId,
+        payload: {
+          chatId: chatSelecionado.id,
+          pedidoId: chatSelecionado.pedidoId || '',
+          autopecaId: chatSelecionado.autopecaId,
+          oficinaId: chatSelecionado.oficinaId,
+          status: 'aberto',
+          solicitadoPor: userData.id,
+          solicitadoTipo: userData.tipo,
+        },
+      });
+
       await addDoc(collection(db, 'pedidosFrete'), {
         chatId: chatSelecionado.id,
         pedidoId: chatSelecionado.pedidoId || '',
@@ -926,16 +942,16 @@ export default function ChatsPage() {
         // Mesmo assim, continuar com o fechamento do pedido
       } else {
         try {
-          await updateDoc(chatRef, {
-            encerrado: true,
-            encerradoPor: userData.id,
-            encerradoEm: Timestamp.now(),
+      await updateDoc(chatRef, {
+        encerrado: true,
+        encerradoPor: userData.id,
+        encerradoEm: Timestamp.now(),
             aguardandoConfirmacao: false,
             confirmadoPor: userData.id,
             dataConfirmacao: Timestamp.now(),
             updatedAt: Timestamp.now(),
-          });
-          console.log('✅ Chat marcado como encerrado!');
+      });
+      console.log('✅ Chat marcado como encerrado!');
         } catch (updateError: any) {
           // Se o erro for "document not found", apenas logar e continuar
           if (updateError.code === 'not-found' || updateError.message?.includes('No document to update')) {
@@ -1413,17 +1429,17 @@ export default function ChatsPage() {
                     </button>
                   )}
                   {chats.filter(c => c.encerrado && !c.isSuporte).length > 0 && (
-                    <button
-                      onClick={excluirChatsEncerrados}
-                      disabled={excluindo}
-                      className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
-                      title="Excluir chats encerrados"
-                    >
-                      <Trash2 size={14} className="mr-1" />
-                      <span className="hidden sm:inline">Excluir Encerrados</span>
-                      <span className="sm:hidden">Excluir</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={excluirChatsEncerrados}
+                    disabled={excluindo}
+                    className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                    title="Excluir chats encerrados"
+                  >
+                    <Trash2 size={14} className="mr-1" />
+                    <span className="hidden sm:inline">Excluir Encerrados</span>
+                    <span className="sm:hidden">Excluir</span>
+                  </button>
+                )}
                 </div>
               </div>
             </div>
@@ -1501,8 +1517,8 @@ export default function ChatsPage() {
                             </h3>
                           ) : (
                             <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                              {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
-                            </h3>
+                            {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
+                          </h3>
                           )}
                           {/* Plano da autopeça com coroinha (apenas para oficinas) */}
                           {userData?.tipo === 'oficina' && (() => {
@@ -1529,21 +1545,21 @@ export default function ChatsPage() {
                               return (
                                 <span className={`font-bold ${cores[plano]} text-xs sm:text-sm flex items-center gap-1`}>
                                   {emojis[plano]} {nomesPlanos[plano]}
-                                </span>
+                            </span>
                               );
                             }
                             return null;
                           })()}
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {chat.mensagens.length > 0 && (
+                        {chat.mensagens.length > 0 && (
                             <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                              {formatDistanceToNow(
-                                chat.mensagens[chat.mensagens.length - 1].createdAt,
-                                { addSuffix: true, locale: ptBR }
-                              )}
-                            </span>
-                          )}
+                            {formatDistanceToNow(
+                              chat.mensagens[chat.mensagens.length - 1].createdAt,
+                              { addSuffix: true, locale: ptBR }
+                            )}
+                          </span>
+                        )}
                           {/* Círculo verde estilo WhatsApp com número de mensagens não lidas */}
                           {naoLidas && quantidadeNaoLidas > 0 && (
                             <div className="flex-shrink-0">
@@ -1556,7 +1572,7 @@ export default function ChatsPage() {
                           )}
                         </div>
                       </div>
-
+                      
                       {/* Linha neon separadora (verde para chats normais, azul para suporte) */}
                       {chat.isSuporte ? (
                         <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
@@ -1576,21 +1592,21 @@ export default function ChatsPage() {
                             {((userData?.tipo === 'autopeca' && chat.encerrado) ||
                               (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao)) && (
                               <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
-                                Encerrado
-                              </span>
-                            )}
+                            Encerrado
+                          </span>
+                        )}
                             {chat.aguardandoConfirmacao && userData?.tipo === 'oficina' && (
                               <span className="px-1 py-0.5 bg-blue-200 dark:bg-blue-600 text-blue-700 dark:text-blue-200 rounded text-[10px] font-semibold">
                                 Aguardando Confirmação
                               </span>
                             )}
-                          </div>
+                      </div>
                           <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">
-                            {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
-                          </p>
+                        {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
+                      </p>
                         </div>
                       )}
-
+                      
                       {/* Linha neon separadora antes da última mensagem */}
                       {chat.mensagens.length > 0 && (
                         chat.isSuporte ? (
@@ -1604,9 +1620,9 @@ export default function ChatsPage() {
                       {chat.mensagens.length > 0 && (
                         <div className="mt-1">
                           <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate italic">
-                            {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
-                          </p>
-                        </div>
+                              {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
+                            </p>
+                          </div>
                       )}
                       
                       {/* Badge de mensagens não lidas */}
@@ -1653,10 +1669,10 @@ export default function ChatsPage() {
                               </h2>
                             ) : (
                               <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase">
-                                {userData?.tipo === 'oficina' 
-                                  ? chatSelecionado.autopecaNome 
-                                  : chatSelecionado.oficinaNome}
-                              </h2>
+                            {userData?.tipo === 'oficina' 
+                              ? chatSelecionado.autopecaNome 
+                              : chatSelecionado.oficinaNome}
+                          </h2>
                             )}
                             {/* Plano da autopeça com coroinha (apenas para oficinas e chats normais) */}
                             {userData?.tipo === 'oficina' && !chatSelecionado.isSuporte && (() => {
@@ -1704,8 +1720,8 @@ export default function ChatsPage() {
                                 {chatSelecionado.nomePeca}
                               </p>
                               <p className="text-blue-200 text-xs font-semibold truncate mt-0.5 uppercase">
-                                {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
-                              </p>
+                            {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
+                          </p>
                             </div>
                           )}
                           {/* Motivo do Suporte (apenas para chats de suporte) */}
@@ -1750,20 +1766,20 @@ export default function ChatsPage() {
                                   <span>Endereço da loja</span>
                                 </button>
 
-                                {telefoneOutroUsuario && (
-                                  <button
+                          {telefoneOutroUsuario && (
+                            <button
                                     onClick={() => {
                                       abrirWhatsApp();
                                       setMostrarMenuMaisInfo(false);
                                     }}
                                     className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
-                                  >
+                            >
                                     <Phone size={18} className="mr-2" />
-                                    <span>WhatsApp</span>
-                                  </button>
-                                )}
-                                
-                                <button
+                              <span>WhatsApp</span>
+                            </button>
+                          )}
+                          
+                          <button
                                   onClick={async () => {
                                     if (chatSelecionado) {
                                       await buscarDadosParaEntregador();
@@ -1772,26 +1788,26 @@ export default function ChatsPage() {
                                     setMostrarMenuMaisInfo(false);
                                   }}
                                   className="w-full px-4 py-3 bg-yellow-500 text-white hover:bg-yellow-600 font-medium flex items-center transition-all text-sm"
-                                >
+                          >
                                   <Truck size={18} className="mr-2" />
                                   <span>Entregador</span>
-                                </button>
-
+                          </button>
+                          
                                 {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
-                                  <button
+                            <button
                                     onClick={async () => {
                                       await criarPedidoFreteAutomatico();
                                     }}
                                     disabled={criandoPedidoFrete}
                                     className="w-full px-4 py-3 bg-purple-500 text-white hover:bg-purple-600 font-medium flex items-center transition-all text-sm disabled:opacity-60"
-                                  >
+                            >
                                     <Package size={18} className="mr-2" />
                                     <span>{criandoPedidoFrete ? 'Gerando pedido...' : 'Chamar frete automaticamente'}</span>
-                                  </button>
-                                )}
-                                
+                            </button>
+                          )}
+                          
                                 {!chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
-                                  <button
+                          <button
                                     onClick={() => {
                                       finalizarNegociacao();
                                       setMostrarMenuMaisInfo(false);
@@ -1808,13 +1824,13 @@ export default function ChatsPage() {
                                     excluirChat();
                                     setMostrarMenuMaisInfo(false);
                                   }}
-                                  disabled={excluindo}
+                            disabled={excluindo}
                                   className="w-full px-4 py-3 bg-red-500 text-white hover:bg-red-600 font-medium flex items-center transition-all disabled:opacity-50 text-sm"
-                                >
+                          >
                                   <XCircle size={18} className="mr-2" />
                                   <span>Cancelar</span>
-                                </button>
-                              </div>
+                          </button>
+                        </div>
                             </>
                           )}
                         </div>
