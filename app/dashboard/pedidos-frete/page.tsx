@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, orderBy, query, where, updateDoc, doc, Timestamp } from 'firebase/firestore';
