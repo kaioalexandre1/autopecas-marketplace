@@ -723,7 +723,7 @@ export default function ChatsPage() {
       const comporEndereco = (dados: any) =>
         [dados.endereco, dados.numero, dados.bairro, dados.cidade].filter(Boolean).join(', ');
 
-      console.log('[DEBUG FRETE]', {
+      console.error('[DEBUG FRETE]', {
         userId: userData.id,
         userTipo: userData.tipo,
         autopecaId: chatSelecionado.autopecaId,
