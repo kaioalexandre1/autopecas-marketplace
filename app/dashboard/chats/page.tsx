@@ -14,7 +14,8 @@ import {
   Timestamp,
   arrayUnion,
   deleteDoc,
-  getDocs
+  getDocs,
+  QueryConstraint
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
@@ -825,15 +826,27 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
       return false;
     }
 
+    if (userData.tipo !== 'autopeca' && userData.tipo !== 'oficina') {
+      toast.error('Apenas autopeças ou oficinas podem solicitar entregadores.');
+      return false;
+    }
+
     try {
       setCriandoPedidoFrete(true);
 
+      const filtrosConsulta: QueryConstraint[] = [
+        where('chatId', '==', chatSelecionado.id),
+        where('status', '==', 'aberto'),
+      ];
+
+      if (userData.tipo === 'autopeca') {
+        filtrosConsulta.push(where('autopecaId', '==', userData.id));
+      } else if (userData.tipo === 'oficina') {
+        filtrosConsulta.push(where('oficinaId', '==', userData.id));
+      }
+
       const pedidosAbertos = await getDocs(
-        query(
-          collection(db, 'pedidosFrete'),
-          where('chatId', '==', chatSelecionado.id),
-          where('status', '==', 'aberto')
-        )
+        query(collection(db, 'pedidosFrete'), ...filtrosConsulta)
       );
 
       if (!pedidosAbertos.empty) {
@@ -1854,7 +1867,8 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                         {/* Botão "Mais Informações" - Desktop e Mobile */}
                         {!chatSelecionado.isSuporte && (
                         <div className="relative w-full sm:w-auto">
-                          <button
+                          <div className="relative w-full sm:w-auto">
+                            <button
                             onClick={() => setMostrarMenuMaisInfo(!mostrarMenuMaisInfo)}
                             className="w-full sm:w-auto px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center justify-center transition-all shadow-lg hover:shadow-xl text-sm whitespace-nowrap"
                             title="Mais informações"
@@ -1870,7 +1884,7 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                                 className="fixed inset-0 z-10" 
                                 onClick={() => setMostrarMenuMaisInfo(false)}
                               />
-                              <div className="absolute top-full left-0 right-0 sm:right-auto sm:min-w-[200px] mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                              <div className="absolute top-[calc(100%+0.5rem)] sm:left-auto sm:right-0 left-0 sm:min-w-[220px] mt-0 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 z-40 overflow-hidden pointer-events-auto">
                                 <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                                   {(() => {
                                     const infoAtual = chatSelecionado?.autopecaId
