@@ -50,23 +50,23 @@ export async function GET(request: Request) {
         const userDoc = await adminDb.collection('users').doc(autopecaId).get();
         const userData = userDoc.data();
 
-        if (!userData?.assinaturaAtiva || userData?.plano !== plano) {
-          const mesAtual = new Date().toISOString().slice(0, 7);
-          const dataFim = new Date();
-          dataFim.setMonth(dataFim.getMonth() + 1);
+        const mesAtual = new Date().toISOString().slice(0, 7);
+        const dataFim = new Date();
+        dataFim.setMonth(dataFim.getMonth() + 1);
 
-          await adminDb.collection('users').doc(autopecaId).update({
-            plano,
-            assinaturaAtiva: true,
-            ofertasUsadas: 0,
-            mesReferenciaOfertas: mesAtual,
-            dataProximoPagamento: Timestamp.fromDate(dataFim),
-          });
+        await adminDb.collection('users').doc(autopecaId).update({
+          plano,
+          assinaturaAtiva: true,
+          ofertasUsadas: 0,
+          mesReferenciaOfertas: mesAtual,
+          dataProximoPagamento: Timestamp.fromDate(dataFim),
+          cancelamentoAgendado: false,
+          dataCancelamentoAgendado: null,
+          renovacaoAutomaticaAtiva: true,
+          subscriptionId: String(paymentId),
+        });
 
-          console.log(`[Status API] ✅ Plano ${plano} ativado via preapproval`);
-        } else {
-          console.log(`[Status API] Plano ${plano} já está ativo para o usuário ${autopecaId}`);
-        }
+        console.log(`[Status API] ✅ Plano ${plano} ativado via preapproval`);
 
         const pagamentosSnap = await adminDb
           .collection('pagamentos')
@@ -289,13 +289,24 @@ export async function GET(request: Request) {
         const dataFim = new Date();
         dataFim.setMonth(dataFim.getMonth() + 1);
 
-        await adminDb.collection('users').doc(autopecaId).update({
+        const updatePayload: any = {
           plano,
           assinaturaAtiva: true,
           ofertasUsadas: 0,
           mesReferenciaOfertas: mesAtual,
           dataProximoPagamento: Timestamp.fromDate(dataFim),
-        });
+          cancelamentoAgendado: false,
+          dataCancelamentoAgendado: null,
+          renovacaoAutomaticaAtiva: !!preapprovalId,
+        };
+
+        if (preapprovalId) {
+          updatePayload.subscriptionId = String(preapprovalId);
+        } else {
+          updatePayload.subscriptionId = null;
+        }
+
+        await adminDb.collection('users').doc(autopecaId).update(updatePayload);
 
         console.log(`[Status API] ✅ Plano ${plano} ativado para usuário ${autopecaId}`);
 

@@ -514,6 +514,9 @@ export async function POST(request: Request) {
               assinaturaAtiva: true,
               mesReferenciaOfertas: mesAtual,
               dataProximoPagamento: Timestamp.fromDate(dataFim),
+              cancelamentoAgendado: false,
+              dataCancelamentoAgendado: null,
+              renovacaoAutomaticaAtiva: !!preapprovalId,
             };
 
             // Se for renovação de assinatura, manter subscriptionId e resetar ofertas
@@ -541,6 +544,9 @@ export async function POST(request: Request) {
               // Atualizar subscriptionId se mudou
               await adminDb.collection('users').doc(autopecaId).update({
                 subscriptionId: String(preapprovalId),
+                renovacaoAutomaticaAtiva: true,
+                cancelamentoAgendado: false,
+                dataCancelamentoAgendado: null,
               });
             }
 

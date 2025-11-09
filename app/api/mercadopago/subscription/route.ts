@@ -68,24 +68,34 @@ export async function POST(request: Request) {
       }
 
       const data = await resp.json();
-      
+
+      const userDoc = await adminDb.collection('users').doc(autopecaId).get();
+      const userData = userDoc.data();
+      const resolverData = (valor: any): Date | null => {
+        if (!valor) return null;
+        if (valor instanceof Date) return valor;
+        if (valor?.toDate) return valor.toDate();
+        if (valor?.seconds) return new Date(valor.seconds * 1000);
+        return null;
+      };
+
       // Atualizar status no Firestore
-      if (action === 'cancel' || action === 'pause') {
-        // Reverter para plano básico
-        const mesAtual = new Date().toISOString().slice(0, 7);
+      if (action === 'cancel') {
+        const dataFimAtual = resolverData(userData?.dataProximoPagamento);
         await adminDb.collection('users').doc(autopecaId).update({
-          plano: 'basico',
-          assinaturaAtiva: true,
-          ofertasUsadas: 0,
-          mesReferenciaOfertas: mesAtual,
-          dataProximoPagamento: null,
+          cancelamentoAgendado: true,
+          dataCancelamentoAgendado: dataFimAtual ? Timestamp.fromDate(dataFimAtual) : null,
+          renovacaoAutomaticaAtiva: false,
           subscriptionId: null,
         });
+      } else if (action === 'pause') {
+        await adminDb.collection('users').doc(autopecaId).update({
+          assinaturaAtiva: false,
+          renovacaoAutomaticaAtiva: false,
+          cancelamentoAgendado: false,
+          dataCancelamentoAgendado: null,
+        });
       } else if (action === 'resume') {
-        // Manter o plano atual e reativar assinatura
-        const userDoc = await adminDb.collection('users').doc(autopecaId).get();
-        const userData = userDoc.data();
-        
         if (userData?.plano && userData.plano !== 'basico') {
           const mesAtual = new Date().toISOString().slice(0, 7);
           const dataFim = new Date();
@@ -97,6 +107,9 @@ export async function POST(request: Request) {
             mesReferenciaOfertas: mesAtual,
             dataProximoPagamento: Timestamp.fromDate(dataFim),
             subscriptionId: subscriptionId,
+            cancelamentoAgendado: false,
+            dataCancelamentoAgendado: null,
+            renovacaoAutomaticaAtiva: true,
           });
         }
       }

@@ -26,6 +26,9 @@ export interface User {
   assinaturaAtiva?: boolean; // Se a assinatura está ativa
   dataProximoPagamento?: Date; // Data do próximo pagamento
   subscriptionId?: string; // ID da assinatura recorrente no Mercado Pago (para pagamentos automáticos)
+  renovacaoAutomaticaAtiva?: boolean; // Se a renovação automática está ativa
+  cancelamentoAgendado?: boolean; // Se o cancelamento ao fim do período foi solicitado
+  dataCancelamentoAgendado?: Date; // Data em que o plano será cancelado (normalmente o vencimento atual)
   contaBloqueada?: boolean; // Se a conta foi bloqueada pelo admin
   testePlatinumUsado?: boolean; // Se já usou o teste de 30 dias grátis do Platinum
   dataInicioTestePlatinum?: Date; // Data em que iniciou o teste de 30 dias

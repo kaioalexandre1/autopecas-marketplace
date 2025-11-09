@@ -35,12 +35,31 @@ import {
   Phone,
   MapPin,
   ChevronDown,
-  Package
+  Package,
+  Calendar,
+  Store,
+  Clock,
+  TrendingUp,
+  Award
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import EntregadoresModal from '@/components/EntregadoresModal';
+
+interface InfoAutopeca {
+  tempoCadastrado?: string;
+  cadastradoEm?: Date;
+  cadastradoEmTexto?: string;
+  vendas: number;
+  rankingPosicao?: number | null;
+  totalAutopecas?: number;
+}
+
+interface RankingCache {
+  posicoes: Record<string, { posicao: number; quantidade: number }>;
+  total: number;
+}
 
 export default function ChatsPage() {
   const { userData } = useAuth();
@@ -75,9 +94,123 @@ export default function ChatsPage() {
   } | null>(null);
   const [mostrarMenuMaisInfo, setMostrarMenuMaisInfo] = useState(false);
   const [criandoPedidoFrete, setCriandoPedidoFrete] = useState(false);
+const [infoAutopecas, setInfoAutopecas] = useState<Record<string, InfoAutopeca>>({});
+const [infoAutopecaCarregando, setInfoAutopecaCarregando] = useState<string | null>(null);
+const [infoAutopecaErro, setInfoAutopecaErro] = useState<{ id: string; mensagem: string } | null>(null);
+const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selecaoManualRef = useRef<string | null>(null); // Rastrear seleção manual para evitar sobrescrita
+  const rankingPromiseRef = useRef<Promise<RankingCache> | null>(null);
+
+  const resolverDataFirestore = (valor: any): Date | null => {
+    if (!valor) return null;
+    if (valor instanceof Date) return valor;
+    if (valor?.toDate) return valor.toDate();
+    if (valor?.seconds) return new Date(valor.seconds * 1000);
+    return null;
+  };
+
+  const obterRankingCache = async (): Promise<RankingCache> => {
+    if (rankingCacheState) {
+      return rankingCacheState;
+    }
+
+    if (rankingPromiseRef.current) {
+      return rankingPromiseRef.current;
+    }
+
+    const promessa = (async () => {
+      const snapshot = await getDocs(collection(db, 'negocios_fechados'));
+      const contagem = new Map<string, number>();
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const autopecaId = data.autopecaId;
+        if (autopecaId) {
+          contagem.set(autopecaId, (contagem.get(autopecaId) || 0) + 1);
+        }
+      });
+
+      const ordenado = Array.from(contagem.entries()).sort((a, b) => b[1] - a[1]);
+      const posicoes: Record<string, { posicao: number; quantidade: number }> = {};
+
+      let posicaoAtual = 0;
+      let quantidadeAnterior: number | null = null;
+      let contador = 0;
+
+      ordenado.forEach(([autopecaId, quantidade]) => {
+        contador += 1;
+        if (quantidade !== quantidadeAnterior) {
+          posicaoAtual = contador;
+          quantidadeAnterior = quantidade;
+        }
+        posicoes[autopecaId] = { posicao: posicaoAtual, quantidade };
+      });
+
+      const cache: RankingCache = {
+        posicoes,
+        total: ordenado.length,
+      };
+
+      setRankingCache(cache);
+      return cache;
+    })().finally(() => {
+      rankingPromiseRef.current = null;
+    });
+
+    rankingPromiseRef.current = promessa;
+    return promessa;
+  };
+
+  const carregarInfoAutopeca = async (autopecaId: string) => {
+    if (!autopecaId) return;
+    if (infoAutopecas[autopecaId]) return;
+    if (infoAutopecaCarregando === autopecaId) return;
+
+    setInfoAutopecaErro(null);
+    setInfoAutopecaCarregando(autopecaId);
+
+    try {
+      const autopecaDoc = await getDoc(doc(db, 'users', autopecaId));
+      if (!autopecaDoc.exists()) {
+        throw new Error('Autopeça não encontrada.');
+      }
+
+      const autopecaData = autopecaDoc.data();
+      const dataCadastro = resolverDataFirestore(autopecaData.createdAt);
+
+      const rankingCache = await obterRankingCache();
+      const rankingInfo = rankingCache.posicoes[autopecaId];
+
+      const info: InfoAutopeca = {
+        tempoCadastrado: dataCadastro
+          ? formatDistanceToNow(dataCadastro, { addSuffix: true, locale: ptBR })
+          : 'Data indisponível',
+        cadastradoEm: dataCadastro || undefined,
+        cadastradoEmTexto: dataCadastro ? format(dataCadastro, 'dd/MM/yyyy', { locale: ptBR }) : undefined,
+        vendas: rankingInfo ? rankingInfo.quantidade : 0,
+        rankingPosicao: rankingInfo ? rankingInfo.posicao : null,
+        totalAutopecas: rankingCache.total || undefined,
+      };
+
+      setInfoAutopecas((prev) => ({ ...prev, [autopecaId]: info }));
+    } catch (error: any) {
+      console.error('Erro ao carregar informações da autopeça:', error);
+      setInfoAutopecaErro({
+        id: autopecaId,
+        mensagem: error?.message || 'Não foi possível carregar informações da loja.',
+      });
+    } finally {
+      setInfoAutopecaCarregando(null);
+    }
+  };
+
+  useEffect(() => {
+    if (mostrarMenuMaisInfo && chatSelecionado?.autopecaId) {
+      carregarInfoAutopeca(chatSelecionado.autopecaId);
+    }
+  }, [mostrarMenuMaisInfo, chatSelecionado]);
 
   // Verificar timeout de 24h para confirmações pendentes
   useEffect(() => {
@@ -1738,6 +1871,97 @@ export default function ChatsPage() {
                                 onClick={() => setMostrarMenuMaisInfo(false)}
                               />
                               <div className="absolute top-full left-0 right-0 sm:right-auto sm:min-w-[200px] mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                                <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                                  {(() => {
+                                    const infoAtual = chatSelecionado?.autopecaId
+                                      ? infoAutopecas[chatSelecionado.autopecaId]
+                                      : undefined;
+                                    const carregando = infoAutopecaCarregando === chatSelecionado?.autopecaId;
+                                    const erroAtual = infoAutopecaErro?.id === chatSelecionado?.autopecaId ? infoAutopecaErro.mensagem : null;
+
+                                    if (carregando) {
+                                      return (
+                                        <p className="text-xs text-gray-600 dark:text-gray-300">
+                                          Carregando informações da loja...
+                                        </p>
+                                      );
+                                    }
+
+                                    if (erroAtual) {
+                                      return (
+                                        <p className="text-xs text-red-500">
+                                          {erroAtual}
+                                        </p>
+                                      );
+                                    }
+
+                                    if (!infoAtual) {
+                                      return (
+                                        <p className="text-xs text-gray-600 dark:text-gray-300">
+                                          Informações da loja indisponíveis no momento.
+                                        </p>
+                                      );
+                                    }
+
+                                    const rankingTexto = infoAtual.rankingPosicao
+                                      ? `${infoAtual.rankingPosicao}º${infoAtual.totalAutopecas ? ` de ${infoAtual.totalAutopecas}` : ''}`
+                                      : 'Sem ranking registrado';
+
+                                    return (
+                                      <div className="space-y-3 text-xs text-gray-700 dark:text-gray-200">
+                                        <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100">
+                                          <Store size={15} className="text-green-600 dark:text-green-400" />
+                                          <span className="font-semibold uppercase tracking-wide">
+                                            Informações da loja
+                                          </span>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                              <Clock size={14} className="text-blue-500" />
+                                              <span className="font-semibold">Tempo na plataforma</span>
+                                            </div>
+                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                              {infoAtual.tempoCadastrado || '—'}
+                                            </span>
+                                          </div>
+
+                                          {infoAtual.cadastradoEmTexto && (
+                                            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                                <Calendar size={14} className="text-blue-500" />
+                                                <span className="font-semibold">Cadastrada em</span>
+                                              </div>
+                                              <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                                {infoAtual.cadastradoEmTexto}
+                                              </span>
+                                            </div>
+                                          )}
+
+                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                              <TrendingUp size={14} className="text-emerald-500" />
+                                              <span className="font-semibold">Vendas registradas</span>
+                                            </div>
+                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                              {infoAtual.vendas}
+                                            </span>
+                                          </div>
+
+                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                              <Award size={14} className="text-yellow-500" />
+                                              <span className="font-semibold">Ranking de vendas</span>
+                                            </div>
+                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                              {rankingTexto}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
                                 {/* Botão Endereço da loja */}
                                 <button
                                   onClick={() => {

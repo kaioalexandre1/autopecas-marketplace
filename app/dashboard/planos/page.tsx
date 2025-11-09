@@ -147,6 +147,10 @@ export default function PlanosPage() {
           ofertasUsadas: 0,
           mesReferenciaOfertas: mesAtual,
           dataProximoPagamento: null,
+          cancelamentoAgendado: false,
+          dataCancelamentoAgendado: null,
+          renovacaoAutomaticaAtiva: false,
+          subscriptionId: null,
         });
 
         toast.success('Plano Básico ativado com sucesso!');
@@ -170,7 +174,7 @@ export default function PlanosPage() {
   const handleCancelarPlano = async () => {
     if (!userData || userData.plano === 'basico') return;
     const confirmou = window.confirm(
-      'Tem certeza que deseja cancelar o plano atual e voltar para o Plano Básico? Você perderá os benefícios premium imediatamente.'
+      'Tem certeza de que deseja cancelar a renovação automática? Você continuará com os benefícios do plano até o fim do período já pago.'
     );
     if (!confirmou) return;
 
@@ -197,19 +201,17 @@ export default function PlanosPage() {
             'Erro ao cancelar assinatura.';
           throw new Error(errorMessage);
         }
-      } else {
-        const mesAtual = new Date().toISOString().slice(0, 7);
-        await updateDoc(doc(db, 'users', userData.id), {
-          plano: 'basico',
-          assinaturaAtiva: true,
-          ofertasUsadas: 0,
-          mesReferenciaOfertas: mesAtual,
-          dataProximoPagamento: null,
-          subscriptionId: null,
-        });
       }
 
-      toast.success('Plano cancelado com sucesso! Você voltou para o Plano Básico.');
+      const dataFimPlano = getDataVencimento();
+      await updateDoc(doc(db, 'users', userData.id), {
+        cancelamentoAgendado: true,
+        dataCancelamentoAgendado: dataFimPlano ? Timestamp.fromDate(dataFimPlano) : null,
+        renovacaoAutomaticaAtiva: false,
+        subscriptionId: null,
+      });
+
+      toast.success('Renovação automática cancelada. O plano permanecerá ativo até o fim do período atual.');
       setTimeout(() => {
         window.location.reload();
       }, 800);
@@ -257,6 +259,19 @@ export default function PlanosPage() {
       return limite + ofertasExtras;
     }
     return limite;
+  };
+
+  const resolverDataFirestore = (valor: any): Date | null => {
+    if (!valor) return null;
+    if (valor instanceof Date) return valor;
+    if (valor?.toDate) return valor.toDate();
+    if (valor?.seconds) return new Date(valor.seconds * 1000);
+    return null;
+  };
+
+  const getDataVencimento = () => {
+    if (!userData?.dataProximoPagamento) return null;
+    return resolverDataFirestore(userData.dataProximoPagamento);
   };
 
   // Verificar elegibilidade para teste de 30 dias grátis do Platinum
@@ -342,6 +357,10 @@ export default function PlanosPage() {
             ofertasUsadas: 0,
             mesReferenciaOfertas: mesAtual,
             dataProximoPagamento: null,
+            cancelamentoAgendado: false,
+            dataCancelamentoAgendado: null,
+            renovacaoAutomaticaAtiva: false,
+            subscriptionId: null,
           });
 
           toast.error('Seu plano expirou e foi automaticamente convertido para o plano Básico.');
@@ -356,24 +375,6 @@ export default function PlanosPage() {
     const interval = setInterval(verificarVencimento, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [userData]);
-
-  // Função para formatar data de vencimento
-  const getDataVencimento = () => {
-    if (!userData?.dataProximoPagamento) return null;
-    
-    let dataVencimento: Date;
-    if (userData.dataProximoPagamento instanceof Date) {
-      dataVencimento = userData.dataProximoPagamento;
-    } else if ((userData.dataProximoPagamento as any)?.toDate) {
-      dataVencimento = (userData.dataProximoPagamento as any).toDate();
-    } else if ((userData.dataProximoPagamento as any)?.seconds) {
-      dataVencimento = new Date((userData.dataProximoPagamento as any).seconds * 1000);
-    } else {
-      return null;
-    }
-
-    return dataVencimento;
-  };
 
   // Verificar se está próximo de vencer (menos de 7 dias)
   const isProximoDeVencer = () => {
@@ -398,6 +399,11 @@ export default function PlanosPage() {
 
     return vencimento < hoje;
   };
+
+  const dataCancelamentoAgendado = resolverDataFirestore(userData?.dataCancelamentoAgendado);
+  const dataCancelamentoTexto = dataCancelamentoAgendado
+    ? format(dataCancelamentoAgendado, 'dd/MM/yyyy', { locale: ptBR })
+    : null;
 
   if (!userData || userData.tipo !== 'autopeca') {
     return null;
@@ -769,6 +775,17 @@ export default function PlanosPage() {
                         )}
                       </p>
                     </div>
+                  </div>
+                )}
+
+                {userData.cancelamentoAgendado && (
+                  <div className="mt-6 px-4 py-3 rounded-xl border border-yellow-500/40 bg-yellow-500/10 text-yellow-100 text-center">
+                    <p className="font-semibold">
+                      Renovação automática cancelada
+                    </p>
+                    <p className="text-sm mt-1">
+                      O plano permanecerá ativo até {dataCancelamentoTexto || 'o fim do ciclo atual'}. Após essa data, você voltará automaticamente para o Plano Básico.
+                    </p>
                   </div>
                 )}
               </div>
