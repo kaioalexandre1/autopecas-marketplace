@@ -1928,7 +1928,6 @@ export default function ChatsPage() {
                                     <Store size={16} />
                                     Informações
                                   </span>
-                                  <ChevronDown size={18} className={`transition-transform ${mostrarDetalhesLoja ? 'rotate-180' : ''}`} />
                                 </button>
                                 {mostrarDetalhesLoja && (
                                 <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
