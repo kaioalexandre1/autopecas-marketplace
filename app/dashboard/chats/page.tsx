@@ -2403,9 +2403,9 @@ export default function ChatsPage() {
       {/* Modal - Endereço da Loja/Oficina */}
       {mostrarModalEndereco && dadosEndereco && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setMostrarModalEndereco(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-black rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-black dark:text-white flex items-center gap-2 uppercase">
                 <MapPin className="text-blue-600" />
                 Endereço e Contato
               </h2>
@@ -2420,20 +2420,20 @@ export default function ChatsPage() {
             
             <div className="space-y-4">
               {dadosEndereco.estado && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Estado</p>
-                  <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.estado}</p>
+                <div className="bg-white rounded-lg p-3 border border-blue-200">
+                  <p className="text-xs font-semibold text-black uppercase tracking-wider mb-1">Estado</p>
+                  <p className="text-base font-bold text-black uppercase">{dadosEndereco.estado}</p>
                 </div>
               )}
               
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
-                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Cidade</p>
-                <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.cidade}</p>
+              <div className="bg-white rounded-lg p-3 border border-blue-200">
+                <p className="text-xs font-semibold text-black uppercase tracking-wider mb-1">Cidade</p>
+                <p className="text-base font-bold text-black uppercase">{dadosEndereco.cidade}</p>
               </div>
               
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">Endereço</p>
-                <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <p className="text-xs font-semibold text-black uppercase tracking-wider mb-1">Endereço</p>
+                <p className="text-base font-semibold text-black uppercase">
                   {dadosEndereco.endereco}
                   {dadosEndereco.numero && `, ${dadosEndereco.numero}`}
                   {dadosEndereco.complemento && ` - ${dadosEndereco.complemento}`}
@@ -2442,13 +2442,13 @@ export default function ChatsPage() {
                 </p>
               </div>
               
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wider mb-1">Telefone</p>
+              <div className="bg-white rounded-lg p-3 border border-green-200">
+                <p className="text-xs font-semibold text-black uppercase tracking-wider mb-1">Telefone</p>
                 <a
                   href={`tel:${dadosEndereco.telefone}`}
-                  className="text-lg font-bold text-green-600 dark:text-green-400 hover:underline flex items-center gap-2"
+                  className="text-lg font-bold text-black uppercase hover:underline flex items-center gap-2"
                 >
-                  <Phone size={18} />
+                  <Phone size={18} className="text-black" />
                   {dadosEndereco.telefone}
                 </a>
               </div>
