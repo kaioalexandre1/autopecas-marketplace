@@ -36,7 +36,6 @@ import {
   MapPin,
   ChevronDown,
   Package,
-  Calendar,
   Store,
   Clock,
   TrendingUp,
@@ -58,7 +57,8 @@ import {
   Info,
   LogOut,
   RefreshCw,
-  ClipboardCheck
+  ClipboardCheck,
+  Image
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -79,6 +79,8 @@ interface RankingCache {
   posicoes: Record<string, { posicao: number; quantidade: number }>;
   total: number;
 }
+
+const ImageIcon = (props: React.ComponentProps<typeof Image>) => <Image {...props} />;
 
 export default function ChatsPage() {
   const { userData } = useAuth();
