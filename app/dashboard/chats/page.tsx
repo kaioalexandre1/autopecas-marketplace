@@ -24,7 +24,7 @@ import { excluirChatsDoPedido } from '@/lib/chatUtils';
 import { 
   MessageSquare, 
   Send, 
-  Image as ImageIcon, 
+  Paperclip, 
   X, 
   Truck, 
   CheckCircle, 
@@ -40,7 +40,25 @@ import {
   Store,
   Clock,
   TrendingUp,
-  Award
+  Award,
+  Star,
+  Shield,
+  Users,
+  Loader2,
+  Navigation,
+  Mail,
+  FileText,
+  Ban,
+  ExternalLink,
+  ArrowRight,
+  Tag,
+  Eye,
+  EyeOff,
+  Filter,
+  Info,
+  LogOut,
+  RefreshCw,
+  ClipboardCheck
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -54,6 +72,7 @@ interface InfoAutopeca {
   vendas: number;
   rankingPosicao?: number | null;
   totalAutopecas?: number;
+  cidadeEstado?: string;
 }
 
 interface RankingCache {
@@ -180,6 +199,23 @@ export default function ChatsPage() {
 
       const autopecaData = autopecaDoc.data();
       const dataCadastro = resolverDataFirestore(autopecaData.createdAt);
+      const cidadeBruta = (autopecaData.cidade || '').trim();
+      let cidadeFormatada = cidadeBruta;
+      let estadoFormatado: string | undefined;
+
+      if (cidadeFormatada.includes('-')) {
+        const partes = cidadeFormatada.split('-').map((parte: string) => parte.trim());
+        if (partes.length >= 2) {
+          estadoFormatado = partes.pop();
+          cidadeFormatada = partes.join('-');
+        }
+      } else if (autopecaData.estado) {
+        estadoFormatado = String(autopecaData.estado).trim();
+      }
+
+      const cidadeEstado = cidadeFormatada
+        ? `${cidadeFormatada.toLowerCase()}${estadoFormatado ? `-${estadoFormatado.toUpperCase()}` : ''}`
+        : undefined;
 
       const rankingCache = await obterRankingCache();
       const rankingInfo = rankingCache.posicoes[autopecaId];
@@ -193,6 +229,7 @@ export default function ChatsPage() {
         vendas: rankingInfo ? rankingInfo.quantidade : 0,
         rankingPosicao: rankingInfo ? rankingInfo.posicao : null,
         totalAutopecas: rankingCache.total || undefined,
+        cidadeEstado,
       };
 
       setInfoAutopecas((prev) => ({ ...prev, [autopecaId]: info }));
@@ -1943,21 +1980,9 @@ export default function ChatsPage() {
                                                <span className="font-semibold">Tempo na plataforma</span>
                                              </div>
                                              <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                               {infoAtual.tempoCadastrado || '—'}
+                                               {infoAtual.tempoCadastrado || '-'}
                                              </span>
                                            </div>
-
-                                           {infoAtual.cadastradoEmTexto && (
-                                             <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                               <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                                 <Calendar size={14} className="text-blue-500" />
-                                                 <span className="font-semibold">Cadastrada em</span>
-                                               </div>
-                                               <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                                 {infoAtual.cadastradoEmTexto}
-                                               </span>
-                                             </div>
-                                           )}
 
                                            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
                                              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
@@ -1975,7 +2000,13 @@ export default function ChatsPage() {
                                                <span className="font-semibold">Ranking de vendas</span>
                                              </div>
                                              <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                               {rankingTexto}
+                                               {infoAtual.rankingPosicao
+                                                 ? infoAtual.cidadeEstado
+                                                   ? `${infoAtual.rankingPosicao}º lugar de ${infoAtual.cidadeEstado}`
+                                                   : infoAtual.totalAutopecas
+                                                     ? `${infoAtual.rankingPosicao}º de ${infoAtual.totalAutopecas}`
+                                                     : `${infoAtual.rankingPosicao}º lugar`
+                                                 : 'Sem ranking registrado'}
                                              </span>
                                            </div>
                                          </div>
