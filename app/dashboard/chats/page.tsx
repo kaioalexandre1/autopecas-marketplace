@@ -1461,26 +1461,27 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
            ultimaMensagem.remetenteId !== userData.id;
   };
 
-  const contarMensagensNaoLidas = (chat: Chat): number => {
-    if (!userData || chat.mensagens.length === 0) return 0;
-    
-    const ultimaLeitura = userData.tipo === 'oficina' 
-      ? chat.ultimaLeituraOficina 
-      : chat.ultimaLeituraAutopeca;
-    
-    // Se nunca leu, todas as mensagens do outro usuário são não lidas
-    if (!ultimaLeitura) {
-      return chat.mensagens.filter(msg => msg.remetenteId !== userData.id).length;
-    }
-    
-    // Contar mensagens depois da última leitura que não foram enviadas por mim
-    return chat.mensagens.filter(msg => 
-      msg.createdAt > ultimaLeitura && msg.remetenteId !== userData.id
-    ).length;
-  };
+const contarMensagensNaoLidas = (chat: Chat): number => {
+  if (!userData || chat.mensagens.length === 0) return 0;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-6 relative">
+  const ultimaLeitura =
+    userData.tipo === 'oficina'
+      ? chat.ultimaLeituraOficina
+      : chat.ultimaLeituraAutopeca;
+
+  // Se nunca leu, todas as mensagens do outro usuário são não lidas
+  if (!ultimaLeitura) {
+    return chat.mensagens.filter((msg) => msg.remetenteId !== userData.id).length;
+  }
+
+  // Contar mensagens depois da última leitura que não foram enviadas por mim
+  return chat.mensagens.filter(
+    (msg) => msg.createdAt > ultimaLeitura && msg.remetenteId !== userData.id
+  ).length;
+};
+
+return (
+  <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-6 relative">
       {/* Elementos decorativos de fundo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Círculos grandes desfocados */}
