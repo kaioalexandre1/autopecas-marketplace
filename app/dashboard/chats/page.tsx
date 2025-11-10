@@ -24,7 +24,7 @@ import { excluirChatsDoPedido } from '@/lib/chatUtils';
 import { 
   MessageSquare, 
   Send, 
-  Paperclip, 
+  Image as ImageIcon, 
   X, 
   Truck, 
   CheckCircle, 
@@ -35,7 +35,6 @@ import {
   Phone,
   MapPin,
   ChevronDown,
-  Package,
   Store,
   Clock,
   TrendingUp,
@@ -44,26 +43,11 @@ import {
   Shield,
   Users,
   Loader2,
-  Navigation,
-  Mail,
-  FileText,
-  Ban,
-  ExternalLink,
-  ArrowRight,
-  Tag,
-  Eye,
-  EyeOff,
-  Filter,
-  Info,
-  LogOut,
-  RefreshCw,
-  ClipboardCheck,
-  Image
+  Navigation
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import EntregadoresModal from '@/components/EntregadoresModal';
 
 interface InfoAutopeca {
   tempoCadastrado?: string;
@@ -80,8 +64,6 @@ interface RankingCache {
   total: number;
 }
 
-const ImageIcon = (props: React.ComponentProps<typeof Image>) => <Image {...props} />;
-
 export default function ChatsPage() {
   const { userData } = useAuth();
   const router = useRouter();
@@ -91,13 +73,6 @@ export default function ChatsPage() {
   const [mensagem, setMensagem] = useState('');
   const [imagemUpload, setImagemUpload] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
-  const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
-  const [dadosEntregador, setDadosEntregador] = useState<{
-    nomeAutopeca?: string;
-    enderecoAutopeca?: string;
-    nomeOficina?: string;
-    enderecoOficina?: string;
-  } | null>(null);
   const [excluindo, setExcluindo] = useState(false);
   const [excluindoChatSuporte, setExcluindoChatSuporte] = useState<string | null>(null);
   const [telefoneOutroUsuario, setTelefoneOutroUsuario] = useState<string | null>(null);
@@ -114,7 +89,6 @@ export default function ChatsPage() {
     telefone: string;
   } | null>(null);
   const [mostrarMenuMaisInfo, setMostrarMenuMaisInfo] = useState(false);
-  const [criandoPedidoFrete, setCriandoPedidoFrete] = useState(false);
   const [infoAutopecas, setInfoAutopecas] = useState<Record<string, InfoAutopeca>>({});
   const [infoAutopecaCarregando, setInfoAutopecaCarregando] = useState<string | null>(null);
   const [infoAutopecaErro, setInfoAutopecaErro] = useState<{ id: string; mensagem: string } | null>(null);
@@ -201,22 +175,25 @@ export default function ChatsPage() {
 
       const autopecaData = autopecaDoc.data();
       const dataCadastro = resolverDataFirestore(autopecaData.createdAt);
+
       const cidadeBruta = (autopecaData.cidade || '').trim();
       let cidadeFormatada = cidadeBruta;
       let estadoFormatado: string | undefined;
 
-      if (cidadeFormatada.includes('-')) {
+      if (cidadeFormatada && cidadeFormatada.includes('-')) {
         const partes = cidadeFormatada.split('-').map((parte: string) => parte.trim());
         if (partes.length >= 2) {
           estadoFormatado = partes.pop();
           cidadeFormatada = partes.join('-');
         }
-      } else if (autopecaData.estado) {
+      }
+
+      if (!estadoFormatado && autopecaData.estado) {
         estadoFormatado = String(autopecaData.estado).trim();
       }
 
       const cidadeEstado = cidadeFormatada
-        ? `${cidadeFormatada.toLowerCase()}${estadoFormatado ? `-${estadoFormatado.toUpperCase()}` : ''}`
+        ? `${cidadeFormatada}${estadoFormatado ? `-${estadoFormatado.toUpperCase()}` : ''}`
         : undefined;
 
       const rankingCache = await obterRankingCache();
@@ -251,12 +228,6 @@ export default function ChatsPage() {
       carregarInfoAutopeca(chatSelecionado.autopecaId);
     }
   }, [mostrarMenuMaisInfo, chatSelecionado]);
-
-  useEffect(() => {
-    if (!mostrarMenuMaisInfo) {
-      setMostrarDetalhesLoja(false);
-    }
-  }, [mostrarMenuMaisInfo]);
 
   // Verificar timeout de 24h para confirmações pendentes
   useEffect(() => {
@@ -804,135 +775,6 @@ export default function ChatsPage() {
   };
 
   // Função para buscar dados da autopeça e oficina para entregador
-  const buscarDadosParaEntregador = async () => {
-    if (!chatSelecionado || !userData) return;
-
-    try {
-      // Buscar dados da autopeça
-      let nomeAutopeca = '';
-      let enderecoAutopeca = '';
-      
-      if (chatSelecionado.autopecaId) {
-        const autopecaDoc = await getDoc(doc(db, 'users', chatSelecionado.autopecaId));
-        if (autopecaDoc.exists()) {
-          const autopecaData = autopecaDoc.data();
-          nomeAutopeca = autopecaData.nome || autopecaData.nomeLoja || '';
-          const enderecoCompleto = [
-            autopecaData.endereco || '',
-            autopecaData.numero || '',
-            autopecaData.bairro || '',
-            autopecaData.cidade || ''
-          ].filter(Boolean).join(', ');
-          enderecoAutopeca = enderecoCompleto;
-        }
-      }
-
-      // Buscar dados da oficina
-      let nomeOficina = '';
-      let enderecoOficina = '';
-      
-      if (chatSelecionado.oficinaId) {
-        const oficinaDoc = await getDoc(doc(db, 'users', chatSelecionado.oficinaId));
-        if (oficinaDoc.exists()) {
-          const oficinaData = oficinaDoc.data();
-          nomeOficina = oficinaData.nome || oficinaData.nomeLoja || '';
-          const enderecoCompleto = [
-            oficinaData.endereco || '',
-            oficinaData.numero || '',
-            oficinaData.bairro || '',
-            oficinaData.cidade || ''
-          ].filter(Boolean).join(', ');
-          enderecoOficina = enderecoCompleto;
-        }
-      }
-
-      setDadosEntregador({
-        nomeAutopeca,
-        enderecoAutopeca,
-        nomeOficina,
-        enderecoOficina,
-      });
-    } catch (error) {
-      console.error('Erro ao buscar dados da autopeça e oficina:', error);
-      toast.error('Erro ao carregar dados do entregador');
-    }
-  };
-
-  const criarPedidoFreteAutomatico = async (): Promise<boolean> => {
-    if (!chatSelecionado || !userData) return false;
-
-    if (!chatSelecionado.autopecaId || !chatSelecionado.oficinaId) {
-      toast.error('Informações da autopeça ou oficina indisponíveis.');
-      return false;
-    }
-
-    if (chatSelecionado.encerrado) {
-      toast.error('Este chat está encerrado. Não é possível chamar um frete automático.');
-      return false;
-    }
-
-    try {
-      setCriandoPedidoFrete(true);
-
-      const pedidosAbertos = await getDocs(
-        query(
-          collection(db, 'pedidosFrete'),
-          where('chatId', '==', chatSelecionado.id),
-          where('status', '==', 'aberto')
-        )
-      );
-
-      if (!pedidosAbertos.empty) {
-        toast.error('Já existe um pedido de frete aberto para este chat.');
-        setMostrarMenuMaisInfo(false);
-        return false;
-      }
-
-      const autopecaDoc = await getDoc(doc(db, 'users', chatSelecionado.autopecaId));
-      const oficinaDoc = await getDoc(doc(db, 'users', chatSelecionado.oficinaId));
-
-      if (!autopecaDoc.exists() || !oficinaDoc.exists()) {
-        toast.error('Não foi possível coletar os dados necessários.');
-        return false;
-      }
-
-      const autopecaData = autopecaDoc.data();
-      const oficinaData = oficinaDoc.data();
-
-      const comporEndereco = (dados: any) =>
-        [dados.endereco, dados.numero, dados.bairro, dados.cidade].filter(Boolean).join(', ');
-
-      await addDoc(collection(db, 'pedidosFrete'), {
-        chatId: chatSelecionado.id,
-        pedidoId: chatSelecionado.pedidoId || '',
-        autopecaId: chatSelecionado.autopecaId,
-        autopecaNome: autopecaData.nome || autopecaData.nomeLoja || 'Autopeça',
-        autopecaTelefone: autopecaData.telefone || autopecaData.whatsapp || '',
-        autopecaEndereco: comporEndereco(autopecaData),
-        autopecaCidade: autopecaData.cidade || '',
-        oficinaId: chatSelecionado.oficinaId,
-        oficinaNome: oficinaData.nome || oficinaData.nomeLoja || 'Oficina',
-        oficinaTelefone: oficinaData.telefone || oficinaData.whatsapp || '',
-        oficinaEndereco: comporEndereco(oficinaData),
-        oficinaCidade: oficinaData.cidade || '',
-        status: 'aberto',
-        criadoEm: Timestamp.now(),
-        solicitadoPor: userData.id,
-        solicitadoTipo: userData.tipo,
-      });
-
-      toast.success('Pedido de frete enviado automaticamente aos entregadores!');
-      setMostrarMenuMaisInfo(false);
-      return true;
-    } catch (error) {
-      console.error('Erro ao criar pedido de frete:', error);
-      toast.error('Não foi possível criar o pedido de frete. Tente novamente.');
-      return false;
-    } finally {
-      setCriandoPedidoFrete(false);
-    }
-  };
-
   // Função para abrir modal de endereço
   const abrirModalEndereco = async () => {
     if (!chatSelecionado || !userData) return;
@@ -1512,6 +1354,20 @@ export default function ChatsPage() {
     ).length;
   };
 
+  const selecionarPrimeiroChat = (listaChats: Chat[]) => {
+    if (!listaChats.length) {
+      setChatSelecionado(null);
+      return;
+    }
+    setChatSelecionado(listaChats[0]);
+  };
+
+  useEffect(() => {
+    if (!mostrarMenuMaisInfo) {
+      setMostrarDetalhesLoja(false);
+    }
+  }, [mostrarMenuMaisInfo]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-6 relative">
       {/* Elementos decorativos de fundo */}
@@ -1592,813 +1448,227 @@ export default function ChatsPage() {
                     </button>
                   )}
                   {chats.filter(c => c.encerrado && !c.isSuporte).length > 0 && (
-                  <button
-                    onClick={excluirChatsEncerrados}
-                    disabled={excluindo}
-                    className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
-                    title="Excluir chats encerrados"
-                  >
-                    <Trash2 size={14} className="mr-1" />
-                    <span className="hidden sm:inline">Excluir Encerrados</span>
-                    <span className="sm:hidden">Excluir</span>
-                  </button>
-                )}
+                    <button
+                      onClick={excluirChatsEncerrados}
+                      disabled={excluindo}
+                      className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                      title="Excluir chats encerrados"
+                    >
+                      <Trash2 size={14} className="mr-1" />
+                      <span className="hidden sm:inline">Excluir Encerrados</span>
+                      <span className="sm:hidden">Excluir</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
             
             <div className="overflow-y-auto" style={{ height: 'calc(100% - 90px)' }}>
-              {chats.length === 0 ? (
-                <div className="p-8 text-center text-gray-900 dark:text-gray-100">
-                  <MessageSquare size={56} className="mx-auto mb-4 text-gray-600 dark:text-gray-400" />
-                  <p className="font-medium text-gray-900 dark:text-gray-100">Nenhuma conversa ainda</p>
-                  <p className="text-sm text-gray-700 mt-2 dark:text-gray-300">
-                    {userData?.tipo === 'autopeca' 
-                      ? 'Faça uma oferta para iniciar uma conversa'
-                      : 'Aguarde ofertas em seus pedidos'}
-                  </p>
-                </div>
-              ) : (
-                chats.map((chat) => {
-                  const naoLidas = temMensagensNaoLidas(chat);
-                  const quantidadeNaoLidas = contarMensagensNaoLidas(chat);
+              {/* Mensagens */}
+              <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
+                {/* Card de confirmação para oficina */}
+                {(() => {
+                  const condicao1 = chatSelecionado && userData?.tipo === 'oficina';
+                  // Usar !! para garantir que seja tratado como booleano
+                  const condicao2 = !!chatSelecionado?.aguardandoConfirmacao;
+                  const condicao3 = !chatSelecionado?.confirmadoPor;
+                  const condicao4 = !chatSelecionado?.negadoPor;
+                  const deveMostrar = condicao1 && condicao2 && condicao3 && condicao4;
                   
-                  return (
-                    <div
-                      key={chat.id}
-                      className={`relative p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${
-                        chat.isSuporte 
-                          ? chatSelecionado?.id === chat.id
-                            ? 'bg-blue-100 dark:bg-blue-900/50 border-l-4 border-l-blue-600 dark:border-l-blue-500'
-                            : ((userData?.tipo === 'autopeca' && chat.encerrado) ||
-                               (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao))
-                            ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700 border-l-4 border-l-gray-400'
-                            : 'bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 border-l-4 border-l-blue-500 dark:border-l-blue-400'
-                          : chatSelecionado?.id === chat.id 
-                          ? 'bg-green-100 dark:bg-green-900/50 border-l-4 border-l-green-600 dark:border-l-green-500' 
-                          : ((userData?.tipo === 'autopeca' && chat.encerrado) ||
-                             (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao))
-                          ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700'
-                          : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
-                      }`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (!excluindoChatSuporte) {
-                          console.log('🖱️ Seleção MANUAL do chat:', {
-                            chatId: chat.id,
-                            nomePeca: chat.nomePeca || 'Suporte',
-                            pedidoId: chat.pedidoId,
-                            chatSelecionadoAtual: chatSelecionado?.id
-                          });
-                          // Marcar como seleção manual para evitar sobrescrita pelo useEffect
-                          selecaoManualRef.current = chat.id;
-                          // Selecionar imediatamente
-                          setChatSelecionado(chat);
-                          marcarComoLido(chat);
-                        }
-                      }}
-                    >
-                      {/* Botão de excluir para chats de suporte */}
-                      {chat.isSuporte && (
-                        <button
-                          onClick={(e) => excluirChatSuporte(chat.id, e)}
-                          disabled={excluindoChatSuporte === chat.id}
-                          className="absolute top-3 right-3 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed z-10"
-                          title="Excluir este chat de suporte"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                      
-                      {/* Nome da Loja ou Suporte */}
-                      <div className="mb-1.5 flex justify-between items-center pr-8">
-                        <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-                          {chat.isSuporte ? (
-                            <h3 className="font-bold text-xs text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1">
-                              🎧 Suporte
-                            </h3>
-                          ) : (
-                            <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                            {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
-                          </h3>
-                          )}
-                          {/* Plano da autopeça com coroinha (apenas para oficinas) */}
-                          {userData?.tipo === 'oficina' && (() => {
-                            const plano = planosAutopecas[chat.autopecaId] || 'basico';
-                            const cores: {[key: string]: string} = {
-                              basico: 'text-gray-600 dark:text-gray-400',
-                              premium: 'text-blue-600 dark:text-blue-400',
-                              gold: 'text-yellow-600 dark:text-yellow-500',
-                              platinum: 'text-purple-600 dark:text-purple-400'
-                            };
-                            const emojis: {[key: string]: string} = {
-                              basico: '',
-                              premium: '💎',
-                              gold: '🏆',
-                              platinum: '👑'
-                            };
-                            const nomesPlanos: {[key: string]: string} = {
-                              basico: '',
-                              premium: 'Silver',
-                              gold: 'Gold',
-                              platinum: 'Platinum'
-                            };
-                            if (plano !== 'basico') {
-                              return (
-                                <span className={`font-bold ${cores[plano]} text-xs sm:text-sm flex items-center gap-1`}>
-                                  {emojis[plano]} {nomesPlanos[plano]}
-                            </span>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {chat.mensagens.length > 0 && (
-                            <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                            {formatDistanceToNow(
-                              chat.mensagens[chat.mensagens.length - 1].createdAt,
-                              { addSuffix: true, locale: ptBR }
-                            )}
-                          </span>
-                        )}
-                          {/* Círculo verde estilo WhatsApp com número de mensagens não lidas */}
-                          {naoLidas && quantidadeNaoLidas > 0 && (
-                            <div className="flex-shrink-0">
-                              <div className="bg-green-500 rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
-                                <span className="text-white text-[10px] font-bold">
-                                  {quantidadeNaoLidas > 99 ? '99+' : quantidadeNaoLidas}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Linha neon separadora (verde para chats normais, azul para suporte) */}
-                      {chat.isSuporte ? (
-                        <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
-                      ) : (
-                        <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
-                      )}
-
-                      {/* Informações do Pedido (ocultar para chats de suporte) */}
-                      {!chat.isSuporte && (
-                        <div className="mb-1.5">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                              {chat.nomePeca}
-                            </span>
-                            {/* Para autopeça: mostrar encerrado se ela fechou
-                                Para oficina: mostrar encerrado apenas se não estiver aguardando confirmação */}
-                            {((userData?.tipo === 'autopeca' && chat.encerrado) ||
-                              (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao)) && (
-                              <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
-                            Encerrado
-                          </span>
-                        )}
-                            {chat.aguardandoConfirmacao && userData?.tipo === 'oficina' && (
-                              <span className="px-1 py-0.5 bg-blue-200 dark:bg-blue-600 text-blue-700 dark:text-blue-200 rounded text-[10px] font-semibold">
-                                Aguardando Confirmação
-                              </span>
-                            )}
-                      </div>
-                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">
-                        {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
-                      </p>
-                        </div>
-                      )}
-                      
-                      {/* Linha neon separadora antes da última mensagem */}
-                      {chat.mensagens.length > 0 && (
-                        chat.isSuporte ? (
-                          <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent my-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
-                        ) : (
-                          <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent my-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
-                        )
-                      )}
-
-                      {/* Última Mensagem */}
-                      {chat.mensagens.length > 0 && (
-                        <div className="mt-1">
-                          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate italic">
-                              {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
-                            </p>
-                          </div>
-                      )}
-                      
-                      {/* Badge de mensagens não lidas */}
-                      {naoLidas && quantidadeNaoLidas > 0 && (
-                        <div className="mt-1">
-                          <span className="text-xs font-semibold text-red-600 dark:text-red-400">
-                            {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Área do Chat */}
-          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 overflow-visible ${
-             chatSelecionado ? 'block' : 'hidden lg:block'
-           }`}>
-            {chatSelecionado ? (
-              <>
-                {/* Header do Chat */}
-                <div className="p-3 sm:p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-indigo-600 flex-shrink-0">
-                  <div className="flex items-start gap-2 sm:gap-0">
-                    {/* Botão Voltar - Apenas no Mobile */}
-                    <button
-                      onClick={() => setChatSelecionado(null)}
-                      className="lg:hidden p-2 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0 mt-1"
-                      title="Voltar para conversas"
-                    >
-                      <ArrowLeft size={20} className="text-white" />
-                    </button>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-                        <div className="flex-1 min-w-0">
-                          {/* Nome da Loja ou Suporte */}
-                          <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                            {chatSelecionado.isSuporte ? (
-                              <h2 className="font-black text-xs sm:text-sm text-blue-200 truncate uppercase flex items-center gap-1">
-                                🎧 Suporte
-                              </h2>
-                            ) : (
-                              <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase">
-                            {userData?.tipo === 'oficina' 
-                              ? chatSelecionado.autopecaNome 
-                              : chatSelecionado.oficinaNome}
-                          </h2>
-                            )}
-                            {/* Plano da autopeça com coroinha (apenas para oficinas e chats normais) */}
-                            {userData?.tipo === 'oficina' && !chatSelecionado.isSuporte && (() => {
-                              const plano = planosAutopecas[chatSelecionado.autopecaId] || 'basico';
-                              const cores: {[key: string]: string} = {
-                                basico: 'text-blue-100',
-                                premium: 'text-blue-200',
-                                gold: 'text-yellow-200',
-                                platinum: 'text-yellow-300'
-                              };
-                              const emojis: {[key: string]: string} = {
-                                basico: '',
-                                premium: '💎',
-                                gold: '🏆',
-                                platinum: '👑'
-                              };
-                              const nomesPlanos: {[key: string]: string} = {
-                                basico: '',
-                                premium: 'Silver',
-                                gold: 'Gold',
-                                platinum: 'Platinum'
-                              };
-                              if (plano !== 'basico') {
-                                return (
-                                  <span className={`font-bold ${cores[plano]} text-sm sm:text-base md:text-lg flex items-center gap-1 whitespace-nowrap`}>
-                                    {emojis[plano]} {nomesPlanos[plano]}
-                                  </span>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
-                          
-                          {/* Linha neon separadora (verde para chats normais, azul para suporte) */}
-                          {chatSelecionado.isSuporte ? (
-                            <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
-                          ) : (
-                            <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
-                          )}
-                          
-                          {/* Informações do Pedido (ocultar para chats de suporte) */}
-                          {!chatSelecionado.isSuporte && (
-                            <div>
-                              <p className="text-blue-100 text-xs font-bold truncate uppercase">
-                                {chatSelecionado.nomePeca}
-                              </p>
-                              <p className="text-blue-200 text-xs font-semibold truncate mt-0.5 uppercase">
-                            {chatSelecionado.marcaCarro} {chatSelecionado.modeloCarro} {chatSelecionado.anoCarro}
+                  if (userData?.tipo === 'oficina' && chatSelecionado) {
+                    console.log('🔍 Verificando card de confirmação:', {
+                      condicao1,
+                      condicao2,
+                      condicao3,
+                      condicao4,
+                      deveMostrar,
+                      aguardandoConfirmacao: chatSelecionado.aguardandoConfirmacao,
+                      tipoAguardandoConfirmacao: typeof chatSelecionado.aguardandoConfirmacao,
+                      confirmadoPor: chatSelecionado.confirmadoPor,
+                      negadoPor: chatSelecionado.negadoPor,
+                      encerrado: chatSelecionado.encerrado,
+                    });
+                  }
+                  
+                  return deveMostrar;
+                })() && (
+                  <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-400 dark:border-blue-500 rounded-xl p-6 mb-4 shadow-lg">
+                    <div className="flex items-start mb-4">
+                      <AlertCircle className="text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" size={28} />
+                      <div className="flex-1">
+                        <p className="font-bold text-lg text-blue-900 dark:text-blue-100 mb-2">
+                          Confirmação de Negócio
+                        </p>
+                        <p className="text-base text-blue-800 dark:text-blue-200">
+                          A <span className="font-bold">{chatSelecionado.autopecaNome}</span> informou que vocês fecharam negócio. Confirma?
+                        </p>
+                        {chatSelecionado.dataSolicitacaoConfirmacao && (
+                          <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
+                            Solicitado há {formatDistanceToNow(chatSelecionado.dataSolicitacaoConfirmacao, { addSuffix: true, locale: ptBR })}
                           </p>
-                            </div>
-                          )}
-                          {/* Motivo do Suporte (apenas para chats de suporte) */}
-                          {chatSelecionado.isSuporte && chatSelecionado.motivoLabel && (
-                            <div>
-                              <p className="text-blue-200 text-xs font-semibold truncate mt-0.5">
-                                {chatSelecionado.motivoLabel}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Botão "Mais Informações" - Desktop e Mobile */}
-                        {!chatSelecionado.isSuporte && (
-                        <div className="relative w-full sm:w-auto">
-                          <button
-                            onClick={() => setMostrarMenuMaisInfo(!mostrarMenuMaisInfo)}
-                            className="w-full sm:w-auto px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center justify-center transition-all shadow-lg hover:shadow-xl text-sm whitespace-nowrap"
-                            title="Mais informações"
-                          >
-                            <span className="mr-2">Mais informações</span>
-                            <ChevronDown size={18} className={`transition-transform ${mostrarMenuMaisInfo ? 'rotate-180' : ''}`} />
-                          </button>
-
-                          {/* Menu Dropdown */}
-                          {mostrarMenuMaisInfo && (
-                            <>
-                              <div 
-                                className="fixed inset-0 z-10" 
-                                onClick={() => {
-                                  setMostrarMenuMaisInfo(false);
-                                  setMostrarDetalhesLoja(false);
-                                }}
-                              />
-                              <div className="absolute top-[calc(100%+0.5rem)] sm:left-auto sm:right-0 left-0 sm:min-w-[220px] mt-0 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 z-40 overflow-hidden pointer-events-auto">
-                                <button
-                                  onClick={() => setMostrarDetalhesLoja((prev) => !prev)}
-                                  className="w-full flex items-center justify-between px-4 py-3 bg-purple-600 text-white font-semibold uppercase tracking-wide text-xs"
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <Store size={16} />
-                                    Informações
-                                  </span>
-                                </button>
-                                {mostrarDetalhesLoja && (
-                                <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-                                   {(() => {
-                                     const infoAtual = chatSelecionado?.autopecaId
-                                       ? infoAutopecas[chatSelecionado.autopecaId]
-                                       : undefined;
-                                     const carregando = infoAutopecaCarregando === chatSelecionado?.autopecaId;
-                                     const erroAtual = infoAutopecaErro?.id === chatSelecionado?.autopecaId ? infoAutopecaErro.mensagem : null;
-
-                                     if (carregando) {
-                                       return (
-                                         <p className="text-xs text-gray-600 dark:text-gray-300">
-                                           Carregando informações da loja...
-                                         </p>
-                                       );
-                                     }
-
-                                     if (erroAtual) {
-                                       return (
-                                         <p className="text-xs text-red-500">
-                                           {erroAtual}
-                                         </p>
-                                       );
-                                     }
-
-                                     if (!infoAtual) {
-                                       return (
-                                         <p className="text-xs text-gray-600 dark:text-gray-300">
-                                           Informações da loja indisponíveis no momento.
-                                         </p>
-                                       );
-                                     }
-
-                                     const rankingTexto = infoAtual.rankingPosicao
-                                       ? `${infoAtual.rankingPosicao}º${infoAtual.totalAutopecas ? ` de ${infoAtual.totalAutopecas}` : ''}`
-                                       : 'Sem ranking registrado';
-
-                                     return (
-                                       <div className="space-y-3 text-xs text-gray-700 dark:text-gray-200">
-                                         <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100">
-                                           <Store size={15} className="text-green-600 dark:text-green-400" />
-                                           <span className="font-semibold uppercase tracking-wide">
-                                             Informações da loja
-                                           </span>
-                                         </div>
-                                         <div className="space-y-2">
-                                           <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                               <Clock size={14} className="text-blue-500" />
-                                               <span className="font-semibold">Tempo na plataforma</span>
-                                             </div>
-                                             <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                               {infoAtual.tempoCadastrado || '-'}
-                                             </span>
-                                           </div>
-
-                                           <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                               <TrendingUp size={14} className="text-emerald-500" />
-                                               <span className="font-semibold">Vendas registradas</span>
-                                             </div>
-                                             <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                               {infoAtual.vendas}
-                                             </span>
-                                           </div>
-
-                                           <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                               <Award size={14} className="text-yellow-500" />
-                                               <span className="font-semibold">Ranking de vendas</span>
-                                             </div>
-                                             <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                               {infoAtual.rankingPosicao
-                                                 ? infoAtual.cidadeEstado
-                                                   ? `${infoAtual.rankingPosicao}º lugar de ${infoAtual.cidadeEstado}`
-                                                   : infoAtual.totalAutopecas
-                                                     ? `${infoAtual.rankingPosicao}º de ${infoAtual.totalAutopecas}`
-                                                     : `${infoAtual.rankingPosicao}º lugar`
-                                                 : 'Sem ranking registrado'}
-                                             </span>
-                                           </div>
-                                         </div>
-                                       </div>
-                                     );
-                                   })()}
-                                </div>
-                                )}
-                                {/* Botão Endereço da loja */}
-                                <button
-                                  onClick={() => {
-                                    abrirModalEndereco();
-                                    setMostrarMenuMaisInfo(false);
-                                    setMostrarDetalhesLoja(false);
-                                  }}
-                                  className="w-full px-4 py-3 bg-blue-500 text-white hover:bg-blue-600 font-medium flex items-center transition-all text-sm"
-                                >
-                                  <MapPin size={18} className="mr-2" />
-                                  <span>Endereço da loja</span>
-                                </button>
-
-                          {telefoneOutroUsuario && (
-                            <button
-                                    onClick={() => {
-                                      abrirWhatsApp();
-                                      setMostrarMenuMaisInfo(false);
-                                      setMostrarDetalhesLoja(false);
-                                    }}
-                                    className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
-                            >
-                                    <Phone size={18} className="mr-2" />
-                              <span>WhatsApp</span>
-                            </button>
-                          )}
-                          
-                          <button
-                                  onClick={async () => {
-                                    if (chatSelecionado) {
-                                      await buscarDadosParaEntregador();
-                                    }
-                                    setMostrarEntregadores(true);
-                                    setMostrarMenuMaisInfo(false);
-                                    setMostrarDetalhesLoja(false);
-                                  }}
-                                  className="w-full px-4 py-3 bg-yellow-500 text-white hover:bg-yellow-600 font-medium flex items-center transition-all text-sm"
-                          >
-                                  <Truck size={18} className="mr-2" />
-                                  <span>Entregador</span>
-                          </button>
-                          
-                                {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
-                            <button
-                                    onClick={async () => {
-                                      await criarPedidoFreteAutomatico();
-                                    }}
-                                    disabled={criandoPedidoFrete}
-                                    className="w-full px-4 py-3 bg-purple-500 text-white hover:bg-purple-600 font-medium flex items-center transition-all text-sm disabled:opacity-60"
-                            >
-                                    <Package size={18} className="mr-2" />
-                                    <span>{criandoPedidoFrete ? 'Gerando pedido...' : 'Frete automático'}</span>
-                            </button>
-                          )}
-                          
-                                {!chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
-                          <button
-                                    onClick={() => {
-                                      finalizarNegociacao();
-                                      setMostrarMenuMaisInfo(false);
-                                      setMostrarDetalhesLoja(false);
-                                    }}
-                                    className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
-                                  >
-                                    <CheckCircle size={18} className="mr-2" />
-                                    <span>Negócio Fechado</span>
-                                  </button>
-                                )}
-                                
-                                <button
-                                  onClick={() => {
-                                    excluirChat();
-                                    setMostrarMenuMaisInfo(false);
-                                    setMostrarDetalhesLoja(false);
-                                  }}
-                            disabled={excluindo}
-                                  className="w-full px-4 py-3 bg-red-500 text-white hover:bg-red-600 font-medium flex items-center transition-all disabled:opacity-50 text-sm"
-                          >
-                                  <XCircle size={18} className="mr-2" />
-                                  <span>Cancelar</span>
-                          </button>
-                        </div>
-                            </>
-                          )}
-                        </div>
                         )}
+                      </div>
+                    </div>
+                    <div className="flex gap-3 mt-4">
+                      <button
+                        onClick={confirmarNegocio}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
+                      >
+                        <CheckCircle size={20} className="mr-2" />
+                        Sim, Negócio Fechado
+                      </button>
+                      <button
+                        onClick={negarNegocio}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
+                      >
+                        <XCircle size={20} className="mr-2" />
+                        Não
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
+                  <div className="bg-yellow-50 dark:bg-yellow-950/50 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 mb-4 rounded-r-lg">
+                    <div className="flex items-center">
+                      <AlertCircle className="text-yellow-600 dark:text-yellow-400 mr-3" size={24} />
+                      <div>
+                        <p className="font-medium text-yellow-800 dark:text-yellow-200">Chat Encerrado</p>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                          Esta negociação foi finalizada em{' '}
+                          {chatSelecionado.encerradoEm && 
+                            formatDistanceToNow(chatSelecionado.encerradoEm, { addSuffix: true, locale: ptBR })}
+                        </p>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Mensagens */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
-                  {/* Card de confirmação para oficina */}
-                  {(() => {
-                    const condicao1 = chatSelecionado && userData?.tipo === 'oficina';
-                    // Usar !! para garantir que seja tratado como booleano
-                    const condicao2 = !!chatSelecionado?.aguardandoConfirmacao;
-                    const condicao3 = !chatSelecionado?.confirmadoPor;
-                    const condicao4 = !chatSelecionado?.negadoPor;
-                    const deveMostrar = condicao1 && condicao2 && condicao3 && condicao4;
+                )}
+                
+                {chatSelecionado.mensagens.length === 0 ? (
+                  <div className="text-center text-gray-900 dark:text-gray-100 py-12">
+                    <MessageSquare size={64} className="mx-auto mb-4 text-gray-600 dark:text-gray-300" />
+                    <p className="text-lg font-medium text-gray-900 dark:text-gray-100">Nenhuma mensagem ainda</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">Envie a primeira mensagem para iniciar a conversa!</p>
+                  </div>
+                ) : (
+                  chatSelecionado.mensagens.map((msg) => {
+                    const isMinha = msg.remetenteId === userData?.id;
                     
-                    if (userData?.tipo === 'oficina' && chatSelecionado) {
-                      console.log('🔍 Verificando card de confirmação:', {
-                        condicao1,
-                        condicao2,
-                        condicao3,
-                        condicao4,
-                        deveMostrar,
-                        aguardandoConfirmacao: chatSelecionado.aguardandoConfirmacao,
-                        tipoAguardandoConfirmacao: typeof chatSelecionado.aguardandoConfirmacao,
-                        confirmadoPor: chatSelecionado.confirmadoPor,
-                        negadoPor: chatSelecionado.negadoPor,
-                        encerrado: chatSelecionado.encerrado,
-                      });
-                    }
-                    
-                    return deveMostrar;
-                  })() && (
-                    <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-400 dark:border-blue-500 rounded-xl p-6 mb-4 shadow-lg">
-                      <div className="flex items-start mb-4">
-                        <AlertCircle className="text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" size={28} />
-                        <div className="flex-1">
-                          <p className="font-bold text-lg text-blue-900 dark:text-blue-100 mb-2">
-                            Confirmação de Negócio
-                          </p>
-                          <p className="text-base text-blue-800 dark:text-blue-200">
-                            A <span className="font-bold">{chatSelecionado.autopecaNome}</span> informou que vocês fecharam negócio. Confirma?
-                          </p>
-                          {chatSelecionado.dataSolicitacaoConfirmacao && (
-                            <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
-                              Solicitado há {formatDistanceToNow(chatSelecionado.dataSolicitacaoConfirmacao, { addSuffix: true, locale: ptBR })}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-3 mt-4">
-                        <button
-                          onClick={confirmarNegocio}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
-                        >
-                          <CheckCircle size={20} className="mr-2" />
-                          Sim, Negócio Fechado
-                        </button>
-                        <button
-                          onClick={negarNegocio}
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
-                        >
-                          <XCircle size={20} className="mr-2" />
-                          Não
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
-                    <div className="bg-yellow-50 dark:bg-yellow-950/50 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 mb-4 rounded-r-lg">
-                      <div className="flex items-center">
-                        <AlertCircle className="text-yellow-600 dark:text-yellow-400 mr-3" size={24} />
-                        <div>
-                          <p className="font-medium text-yellow-800 dark:text-yellow-200">Chat Encerrado</p>
-                          <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                            Esta negociação foi finalizada em{' '}
-                            {chatSelecionado.encerradoEm && 
-                              formatDistanceToNow(chatSelecionado.encerradoEm, { addSuffix: true, locale: ptBR })}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {chatSelecionado.mensagens.length === 0 ? (
-                    <div className="text-center text-gray-900 dark:text-gray-100 py-12">
-                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-600 dark:text-gray-300" />
-                      <p className="text-lg font-medium text-gray-900 dark:text-gray-100">Nenhuma mensagem ainda</p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">Envie a primeira mensagem para iniciar a conversa!</p>
-                    </div>
-                  ) : (
-                    chatSelecionado.mensagens.map((msg) => {
-                      const isMinha = msg.remetenteId === userData?.id;
-                      
-                      return (
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex ${isMinha ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+                      >
                         <div
-                          key={msg.id}
-                          className={`flex ${isMinha ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+                          className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-md ${
+                            isMinha
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
+                              : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
+                          }`}
                         >
-                          <div
-                            className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-md ${
-                              isMinha
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                                : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
+                          {msg.imagemUrl && (
+                            <img
+                              src={msg.imagemUrl}
+                              alt="Imagem"
+                              className="rounded-xl mb-2 max-w-full cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => window.open(msg.imagemUrl, '_blank')}
+                            />
+                          )}
+                          {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
+                          <span
+                            className={`text-xs mt-2 block ${
+                              isMinha ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300'
                             }`}
                           >
-                            {msg.imagemUrl && (
-                              <img
-                                src={msg.imagemUrl}
-                                alt="Imagem"
-                                className="rounded-xl mb-2 max-w-full cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(msg.imagemUrl, '_blank')}
-                              />
-                            )}
-                            {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
-                            <span
-                              className={`text-xs mt-2 block ${
-                                isMinha ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300'
-                              }`}
-                            >
-                              {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input de Mensagem */}
-                <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-                  {/* Para autopeça: mostrar como encerrado se ela fechou
-                      Para oficina: mostrar como encerrado apenas se não estiver aguardando confirmação */}
-                  {((userData?.tipo === 'autopeca' && chatSelecionado.encerrado) ||
-                    (userData?.tipo === 'oficina' && chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao)) ? (
-                    <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
-                      <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-700 dark:text-gray-300" />
-                      <p className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">Chat Encerrado</p>
-                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-1">Este chat foi finalizado e não aceita mais mensagens.</p>
-                    </div>
-                  ) : (
-                    <>
-                      {imagemUpload && (
-                        <div className="mb-2 sm:mb-3 flex items-center justify-between bg-blue-50 dark:bg-blue-950/40 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700">
-                          <span className="text-xs sm:text-sm text-gray-700 dark:text-blue-200 truncate flex items-center">
-                            <ImageIcon size={16} className="mr-2 text-blue-600 dark:text-blue-400" />
-                            <span className="font-medium">{imagemUpload.name}</span>
+                            {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
                           </span>
-                          <button
-                            onClick={() => {
-                              setImagemUpload(null);
-                              if (fileInputRef.current) {
-                                fileInputRef.current.value = '';
-                              }
-                            }}
-                            className="text-red-600 hover:text-red-800 transition-colors"
-                          >
-                            <X size={18} />
-                          </button>
                         </div>
-                      )}
-                      
-                      <form onSubmit={enviarMensagem} className="flex items-center space-x-2 sm:space-x-3">
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleImagemSelecionada}
-                          accept="image/*"
-                          className="hidden"
-                        />
-                        
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex-shrink-0"
-                          title="Enviar imagem"
-                        >
-                          <ImageIcon size={20} />
-                        </button>
-                        
-                        <input
-                          type="text"
-                          value={mensagem}
-                          onChange={(e) => setMensagem(e.target.value)}
-                          placeholder="Digite sua mensagem..."
-                          className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                        />
-                        
-                        <button
-                          type="submit"
-                          disabled={enviando || (!mensagem.trim() && !imagemUpload)}
-                          className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                          title="Enviar mensagem"
-                        >
-                          {enviando ? (
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          ) : (
-                            <Send size={20} />
-                          )}
-                        </button>
-                      </form>
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-gray-100 p-3 sm:p-4 py-8 sm:py-12">
-                <div className="w-full max-w-3xl">
-                  <div className="space-y-3">
-                    <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 p-3 rounded-r-lg">
-                      <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-1.5 text-sm">💬 Sobre os Chats</h3>
-                      <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
-                        Os chats são criados automaticamente quando uma autopeça faz uma oferta em um pedido que você criou, 
-                        ou quando você faz uma oferta em um pedido. Use esta área para negociar diretamente com seus parceiros de negócio.
-                      </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-3">
-                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-3 rounded-r-lg">
-                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-1.5 flex items-center gap-2 text-sm">
-                          <Phone size={16} />
-                          WhatsApp
-                        </h4>
-                        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
-                          Abra uma conversa no WhatsApp com o número cadastrado do outro usuário, já com uma mensagem pré-formatada pronta para enviar.
-                        </p>
                       </div>
-
-                      <div className="bg-yellow-50 dark:bg-yellow-950/40 border-l-4 border-yellow-500 dark:border-yellow-400 p-3 rounded-r-lg">
-                        <h4 className="font-bold text-yellow-900 dark:text-yellow-100 mb-1.5 flex items-center gap-2 text-sm">
-                          <Truck size={16} />
-                          Entregador
-                        </h4>
-                        <p className="text-xs text-yellow-800 dark:text-yellow-200 leading-relaxed">
-                          Solicite um entregador para buscar ou entregar a peça. Você pode escolher entre os entregadores disponíveis na sua região.
-                        </p>
-                      </div>
-
-                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-3 rounded-r-lg">
-                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-1.5 flex items-center gap-2 text-sm">
-                          <CheckCircle size={16} />
-                          Negócio Fechado
-                        </h4>
-                        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
-                          Marque o chat como "Negócio Fechado" quando a negociação for finalizada com sucesso. Isso encerra o chat e registra o negócio.
-                        </p>
-                      </div>
-
-                      <div className="bg-red-50 dark:bg-red-950/40 border-l-4 border-red-500 dark:border-red-400 p-3 rounded-r-lg">
-                        <h4 className="font-bold text-red-900 dark:text-red-100 mb-1.5 flex items-center gap-2 text-sm">
-                          <XCircle size={16} />
-                          Cancelar
-                        </h4>
-                        <p className="text-xs text-red-800 dark:text-red-200 leading-relaxed">
-                          Cancele e exclua o chat se a negociação não for adiante. Esta ação não pode ser desfeita.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="bg-purple-50 dark:bg-purple-950/40 border-l-4 border-purple-500 dark:border-purple-400 p-3 rounded-r-lg">
-                      <h4 className="font-bold text-purple-900 dark:text-purple-100 mb-1.5 text-sm">📋 Dica</h4>
-                      <p className="text-xs text-purple-800 dark:text-purple-200 leading-relaxed">
-                        Chats encerrados podem ser excluídos usando o botão "Excluir Encerrados" na lista de conversas. 
-                        Uma barra verde vertical indica chats ativos, facilitando a identificação das negociações em andamento.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            )}
+
+              {/* Input de Mensagem */}
+              <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+                {/* Para autopeça: mostrar como encerrado se ela fechou
+                    Para oficina: mostrar como encerrado apenas se não estiver aguardando confirmação */}
+                {((userData?.tipo === 'autopeca' && chatSelecionado.encerrado) ||
+                  (userData?.tipo === 'oficina' && chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao)) ? (
+                  <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-700 dark:text-gray-300" />
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">Chat Encerrado</p>
+                    <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-1">Este chat foi finalizado e não aceita mais mensagens.</p>
+                  </div>
+                ) : (
+                  <>
+                    {imagemUpload && (
+                      <div className="mb-2 sm:mb-3 flex items-center justify-between bg-blue-50 dark:bg-blue-950/40 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <span className="text-xs sm:text-sm text-gray-700 dark:text-blue-200 truncate flex items-center">
+                          <ImageIcon size={16} className="mr-2 text-blue-600 dark:text-blue-400" />
+                          <span className="font-medium">{imagemUpload.name}</span>
+                        </span>
+                        <button
+                          onClick={() => {
+                            setImagemUpload(null);
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = '';
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    )}
+                    
+                    <form onSubmit={enviarMensagem} className="flex items-center space-x-2 sm:space-x-3">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImagemSelecionada}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex-shrink-0"
+                        title="Enviar imagem"
+                      >
+                        <ImageIcon size={20} />
+                      </button>
+                      
+                      <input
+                        type="text"
+                        value={mensagem}
+                        onChange={(e) => setMensagem(e.target.value)}
+                        placeholder="Digite sua mensagem..."
+                        className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                      />
+                      
+                      <button
+                        type="submit"
+                        disabled={enviando || (!mensagem.trim() && !imagemUpload)}
+                        className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                        title="Enviar mensagem"
+                      >
+                        {enviando ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        ) : (
+                          <Send size={20} />
+                        )}
+                      </button>
+                    </form>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Modal de Entregadores */}
-      <EntregadoresModal 
-        isOpen={mostrarEntregadores}
-        onClose={() => {
-          setMostrarEntregadores(false);
-          setDadosEntregador(null);
-        }}
-        nomePeca={chatSelecionado?.nomePeca}
-        nomeAutopeca={dadosEntregador?.nomeAutopeca}
-        enderecoAutopeca={dadosEntregador?.enderecoAutopeca}
-        nomeOficina={dadosEntregador?.nomeOficina}
-        enderecoOficina={dadosEntregador?.enderecoOficina}
-        onCriarPedidoFrete={async () => {
-          const sucesso = await criarPedidoFreteAutomatico();
-          if (sucesso) {
-            setMostrarEntregadores(false);
-            setDadosEntregador(null);
-          }
-        }}
-        carregandoPedidoFrete={criandoPedidoFrete}
-      />
 
       {/* Modal - Endereço da Loja/Oficina */}
       {mostrarModalEndereco && dadosEndereco && (

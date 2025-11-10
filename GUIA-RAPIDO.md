@@ -79,7 +79,6 @@ autopecas-marketplace/
 │       └── negocios-fechados/ # Histórico
 ├── components/              # Componentes reutilizáveis
 │   ├── Navbar.tsx
-│   └── EntregadoresModal.tsx
 ├── contexts/                # Context API (Auth)
 │   └── AuthContext.tsx
 ├── lib/                     # Utilitários

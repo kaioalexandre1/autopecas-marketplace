@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones, Trophy, Truck, Package } from 'lucide-react';
+import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones, Trophy, Truck } from 'lucide-react';
 import ModalSuporte from './ModalSuporte';
 import { useUnreadChats } from '@/hooks/useUnreadChats';
 
@@ -299,7 +299,6 @@ export default function Navbar() {
       : []),
     ...(userData?.tipo === 'entregador'
       ? [
-          { href: '/dashboard/pedidos-frete', label: 'Pedidos de Frete', icon: Package },
           { href: '/dashboard/configuracoes-frete', label: 'Configurações de Frete', icon: Truck },
         ]
       : []),
@@ -846,17 +845,6 @@ export default function Navbar() {
                 title="Chats"
               >
                 💬
-              </Link>
-            )}
-
-            {userData?.tipo === 'entregador' && (
-              <Link
-                href="/dashboard/pedidos-frete"
-                className="p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all"
-                style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
-                title="Pedidos de Frete"
-              >
-                📦
               </Link>
             )}
 
