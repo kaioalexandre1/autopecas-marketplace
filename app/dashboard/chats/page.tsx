@@ -1480,7 +1480,7 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
     ).length;
   };
 
-  return (
+  const renderContent = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-6 relative">
       {/* Elementos decorativos de fundo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -2414,4 +2414,6 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
       )}
     </div>
   );
+
+  return renderContent();
 }
