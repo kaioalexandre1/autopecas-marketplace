@@ -26,6 +26,7 @@ import {
   Send, 
   Image as ImageIcon, 
   X, 
+  Truck, 
   CheckCircle, 
   XCircle,
   Trash2,
@@ -34,37 +35,17 @@ import {
   Phone,
   MapPin,
   ChevronDown,
+  Package,
+  Calendar,
   Store,
-  Truck,
   Clock,
   TrendingUp,
-  Award,
-  Star,
-  Shield,
-  Users,
-  Loader2,
-  Navigation,
-  Mail,
-  FileText,
-  Ban,
-  ExternalLink,
-  ArrowRight,
-  Tag,
-  Eye,
-  EyeOff,
-  Filter,
-  Info,
-  LogOut,
-  RefreshCw,
-  ClipboardCheck,
-  Calendar,
-  Package,
-  MessageCircle
+  Award
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { formatarPreco, formatarTelefone } from '@/lib/utils';
+import EntregadoresModal from '@/components/EntregadoresModal';
 
 interface InfoAutopeca {
   tempoCadastrado?: string;
@@ -73,27 +54,11 @@ interface InfoAutopeca {
   vendas: number;
   rankingPosicao?: number | null;
   totalAutopecas?: number;
-  cidadeEstado?: string;
 }
 
 interface RankingCache {
   posicoes: Record<string, { posicao: number; quantidade: number }>;
   total: number;
-}
-
-interface EntregadorResumo {
-  id: string;
-  nome: string;
-  telefone: string;
-  whatsapp: string;
-  valorDentroCidade: number;
-  cidade?: string;
-}
-
-interface DadosEntregaChat {
-  chatId: string;
-  autopeca?: { nome: string; endereco: string };
-  oficina?: { nome: string; endereco: string };
 }
 
 export default function ChatsPage() {
@@ -105,6 +70,13 @@ export default function ChatsPage() {
   const [mensagem, setMensagem] = useState('');
   const [imagemUpload, setImagemUpload] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
+  const [dadosEntregador, setDadosEntregador] = useState<{
+    nomeAutopeca?: string;
+    enderecoAutopeca?: string;
+    nomeOficina?: string;
+    enderecoOficina?: string;
+  } | null>(null);
   const [excluindo, setExcluindo] = useState(false);
   const [excluindoChatSuporte, setExcluindoChatSuporte] = useState<string | null>(null);
   const [telefoneOutroUsuario, setTelefoneOutroUsuario] = useState<string | null>(null);
@@ -121,16 +93,11 @@ export default function ChatsPage() {
     telefone: string;
   } | null>(null);
   const [mostrarMenuMaisInfo, setMostrarMenuMaisInfo] = useState(false);
-  const [infoAutopecas, setInfoAutopecas] = useState<Record<string, InfoAutopeca>>({});
-  const [infoAutopecaCarregando, setInfoAutopecaCarregando] = useState<string | null>(null);
-  const [infoAutopecaErro, setInfoAutopecaErro] = useState<{ id: string; mensagem: string } | null>(null);
-  const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null);
-  const [mostrarDetalhesLoja, setMostrarDetalhesLoja] = useState(false);
-  const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
-  const [entregadoresDisponiveis, setEntregadoresDisponiveis] = useState<EntregadorResumo[]>([]);
-  const [carregandoEntregadores, setCarregandoEntregadores] = useState(false);
-  const [erroEntregadores, setErroEntregadores] = useState<string | null>(null);
-  const [dadosEntregaAtual, setDadosEntregaAtual] = useState<DadosEntregaChat | null>(null);
+  const [criandoPedidoFrete, setCriandoPedidoFrete] = useState(false);
+const [infoAutopecas, setInfoAutopecas] = useState<Record<string, InfoAutopeca>>({});
+const [infoAutopecaCarregando, setInfoAutopecaCarregando] = useState<string | null>(null);
+const [infoAutopecaErro, setInfoAutopecaErro] = useState<{ id: string; mensagem: string } | null>(null);
+const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selecaoManualRef = useRef<string | null>(null); // Rastrear seleção manual para evitar sobrescrita
@@ -196,133 +163,6 @@ export default function ChatsPage() {
     return promessa;
   };
 
-  const montarEnderecoCompleto = (dados: any) =>
-    [dados.endereco, dados.numero, dados.bairro, dados.cidade].filter(Boolean).join(', ');
-
-  const carregarDadosEntrega = async (chat: Chat): Promise<DadosEntregaChat> => {
-    const resultado: DadosEntregaChat = { chatId: chat.id };
-
-    if (chat.autopecaId) {
-      const autopecaDoc = await getDoc(doc(db, 'users', chat.autopecaId));
-      if (autopecaDoc.exists()) {
-        const dados = autopecaDoc.data();
-        resultado.autopeca = {
-          nome: dados.nome || dados.nomeLoja || 'Autopeça',
-          endereco: montarEnderecoCompleto(dados),
-        };
-      }
-    }
-
-    if (chat.oficinaId) {
-      const oficinaDoc = await getDoc(doc(db, 'users', chat.oficinaId));
-      if (oficinaDoc.exists()) {
-        const dados = oficinaDoc.data();
-        resultado.oficina = {
-          nome: dados.nome || dados.nomeLoja || 'Oficina',
-          endereco: montarEnderecoCompleto(dados),
-        };
-      }
-    }
-
-    return resultado;
-  };
-
-  const carregarEntregadores = async (): Promise<EntregadorResumo[]> => {
-    const q = query(collection(db, 'users'), where('tipo', '==', 'entregador'));
-    const snapshot = await getDocs(q);
-
-    const lista = snapshot.docs.map((docSnap) => {
-      const dados = docSnap.data();
-      const telefone = String(dados.telefone || '');
-      const whatsapp = String(dados.whatsapp || telefone).replace(/\D/g, '');
-      return {
-        id: docSnap.id,
-        nome: dados.nome || dados.nomeLoja || 'Entregador',
-        telefone,
-        whatsapp,
-        valorDentroCidade: Number(dados.valorFreteDentroCidade || dados.valorDentroCidade || 0),
-        cidade: dados.cidade || undefined,
-      } as EntregadorResumo;
-    });
-
-    if (!lista.length) {
-      return [
-        {
-          id: 'exemplo-1',
-          nome: 'Motoboy Rápido',
-          telefone: '(44) 99999-1111',
-          whatsapp: '44999991111',
-          valorDentroCidade: 15,
-          cidade: 'Maringá-PR',
-        },
-        {
-          id: 'exemplo-2',
-          nome: 'Entrega Express',
-          telefone: '(44) 99999-2222',
-          whatsapp: '44999992222',
-          valorDentroCidade: 18,
-          cidade: 'Maringá-PR',
-        },
-      ];
-    }
-
-    return lista;
-  };
-
-  const abrirListaEntregadores = async () => {
-    if (!chatSelecionado) {
-      toast.error('Selecione um chat para consultar entregadores.');
-      return;
-    }
-
-    setMostrarEntregadores(true);
-    setCarregandoEntregadores(true);
-    setErroEntregadores(null);
-
-    try {
-      const lista = await carregarEntregadores();
-      setEntregadoresDisponiveis(lista);
-
-      const enderecos = await carregarDadosEntrega(chatSelecionado);
-      setDadosEntregaAtual(enderecos);
-    } catch (error) {
-      console.error('Erro ao carregar entregadores:', error);
-      setErroEntregadores('Não foi possível carregar os entregadores. Tente novamente.');
-    } finally {
-      setCarregandoEntregadores(false);
-    }
-  };
-
-  const abrirWhatsAppEntregador = async (entregador: EntregadorResumo) => {
-    if (!chatSelecionado) {
-      toast.error('Selecione um chat primeiro.');
-      return;
-    }
-
-    const numero = (entregador.whatsapp || entregador.telefone).replace(/\D/g, '');
-    if (!numero) {
-      toast.error('WhatsApp não disponível para este entregador.');
-      return;
-    }
-
-    let dadosEntrega = dadosEntregaAtual;
-    if (!dadosEntrega || dadosEntrega.chatId !== chatSelecionado.id) {
-      dadosEntrega = await carregarDadosEntrega(chatSelecionado);
-      setDadosEntregaAtual(dadosEntrega);
-    }
-
-    let mensagem = 'Olá! Vim pelo Autopeças Marketplace e gostaria de saber o valor do frete e o prazo de coleta/entrega';
-
-    if (dadosEntrega?.autopeca && dadosEntrega?.oficina) {
-      mensagem += ` para retirar em ${dadosEntrega.autopeca.nome} - ${dadosEntrega.autopeca.endereco} e entregar em ${dadosEntrega.oficina.nome} - ${dadosEntrega.oficina.endereco}.`;
-    } else {
-      mensagem += '.';
-    }
-
-    const url = `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, '_blank');
-  };
-
   const carregarInfoAutopeca = async (autopecaId: string) => {
     if (!autopecaId) return;
     if (infoAutopecas[autopecaId]) return;
@@ -340,24 +180,6 @@ export default function ChatsPage() {
       const autopecaData = autopecaDoc.data();
       const dataCadastro = resolverDataFirestore(autopecaData.createdAt);
 
-      const cidadeBruta = (autopecaData.cidade || '').trim();
-      let cidadeFormatada = cidadeBruta;
-      let estadoFormatado: string | undefined;
-
-      if (cidadeFormatada.includes('-')) {
-        const partes = cidadeFormatada.split('-').map((parte: string) => parte.trim());
-        if (partes.length >= 2) {
-          estadoFormatado = partes.pop();
-          cidadeFormatada = partes.join('-');
-        }
-      } else if (autopecaData.estado) {
-        estadoFormatado = String(autopecaData.estado).trim();
-      }
-
-      const cidadeEstado = cidadeFormatada
-        ? `${cidadeFormatada}${estadoFormatado ? `-${estadoFormatado.toUpperCase()}` : ''}`
-        : undefined;
-
       const rankingCache = await obterRankingCache();
       const rankingInfo = rankingCache.posicoes[autopecaId];
 
@@ -370,7 +192,6 @@ export default function ChatsPage() {
         vendas: rankingInfo ? rankingInfo.quantidade : 0,
         rankingPosicao: rankingInfo ? rankingInfo.posicao : null,
         totalAutopecas: rankingCache.total || undefined,
-        cidadeEstado,
       };
 
       setInfoAutopecas((prev) => ({ ...prev, [autopecaId]: info }));
@@ -390,12 +211,6 @@ export default function ChatsPage() {
       carregarInfoAutopeca(chatSelecionado.autopecaId);
     }
   }, [mostrarMenuMaisInfo, chatSelecionado]);
-
-  useEffect(() => {
-    if (!mostrarMenuMaisInfo) {
-      setMostrarDetalhesLoja(false);
-    }
-  }, [mostrarMenuMaisInfo]);
 
   // Verificar timeout de 24h para confirmações pendentes
   useEffect(() => {
@@ -939,6 +754,136 @@ export default function ChatsPage() {
       }
 
       setImagemUpload(file);
+    }
+  };
+
+  // Função para buscar dados da autopeça e oficina para entregador
+  const buscarDadosParaEntregador = async () => {
+    if (!chatSelecionado || !userData) return;
+
+    try {
+      // Buscar dados da autopeça
+      let nomeAutopeca = '';
+      let enderecoAutopeca = '';
+      
+      if (chatSelecionado.autopecaId) {
+        const autopecaDoc = await getDoc(doc(db, 'users', chatSelecionado.autopecaId));
+        if (autopecaDoc.exists()) {
+          const autopecaData = autopecaDoc.data();
+          nomeAutopeca = autopecaData.nome || autopecaData.nomeLoja || '';
+          const enderecoCompleto = [
+            autopecaData.endereco || '',
+            autopecaData.numero || '',
+            autopecaData.bairro || '',
+            autopecaData.cidade || ''
+          ].filter(Boolean).join(', ');
+          enderecoAutopeca = enderecoCompleto;
+        }
+      }
+
+      // Buscar dados da oficina
+      let nomeOficina = '';
+      let enderecoOficina = '';
+      
+      if (chatSelecionado.oficinaId) {
+        const oficinaDoc = await getDoc(doc(db, 'users', chatSelecionado.oficinaId));
+        if (oficinaDoc.exists()) {
+          const oficinaData = oficinaDoc.data();
+          nomeOficina = oficinaData.nome || oficinaData.nomeLoja || '';
+          const enderecoCompleto = [
+            oficinaData.endereco || '',
+            oficinaData.numero || '',
+            oficinaData.bairro || '',
+            oficinaData.cidade || ''
+          ].filter(Boolean).join(', ');
+          enderecoOficina = enderecoCompleto;
+        }
+      }
+
+      setDadosEntregador({
+        nomeAutopeca,
+        enderecoAutopeca,
+        nomeOficina,
+        enderecoOficina,
+      });
+    } catch (error) {
+      console.error('Erro ao buscar dados da autopeça e oficina:', error);
+      toast.error('Erro ao carregar dados do entregador');
+    }
+  };
+
+  const criarPedidoFreteAutomatico = async (): Promise<boolean> => {
+    if (!chatSelecionado || !userData) return false;
+
+    if (!chatSelecionado.autopecaId || !chatSelecionado.oficinaId) {
+      toast.error('Informações da autopeça ou oficina indisponíveis.');
+      return false;
+    }
+
+    if (chatSelecionado.encerrado) {
+      toast.error('Este chat está encerrado. Não é possível chamar um frete automático.');
+      return false;
+    }
+
+    try {
+      setCriandoPedidoFrete(true);
+
+      const pedidosAbertos = await getDocs(
+        query(
+          collection(db, 'pedidosFrete'),
+          where('chatId', '==', chatSelecionado.id),
+          where('status', '==', 'aberto')
+        )
+      );
+
+      if (!pedidosAbertos.empty) {
+        toast.error('Já existe um pedido de frete aberto para este chat.');
+        setMostrarMenuMaisInfo(false);
+        return false;
+      }
+
+      const autopecaDoc = await getDoc(doc(db, 'users', chatSelecionado.autopecaId));
+      const oficinaDoc = await getDoc(doc(db, 'users', chatSelecionado.oficinaId));
+
+      if (!autopecaDoc.exists() || !oficinaDoc.exists()) {
+        toast.error('Não foi possível coletar os dados necessários.');
+        return false;
+      }
+
+      const autopecaData = autopecaDoc.data();
+      const oficinaData = oficinaDoc.data();
+
+      const comporEndereco = (dados: any) =>
+        [dados.endereco, dados.numero, dados.bairro, dados.cidade].filter(Boolean).join(', ');
+
+      await addDoc(collection(db, 'pedidosFrete'), {
+        chatId: chatSelecionado.id,
+        pedidoId: chatSelecionado.pedidoId || '',
+        autopecaId: chatSelecionado.autopecaId,
+        autopecaNome: autopecaData.nome || autopecaData.nomeLoja || 'Autopeça',
+        autopecaTelefone: autopecaData.telefone || autopecaData.whatsapp || '',
+        autopecaEndereco: comporEndereco(autopecaData),
+        autopecaCidade: autopecaData.cidade || '',
+        oficinaId: chatSelecionado.oficinaId,
+        oficinaNome: oficinaData.nome || oficinaData.nomeLoja || 'Oficina',
+        oficinaTelefone: oficinaData.telefone || oficinaData.whatsapp || '',
+        oficinaEndereco: comporEndereco(oficinaData),
+        oficinaCidade: oficinaData.cidade || '',
+        status: 'aberto',
+        criadoEm: Timestamp.now(),
+        solicitadoPor: userData.id,
+        solicitadoTipo: userData.tipo,
+      });
+
+      toast.success('Pedido de frete enviado automaticamente aos entregadores!');
+      setMostrarMenuMaisInfo(false);
+      return true;
+    } catch (error) {
+      console.error('Erro ao criar pedido de frete:', error);
+      toast.error('Não foi possível criar o pedido de frete. Tente novamente.');
+      return false;
+    } finally {
+      setCriandoPedidoFrete(false);
     }
   };
 
@@ -1813,9 +1758,9 @@ export default function ChatsPage() {
           </div>
 
           {/* Área do Chat */}
-          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 overflow-visible ${
-             chatSelecionado ? 'block' : 'hidden lg:block'
-           }`}>
+          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 overflow-hidden ${
+            chatSelecionado ? 'block' : 'hidden lg:block'
+          }`}>
             {chatSelecionado ? (
               <>
                 {/* Header do Chat */}
@@ -1923,113 +1868,105 @@ export default function ChatsPage() {
                             <>
                               <div 
                                 className="fixed inset-0 z-10" 
-                                onClick={() => {
-                                  setMostrarMenuMaisInfo(false);
-                                  setMostrarDetalhesLoja(false);
-                                }}
+                                onClick={() => setMostrarMenuMaisInfo(false)}
                               />
-                              <div className="absolute top-[calc(100%+0.5rem)] sm:left-auto sm:right-0 left-0 sm:min-w-[220px] mt-0 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 z-40 overflow-hidden pointer-events-auto">
-                                <button
-                                  onClick={() => setMostrarDetalhesLoja((prev) => !prev)}
-                                  className="w-full flex items-center justify-between px-4 py-3 bg-purple-600 text-white font-semibold uppercase tracking-wide text-xs"
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <Store size={16} />
-                                    Informações
-                                  </span>
-                                </button>
+                              <div className="absolute top-full left-0 right-0 sm:right-auto sm:min-w-[200px] mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                                <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                                  {(() => {
+                                    const infoAtual = chatSelecionado?.autopecaId
+                                      ? infoAutopecas[chatSelecionado.autopecaId]
+                                      : undefined;
+                                    const carregando = infoAutopecaCarregando === chatSelecionado?.autopecaId;
+                                    const erroAtual = infoAutopecaErro?.id === chatSelecionado?.autopecaId ? infoAutopecaErro.mensagem : null;
 
-                                {mostrarDetalhesLoja && (
-                                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-                                    {(() => {
-                                      const infoAtual = chatSelecionado?.autopecaId
-                                        ? infoAutopecas[chatSelecionado.autopecaId]
-                                        : undefined;
-                                      const carregando = infoAutopecaCarregando === chatSelecionado?.autopecaId;
-                                      const erroAtual = infoAutopecaErro?.id === chatSelecionado?.autopecaId ? infoAutopecaErro.mensagem : null;
-
-                                      if (carregando) {
-                                        return (
-                                          <p className="text-xs text-gray-600 dark:text-gray-300">
-                                            Carregando informações da loja...
-                                          </p>
-                                        );
-                                      }
-
-                                      if (erroAtual) {
-                                        return (
-                                          <p className="text-xs text-red-500">
-                                            {erroAtual}
-                                          </p>
-                                        );
-                                      }
-
-                                      if (!infoAtual) {
-                                        return (
-                                          <p className="text-xs text-gray-600 dark:text-gray-300">
-                                            Informações da loja indisponíveis no momento.
-                                          </p>
-                                        );
-                                      }
-
-                                      const rankingDescricao = infoAtual.rankingPosicao
-                                        ? infoAtual.cidadeEstado
-                                          ? `${infoAtual.rankingPosicao}º lugar de ${infoAtual.cidadeEstado}`
-                                          : infoAtual.totalAutopecas
-                                            ? `${infoAtual.rankingPosicao}º de ${infoAtual.totalAutopecas}`
-                                            : `${infoAtual.rankingPosicao}º lugar`
-                                        : 'Sem ranking registrado';
-
+                                    if (carregando) {
                                       return (
-                                        <div className="space-y-3 text-xs text-gray-700 dark:text-gray-200">
-                                          <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100">
-                                            <Store size={15} className="text-green-600 dark:text-green-400" />
-                                            <span className="font-semibold uppercase tracking-wide">
-                                              Informações da loja
+                                        <p className="text-xs text-gray-600 dark:text-gray-300">
+                                          Carregando informações da loja...
+                                        </p>
+                                      );
+                                    }
+
+                                    if (erroAtual) {
+                                      return (
+                                        <p className="text-xs text-red-500">
+                                          {erroAtual}
+                                        </p>
+                                      );
+                                    }
+
+                                    if (!infoAtual) {
+                                      return (
+                                        <p className="text-xs text-gray-600 dark:text-gray-300">
+                                          Informações da loja indisponíveis no momento.
+                                        </p>
+                                      );
+                                    }
+
+                                    const rankingTexto = infoAtual.rankingPosicao
+                                      ? `${infoAtual.rankingPosicao}º${infoAtual.totalAutopecas ? ` de ${infoAtual.totalAutopecas}` : ''}`
+                                      : 'Sem ranking registrado';
+
+                                    return (
+                                      <div className="space-y-3 text-xs text-gray-700 dark:text-gray-200">
+                                        <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100">
+                                          <Store size={15} className="text-green-600 dark:text-green-400" />
+                                          <span className="font-semibold uppercase tracking-wide">
+                                            Informações da loja
+                                          </span>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                              <Clock size={14} className="text-blue-500" />
+                                              <span className="font-semibold">Tempo na plataforma</span>
+                                            </div>
+                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                              {infoAtual.tempoCadastrado || '—'}
                                             </span>
                                           </div>
-                                          <div className="space-y-2">
-                                            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                                <Clock size={14} className="text-blue-500" />
-                                                <span className="font-semibold">Tempo na plataforma</span>
-                                              </div>
-                                              <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                                {infoAtual.tempoCadastrado || '-'}
-                                              </span>
-                                            </div>
 
+                                          {infoAtual.cadastradoEmTexto && (
                                             <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
                                               <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                                <TrendingUp size={14} className="text-emerald-500" />
-                                                <span className="font-semibold">Vendas registradas</span>
+                                                <Calendar size={14} className="text-blue-500" />
+                                                <span className="font-semibold">Cadastrada em</span>
                                               </div>
                                               <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                                {infoAtual.vendas}
+                                                {infoAtual.cadastradoEmTexto}
                                               </span>
                                             </div>
+                                          )}
 
-                                            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                                <Award size={14} className="text-yellow-500" />
-                                                <span className="font-semibold">Ranking de vendas</span>
-                                              </div>
-                                              <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                                {rankingDescricao}
-                                              </span>
+                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                              <TrendingUp size={14} className="text-emerald-500" />
+                                              <span className="font-semibold">Vendas registradas</span>
                                             </div>
+                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                              {infoAtual.vendas}
+                                            </span>
+                                          </div>
+
+                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                              <Award size={14} className="text-yellow-500" />
+                                              <span className="font-semibold">Ranking de vendas</span>
+                                            </div>
+                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                              {rankingTexto}
+                                            </span>
                                           </div>
                                         </div>
-                                      );
-                                    })()}
-                                  </div>
-                                )}
-
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                                {/* Botão Endereço da loja */}
                                 <button
                                   onClick={() => {
                                     abrirModalEndereco();
                                     setMostrarMenuMaisInfo(false);
-                                    setMostrarDetalhesLoja(false);
                                   }}
                                   className="w-full px-4 py-3 bg-blue-500 text-white hover:bg-blue-600 font-medium flex items-center transition-all text-sm"
                                 >
@@ -2037,34 +1974,51 @@ export default function ChatsPage() {
                                   <span>Endereço da loja</span>
                                 </button>
 
-                                {telefoneOutroUsuario && (
-                                  <button
+                          {telefoneOutroUsuario && (
+                            <button
                                     onClick={() => {
                                       abrirWhatsApp();
                                       setMostrarMenuMaisInfo(false);
-                                      setMostrarDetalhesLoja(false);
                                     }}
                                     className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
-                                  >
+                            >
                                     <Phone size={18} className="mr-2" />
-                                    <span>WhatsApp</span>
-                                  </button>
-                                )}
-
-                                <button
-                                  onClick={abrirListaEntregadores}
+                              <span>WhatsApp</span>
+                            </button>
+                          )}
+                          
+                          <button
+                                  onClick={async () => {
+                                    if (chatSelecionado) {
+                                      await buscarDadosParaEntregador();
+                                    }
+                                    setMostrarEntregadores(true);
+                                    setMostrarMenuMaisInfo(false);
+                                  }}
                                   className="w-full px-4 py-3 bg-yellow-500 text-white hover:bg-yellow-600 font-medium flex items-center transition-all text-sm"
-                                >
+                          >
                                   <Truck size={18} className="mr-2" />
-                                  <span>Entregadores</span>
-                                </button>
-
+                                  <span>Entregador</span>
+                          </button>
+                          
+                                {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
+                            <button
+                                    onClick={async () => {
+                                      await criarPedidoFreteAutomatico();
+                                    }}
+                                    disabled={criandoPedidoFrete}
+                                    className="w-full px-4 py-3 bg-purple-500 text-white hover:bg-purple-600 font-medium flex items-center transition-all text-sm disabled:opacity-60"
+                            >
+                                    <Package size={18} className="mr-2" />
+                                    <span>{criandoPedidoFrete ? 'Gerando pedido...' : 'Chamar frete automaticamente'}</span>
+                            </button>
+                          )}
+                          
                                 {!chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
-                                  <button
+                          <button
                                     onClick={() => {
                                       finalizarNegociacao();
                                       setMostrarMenuMaisInfo(false);
-                                      setMostrarDetalhesLoja(false);
                                     }}
                                     className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
                                   >
@@ -2072,20 +2026,19 @@ export default function ChatsPage() {
                                     <span>Negócio Fechado</span>
                                   </button>
                                 )}
-
+                                
                                 <button
                                   onClick={() => {
                                     excluirChat();
                                     setMostrarMenuMaisInfo(false);
-                                    setMostrarDetalhesLoja(false);
                                   }}
-                                  disabled={excluindo}
+                            disabled={excluindo}
                                   className="w-full px-4 py-3 bg-red-500 text-white hover:bg-red-600 font-medium flex items-center transition-all disabled:opacity-50 text-sm"
-                                >
+                          >
                                   <XCircle size={18} className="mr-2" />
                                   <span>Cancelar</span>
-                                </button>
-                              </div>
+                          </button>
+                        </div>
                             </>
                           )}
                         </div>
@@ -2366,40 +2319,62 @@ export default function ChatsPage() {
         </div>
       </div>
 
+      {/* Modal de Entregadores */}
+      <EntregadoresModal 
+        isOpen={mostrarEntregadores}
+        onClose={() => {
+          setMostrarEntregadores(false);
+          setDadosEntregador(null);
+        }}
+        nomePeca={chatSelecionado?.nomePeca}
+        nomeAutopeca={dadosEntregador?.nomeAutopeca}
+        enderecoAutopeca={dadosEntregador?.enderecoAutopeca}
+        nomeOficina={dadosEntregador?.nomeOficina}
+        enderecoOficina={dadosEntregador?.enderecoOficina}
+        onCriarPedidoFrete={async () => {
+          const sucesso = await criarPedidoFreteAutomatico();
+          if (sucesso) {
+            setMostrarEntregadores(false);
+            setDadosEntregador(null);
+          }
+        }}
+        carregandoPedidoFrete={criandoPedidoFrete}
+      />
+
       {/* Modal - Endereço da Loja/Oficina */}
       {mostrarModalEndereco && dadosEndereco && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setMostrarModalEndereco(false)}>
-          <div className="bg-white dark:bg-black rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-black dark:text-white flex items-center gap-2 uppercase">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <MapPin className="text-blue-600" />
                 Endereço e Contato
               </h2>
               <button
                 onClick={() => setMostrarModalEndereco(false)}
-                className="text-gray-500 hover:text-gray-300 transition-colors"
+                className="text-gray-500 hover:text-gray-700 transition-colors"
                 title="Fechar"
               >
                 <X size={24} />
               </button>
             </div>
-
+            
             <div className="space-y-4">
               {dadosEndereco.estado && (
-                <div className="bg-white rounded-lg p-3 border border-blue-200">
-                  <p className="text-xs font-semibold text-black uppercase tracking-wider mb-1">Estado</p>
-                  <p className="text-base font-bold text-black uppercase">{dadosEndereco.estado}</p>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Estado</p>
+                  <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.estado}</p>
                 </div>
               )}
-
-              <div className="bg-white rounded-lg p-3 border border-blue-200">
-                <p className="text-xs font-semibold text-black uppercase tracking-wider mb-1">Cidade</p>
-                <p className="text-base font-bold text-black uppercase">{dadosEndereco.cidade}</p>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Cidade</p>
+                <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.cidade}</p>
               </div>
-
-              <div className="bg-white rounded-lg p-3 border border-gray-200">
-                <p className="text-xs font-semibold text-black uppercase tracking-wider mb-1">Endereço</p>
-                <p className="text-base font-semibold text-black uppercase">
+              
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">Endereço</p>
+                <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
                   {dadosEndereco.endereco}
                   {dadosEndereco.numero && `, ${dadosEndereco.numero}`}
                   {dadosEndereco.complemento && ` - ${dadosEndereco.complemento}`}
@@ -2407,104 +2382,17 @@ export default function ChatsPage() {
                   {dadosEndereco.cep && ` - CEP: ${dadosEndereco.cep}`}
                 </p>
               </div>
-
-              <div className="bg-white rounded-lg p-3 border border-green-200">
-                <p className="text-xs font-semibold text-black uppercase tracking-wider mb-1">Telefone</p>
+              
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wider mb-1">Telefone</p>
                 <a
                   href={`tel:${dadosEndereco.telefone}`}
-                  className="text-lg font-bold text-black uppercase hover:underline flex items-center gap-2"
+                  className="text-lg font-bold text-green-600 dark:text-green-400 hover:underline flex items-center gap-2"
                 >
-                  <Phone size={18} className="text-black" />
+                  <Phone size={18} />
                   {dadosEndereco.telefone}
                 </a>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {mostrarEntregadores && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={() => setMostrarEntregadores(false)}>
-          <div
-            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3">
-                <Truck className="text-yellow-500" size={26} />
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Entregadores disponíveis</h2>
-                  {dadosEntregaAtual?.autopeca && dadosEntregaAtual?.oficina ? (
-                    <p className="text-xs text-gray-600 dark:text-gray-300">
-                      {`Coleta em ${dadosEntregaAtual.autopeca.nome} → Entrega em ${dadosEntregaAtual.oficina.nome}`}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-600 dark:text-gray-300">Consulte os valores e acione por WhatsApp.</p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setMostrarEntregadores(false)}
-                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                title="Fechar"
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-              {carregandoEntregadores ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="animate-spin text-yellow-500" size={32} />
-                </div>
-              ) : erroEntregadores ? (
-                <div className="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
-                  {erroEntregadores}
-                </div>
-              ) : entregadoresDisponiveis.length === 0 ? (
-                <div className="text-center text-gray-600 dark:text-gray-300 py-12">
-                  <Truck className="mx-auto mb-4 text-gray-300" size={48} />
-                  <p className="font-medium">Nenhum entregador encontrado.</p>
-                  <p className="text-sm mt-1">Cadastre entregadores em "Configurações de Frete" para aparecerem aqui.</p>
-                </div>
-              ) : (
-                entregadoresDisponiveis.map((entregador) => (
-                  <div
-                    key={entregador.id}
-                    className="border border-yellow-200 dark:border-yellow-600/40 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-5 shadow-sm"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{entregador.nome}</h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                          {entregador.cidade || 'Cidade não informada'}
-                        </p>
-                        {entregador.telefone && (
-                          <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
-                            {formatarTelefone(entregador.telefone)}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs uppercase text-gray-500 dark:text-gray-300">Dentro da cidade</p>
-                        <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
-                          {entregador.valorDentroCidade > 0 ? formatarPreco(entregador.valorDentroCidade) : 'Sob consulta'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <button
-                        onClick={() => abrirWhatsAppEntregador(entregador)}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-lg shadow-md transition-colors"
-                      >
-                        <MessageCircle size={18} />
-                        Chamar no WhatsApp
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
             </div>
           </div>
         </div>
