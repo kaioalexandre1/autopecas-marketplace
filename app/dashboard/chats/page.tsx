@@ -1883,11 +1883,11 @@ export default function ChatsPage() {
                               <div className="absolute top-[calc(100%+0.5rem)] sm:left-auto sm:right-0 left-0 sm:min-w-[220px] mt-0 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 z-40 overflow-hidden pointer-events-auto">
                                 <button
                                   onClick={() => setMostrarDetalhesLoja((prev) => !prev)}
-                                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-900/80 text-slate-100 font-semibold uppercase tracking-wide text-xs"
+                                  className="w-full flex items-center justify-between px-4 py-3 bg-purple-600 text-white font-semibold uppercase tracking-wide text-xs"
                                 >
                                   <span className="flex items-center gap-2">
                                     <Store size={16} />
-                                    Informações da loja
+                                    Informações
                                   </span>
                                   <ChevronDown size={18} className={`transition-transform ${mostrarDetalhesLoja ? 'rotate-180' : ''}`} />
                                 </button>
@@ -2035,7 +2035,7 @@ export default function ChatsPage() {
                                     className="w-full px-4 py-3 bg-purple-500 text-white hover:bg-purple-600 font-medium flex items-center transition-all text-sm disabled:opacity-60"
                             >
                                     <Package size={18} className="mr-2" />
-                                    <span>{criandoPedidoFrete ? 'Gerando pedido...' : 'Chamar frete automaticamente'}</span>
+                                    <span>{criandoPedidoFrete ? 'Gerando pedido...' : 'Frete automático'}</span>
                             </button>
                           )}
                           
