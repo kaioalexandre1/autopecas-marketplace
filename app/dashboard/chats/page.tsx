@@ -1772,9 +1772,9 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
           </div>
 
           {/* Área do Chat */}
-          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 overflow-hidden ${
-            chatSelecionado ? 'block' : 'hidden lg:block'
-          }`}>
+          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 overflow-visible ${
+             chatSelecionado ? 'block' : 'hidden lg:block'
+           }`}>
             {chatSelecionado ? (
               <>
                 {/* Header do Chat */}
