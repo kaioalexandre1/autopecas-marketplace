@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Fragment, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   collection, 
@@ -14,7 +14,8 @@ import {
   Timestamp,
   arrayUnion,
   deleteDoc,
-  getDocs
+  getDocs,
+  QueryConstraint
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
@@ -825,15 +826,27 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
       return false;
     }
 
+    if (userData.tipo !== 'autopeca' && userData.tipo !== 'oficina') {
+      toast.error('Apenas autopeças ou oficinas podem solicitar entregadores.');
+      return false;
+    }
+
     try {
       setCriandoPedidoFrete(true);
 
+      const filtrosConsulta: QueryConstraint[] = [
+        where('chatId', '==', chatSelecionado.id),
+        where('status', '==', 'aberto'),
+      ];
+
+      if (userData.tipo === 'autopeca') {
+        filtrosConsulta.push(where('autopecaId', '==', userData.id));
+      } else if (userData.tipo === 'oficina') {
+        filtrosConsulta.push(where('oficinaId', '==', userData.id));
+      }
+
       const pedidosAbertos = await getDocs(
-        query(
-          collection(db, 'pedidosFrete'),
-          where('chatId', '==', chatSelecionado.id),
-          where('status', '==', 'aberto')
-        )
+        query(collection(db, 'pedidosFrete'), ...filtrosConsulta)
       );
 
       if (!pedidosAbertos.empty) {
@@ -1450,23 +1463,24 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
 
   const contarMensagensNaoLidas = (chat: Chat): number => {
     if (!userData || chat.mensagens.length === 0) return 0;
-    
-    const ultimaLeitura = userData.tipo === 'oficina' 
-      ? chat.ultimaLeituraOficina 
-      : chat.ultimaLeituraAutopeca;
-    
+
+    const ultimaLeitura =
+      userData.tipo === 'oficina'
+        ? chat.ultimaLeituraOficina
+        : chat.ultimaLeituraAutopeca;
+
     // Se nunca leu, todas as mensagens do outro usuário são não lidas
     if (!ultimaLeitura) {
-      return chat.mensagens.filter(msg => msg.remetenteId !== userData.id).length;
+      return chat.mensagens.filter((msg) => msg.remetenteId !== userData.id).length;
     }
-    
+
     // Contar mensagens depois da última leitura que não foram enviadas por mim
-    return chat.mensagens.filter(msg => 
-      msg.createdAt > ultimaLeitura && msg.remetenteId !== userData.id
+    return chat.mensagens.filter(
+      (msg) => msg.createdAt > ultimaLeitura && msg.remetenteId !== userData.id
     ).length;
   };
 
-  return (
+  const renderContent = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-6 relative">
       {/* Elementos decorativos de fundo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -1758,11 +1772,11 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
           </div>
 
           {/* Área do Chat */}
-          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 overflow-hidden ${
-            chatSelecionado ? 'block' : 'hidden lg:block'
-          }`}>
+          <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-xl flex flex-col border-2 border-gray-200 dark:border-gray-700 dark:shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:ring-2 dark:ring-cyan-500/50 overflow-visible ${
+             chatSelecionado ? 'block' : 'hidden lg:block'
+           }`}>
             {chatSelecionado ? (
-              <>
+              <div className="flex h-full flex-col">
                 {/* Header do Chat */}
                 <div className="p-3 sm:p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-indigo-600 flex-shrink-0">
                   <div className="flex items-start gap-2 sm:gap-0">
@@ -1854,7 +1868,8 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                         {/* Botão "Mais Informações" - Desktop e Mobile */}
                         {!chatSelecionado.isSuporte && (
                         <div className="relative w-full sm:w-auto">
-                          <button
+                          <div className="relative w-full sm:w-auto">
+                            <button
                             onClick={() => setMostrarMenuMaisInfo(!mostrarMenuMaisInfo)}
                             className="w-full sm:w-auto px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium flex items-center justify-center transition-all shadow-lg hover:shadow-xl text-sm whitespace-nowrap"
                             title="Mais informações"
@@ -1865,12 +1880,12 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
 
                           {/* Menu Dropdown */}
                           {mostrarMenuMaisInfo && (
-                            <>
-                              <div 
-                                className="fixed inset-0 z-10" 
-                                onClick={() => setMostrarMenuMaisInfo(false)}
-                              />
-                              <div className="absolute top-full left-0 right-0 sm:right-auto sm:min-w-[200px] mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                            <div className="relative w-full sm:w-auto">
+                               <div 
+                                 className="fixed inset-0 z-10" 
+                                 onClick={() => setMostrarMenuMaisInfo(false)}
+                               />
+                               <div className="absolute top-[calc(100%+0.5rem)] sm:left-auto sm:right-0 left-0 sm:min-w-[220px] mt-0 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 z-40 overflow-hidden pointer-events-auto">
                                 <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                                   {(() => {
                                     const infoAtual = chatSelecionado?.autopecaId
@@ -1974,429 +1989,432 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                                   <span>Endereço da loja</span>
                                 </button>
 
-                          {telefoneOutroUsuario && (
-                            <button
-                                    onClick={() => {
-                                      abrirWhatsApp();
-                                      setMostrarMenuMaisInfo(false);
-                                    }}
-                                    className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
-                            >
-                                    <Phone size={18} className="mr-2" />
-                              <span>WhatsApp</span>
-                            </button>
-                          )}
-                          
-                          <button
-                                  onClick={async () => {
-                                    if (chatSelecionado) {
-                                      await buscarDadosParaEntregador();
-                                    }
-                                    setMostrarEntregadores(true);
-                                    setMostrarMenuMaisInfo(false);
-                                  }}
-                                  className="w-full px-4 py-3 bg-yellow-500 text-white hover:bg-yellow-600 font-medium flex items-center transition-all text-sm"
-                          >
-                                  <Truck size={18} className="mr-2" />
-                                  <span>Entregador</span>
-                          </button>
-                          
-                                {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
-                            <button
-                                    onClick={async () => {
-                                      await criarPedidoFreteAutomatico();
-                                    }}
-                                    disabled={criandoPedidoFrete}
-                                    className="w-full px-4 py-3 bg-purple-500 text-white hover:bg-purple-600 font-medium flex items-center transition-all text-sm disabled:opacity-60"
-                            >
-                                    <Package size={18} className="mr-2" />
-                                    <span>{criandoPedidoFrete ? 'Gerando pedido...' : 'Chamar frete automaticamente'}</span>
-                            </button>
-                          )}
-                          
-                                {!chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
-                          <button
-                                    onClick={() => {
-                                      finalizarNegociacao();
-                                      setMostrarMenuMaisInfo(false);
-                                    }}
-                                    className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
-                                  >
-                                    <CheckCircle size={18} className="mr-2" />
-                                    <span>Negócio Fechado</span>
-                                  </button>
-                                )}
-                                
+                              {telefoneOutroUsuario && (
                                 <button
-                                  onClick={() => {
-                                    excluirChat();
-                                    setMostrarMenuMaisInfo(false);
-                                  }}
-                            disabled={excluindo}
+                                        onClick={() => {
+                                          abrirWhatsApp();
+                                          setMostrarMenuMaisInfo(false);
+                                        }}
+                                        className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
+                                >
+                                        <Phone size={18} className="mr-2" />
+                                  <span>WhatsApp</span>
+                                </button>
+                              )}
+                              
+                              <button
+                                      onClick={async () => {
+                                        if (chatSelecionado) {
+                                          await buscarDadosParaEntregador();
+                                        }
+                                        setMostrarEntregadores(true);
+                                        setMostrarMenuMaisInfo(false);
+                                      }}
+                                      className="w-full px-4 py-3 bg-yellow-500 text-white hover:bg-yellow-600 font-medium flex items-center transition-all text-sm"
+                              >
+                                      <Truck size={18} className="mr-2" />
+                                      <span>Entregador</span>
+                              </button>
+                              
+                                    {(userData?.tipo === 'autopeca' || userData?.tipo === 'oficina') && (
+                              <button
+                                      onClick={async () => {
+                                        await criarPedidoFreteAutomatico();
+                                      }}
+                                      disabled={criandoPedidoFrete}
+                                      className="w-full px-4 py-3 bg-purple-500 text-white hover:bg-purple-600 font-medium flex items-center transition-all text-sm disabled:opacity-60"
+                              >
+                                      <Package size={18} className="mr-2" />
+                                      <span>{criandoPedidoFrete ? 'Gerando pedido...' : 'Chamar frete automaticamente'}</span>
+                              </button>
+                            )}
+                              
+                                    {!chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
+                              <button
+                                      onClick={() => {
+                                        finalizarNegociacao();
+                                        setMostrarMenuMaisInfo(false);
+                                      }}
+                                      className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
+                                    >
+                                      <CheckCircle size={18} className="mr-2" />
+                                      <span>Negócio Fechado</span>
+                                    </button>
+                                  )}
+                                  
+                                  <button
+                                    onClick={() => {
+                                      excluirChat();
+                                      setMostrarMenuMaisInfo(false);
+                                    }}
+                          disabled={excluindo}
                                   className="w-full px-4 py-3 bg-red-500 text-white hover:bg-red-600 font-medium flex items-center transition-all disabled:opacity-50 text-sm"
-                          >
+                                >
                                   <XCircle size={18} className="mr-2" />
                                   <span>Cancelar</span>
                           </button>
                         </div>
-                            </>
+                            </div>
                           )}
                         </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Mensagens */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
-                  {/* Card de confirmação para oficina */}
-                  {(() => {
-                    const condicao1 = chatSelecionado && userData?.tipo === 'oficina';
-                    // Usar !! para garantir que seja tratado como booleano
-                    const condicao2 = !!chatSelecionado?.aguardandoConfirmacao;
-                    const condicao3 = !chatSelecionado?.confirmadoPor;
-                    const condicao4 = !chatSelecionado?.negadoPor;
-                    const deveMostrar = condicao1 && condicao2 && condicao3 && condicao4;
-                    
-                    if (userData?.tipo === 'oficina' && chatSelecionado) {
-                      console.log('🔍 Verificando card de confirmação:', {
-                        condicao1,
-                        condicao2,
-                        condicao3,
-                        condicao4,
-                        deveMostrar,
-                        aguardandoConfirmacao: chatSelecionado.aguardandoConfirmacao,
-                        tipoAguardandoConfirmacao: typeof chatSelecionado.aguardandoConfirmacao,
-                        confirmadoPor: chatSelecionado.confirmadoPor,
-                        negadoPor: chatSelecionado.negadoPor,
-                        encerrado: chatSelecionado.encerrado,
-                      });
-                    }
-                    
-                    return deveMostrar;
-                  })() && (
-                    <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-400 dark:border-blue-500 rounded-xl p-6 mb-4 shadow-lg">
-                      <div className="flex items-start mb-4">
-                        <AlertCircle className="text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" size={28} />
-                        <div className="flex-1">
-                          <p className="font-bold text-lg text-blue-900 dark:text-blue-100 mb-2">
-                            Confirmação de Negócio
-                          </p>
-                          <p className="text-base text-blue-800 dark:text-blue-200">
-                            A <span className="font-bold">{chatSelecionado.autopecaNome}</span> informou que vocês fecharam negócio. Confirma?
-                          </p>
-                          {chatSelecionado.dataSolicitacaoConfirmacao && (
-                            <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
-                              Solicitado há {formatDistanceToNow(chatSelecionado.dataSolicitacaoConfirmacao, { addSuffix: true, locale: ptBR })}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-3 mt-4">
-                        <button
-                          onClick={confirmarNegocio}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
-                        >
-                          <CheckCircle size={20} className="mr-2" />
-                          Sim, Negócio Fechado
-                        </button>
-                        <button
-                          onClick={negarNegocio}
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
-                        >
-                          <XCircle size={20} className="mr-2" />
-                          Não
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
-                    <div className="bg-yellow-50 dark:bg-yellow-950/50 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 mb-4 rounded-r-lg">
-                      <div className="flex items-center">
-                        <AlertCircle className="text-yellow-600 dark:text-yellow-400 mr-3" size={24} />
-                        <div>
-                          <p className="font-medium text-yellow-800 dark:text-yellow-200">Chat Encerrado</p>
-                          <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                            Esta negociação foi finalizada em{' '}
-                            {chatSelecionado.encerradoEm && 
-                              formatDistanceToNow(chatSelecionado.encerradoEm, { addSuffix: true, locale: ptBR })}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {chatSelecionado.mensagens.length === 0 ? (
-                    <div className="text-center text-gray-900 dark:text-gray-100 py-12">
-                      <MessageSquare size={64} className="mx-auto mb-4 text-gray-600 dark:text-gray-300" />
-                      <p className="text-lg font-medium text-gray-900 dark:text-gray-100">Nenhuma mensagem ainda</p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">Envie a primeira mensagem para iniciar a conversa!</p>
-                    </div>
-                  ) : (
-                    chatSelecionado.mensagens.map((msg) => {
-                      const isMinha = msg.remetenteId === userData?.id;
+                  {/* Mensagens */}
+                  <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: 0 }}>
+                    {/* Card de confirmação para oficina */}
+                    {(() => {
+                      const condicao1 = chatSelecionado && userData?.tipo === 'oficina';
+                      // Usar !! para garantir que seja tratado como booleano
+                      const condicao2 = !!chatSelecionado?.aguardandoConfirmacao;
+                      const condicao3 = !chatSelecionado?.confirmadoPor;
+                      const condicao4 = !chatSelecionado?.negadoPor;
+                      const deveMostrar = condicao1 && condicao2 && condicao3 && condicao4;
                       
-                      return (
-                        <div
-                          key={msg.id}
-                          className={`flex ${isMinha ? 'justify-end' : 'justify-start'} animate-fadeIn`}
-                        >
-                          <div
-                            className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-md ${
-                              isMinha
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                                : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
-                            }`}
-                          >
-                            {msg.imagemUrl && (
-                              <img
-                                src={msg.imagemUrl}
-                                alt="Imagem"
-                                className="rounded-xl mb-2 max-w-full cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(msg.imagemUrl, '_blank')}
-                              />
+                      if (userData?.tipo === 'oficina' && chatSelecionado) {
+                        console.log('🔍 Verificando card de confirmação:', {
+                          condicao1,
+                          condicao2,
+                          condicao3,
+                          condicao4,
+                          deveMostrar,
+                          aguardandoConfirmacao: chatSelecionado.aguardandoConfirmacao,
+                          tipoAguardandoConfirmacao: typeof chatSelecionado.aguardandoConfirmacao,
+                          confirmadoPor: chatSelecionado.confirmadoPor,
+                          negadoPor: chatSelecionado.negadoPor,
+                          encerrado: chatSelecionado.encerrado,
+                        });
+                      }
+                      
+                      return deveMostrar;
+                    })() && (
+                      <div className="bg-blue-50 dark:bg-blue-950/50 border-2 border-blue-400 dark:border-blue-500 rounded-xl p-6 mb-4 shadow-lg">
+                        <div className="flex items-start mb-4">
+                          <AlertCircle className="text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" size={28} />
+                          <div className="flex-1">
+                            <p className="font-bold text-lg text-blue-900 dark:text-blue-100 mb-2">
+                              Confirmação de Negócio
+                            </p>
+                            <p className="text-base text-blue-800 dark:text-blue-200">
+                              A <span className="font-bold">{chatSelecionado.autopecaNome}</span> informou que vocês fecharam negócio. Confirma?
+                            </p>
+                            {chatSelecionado.dataSolicitacaoConfirmacao && (
+                              <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
+                                Solicitado há {formatDistanceToNow(chatSelecionado.dataSolicitacaoConfirmacao, { addSuffix: true, locale: ptBR })}
+                              </p>
                             )}
-                            {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
-                            <span
-                              className={`text-xs mt-2 block ${
-                                isMinha ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300'
-                              }`}
-                            >
-                              {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
-                            </span>
                           </div>
                         </div>
-                      );
-                    })
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input de Mensagem */}
-                <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-                  {/* Para autopeça: mostrar como encerrado se ela fechou
-                      Para oficina: mostrar como encerrado apenas se não estiver aguardando confirmação */}
-                  {((userData?.tipo === 'autopeca' && chatSelecionado.encerrado) ||
-                    (userData?.tipo === 'oficina' && chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao)) ? (
-                    <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
-                      <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-700 dark:text-gray-300" />
-                      <p className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">Chat Encerrado</p>
-                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-1">Este chat foi finalizado e não aceita mais mensagens.</p>
-                    </div>
-                  ) : (
-                    <>
-                      {imagemUpload && (
-                        <div className="mb-2 sm:mb-3 flex items-center justify-between bg-blue-50 dark:bg-blue-950/40 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700">
-                          <span className="text-xs sm:text-sm text-gray-700 dark:text-blue-200 truncate flex items-center">
-                            <ImageIcon size={16} className="mr-2 text-blue-600 dark:text-blue-400" />
-                            <span className="font-medium">{imagemUpload.name}</span>
-                          </span>
+                        <div className="flex gap-3 mt-4">
                           <button
-                            onClick={() => {
-                              setImagemUpload(null);
-                              if (fileInputRef.current) {
-                                fileInputRef.current.value = '';
-                              }
-                            }}
-                            className="text-red-600 hover:text-red-800 transition-colors"
+                            onClick={confirmarNegocio}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
                           >
-                            <X size={18} />
+                            <CheckCircle size={20} className="mr-2" />
+                            Sim, Negócio Fechado
+                          </button>
+                          <button
+                            onClick={negarNegocio}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
+                          >
+                            <XCircle size={20} className="mr-2" />
+                            Não
                           </button>
                         </div>
-                      )}
-                      
-                      <form onSubmit={enviarMensagem} className="flex items-center space-x-2 sm:space-x-3">
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleImagemSelecionada}
-                          accept="image/*"
-                          className="hidden"
-                        />
+                      </div>
+                    )}
+
+                    {chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao && (
+                      <div className="bg-yellow-50 dark:bg-yellow-950/50 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 mb-4 rounded-r-lg">
+                        <div className="flex items-center">
+                          <AlertCircle className="text-yellow-600 dark:text-yellow-400 mr-3" size={24} />
+                          <div>
+                            <p className="font-medium text-yellow-800 dark:text-yellow-200">Chat Encerrado</p>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                              Esta negociação foi finalizada em{' '}
+                              {chatSelecionado.encerradoEm && 
+                                formatDistanceToNow(chatSelecionado.encerradoEm, { addSuffix: true, locale: ptBR })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {chatSelecionado.mensagens.length === 0 ? (
+                      <div className="text-center text-gray-900 dark:text-gray-100 py-12">
+                        <MessageSquare size={64} className="mx-auto mb-4 text-gray-600 dark:text-gray-300" />
+                        <p className="text-lg font-medium text-gray-900 dark:text-gray-100">Nenhuma mensagem ainda</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">Envie a primeira mensagem para iniciar a conversa!</p>
+                      </div>
+                    ) : (
+                      chatSelecionado.mensagens.map((msg) => {
+                        const isMinha = msg.remetenteId === userData?.id;
                         
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex-shrink-0"
-                          title="Enviar imagem"
-                        >
-                          <ImageIcon size={20} />
-                        </button>
-                        
-                        <input
-                          type="text"
-                          value={mensagem}
-                          onChange={(e) => setMensagem(e.target.value)}
-                          placeholder="Digite sua mensagem..."
-                          className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                        />
-                        
-                        <button
-                          type="submit"
-                          disabled={enviando || (!mensagem.trim() && !imagemUpload)}
-                          className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                          title="Enviar mensagem"
-                        >
-                          {enviando ? (
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          ) : (
-                            <Send size={20} />
-                          )}
-                        </button>
-                      </form>
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-gray-100 p-3 sm:p-4 py-8 sm:py-12">
-                <div className="w-full max-w-3xl">
-                  <div className="space-y-3">
-                    <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 p-3 rounded-r-lg">
-                      <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-1.5 text-sm">💬 Sobre os Chats</h3>
-                      <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
-                        Os chats são criados automaticamente quando uma autopeça faz uma oferta em um pedido que você criou, 
-                        ou quando você faz uma oferta em um pedido. Use esta área para negociar diretamente com seus parceiros de negócio.
-                      </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-3">
-                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-3 rounded-r-lg">
-                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-1.5 flex items-center gap-2 text-sm">
-                          <Phone size={16} />
-                          WhatsApp
-                        </h4>
-                        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
-                          Abra uma conversa no WhatsApp com o número cadastrado do outro usuário, já com uma mensagem pré-formatada pronta para enviar.
-                        </p>
-                      </div>
-
-                      <div className="bg-yellow-50 dark:bg-yellow-950/40 border-l-4 border-yellow-500 dark:border-yellow-400 p-3 rounded-r-lg">
-                        <h4 className="font-bold text-yellow-900 dark:text-yellow-100 mb-1.5 flex items-center gap-2 text-sm">
-                          <Truck size={16} />
-                          Entregador
-                        </h4>
-                        <p className="text-xs text-yellow-800 dark:text-yellow-200 leading-relaxed">
-                          Solicite um entregador para buscar ou entregar a peça. Você pode escolher entre os entregadores disponíveis na sua região.
-                        </p>
-                      </div>
-
-                      <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-3 rounded-r-lg">
-                        <h4 className="font-bold text-green-900 dark:text-green-100 mb-1.5 flex items-center gap-2 text-sm">
-                          <CheckCircle size={16} />
-                          Negócio Fechado
-                        </h4>
-                        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
-                          Marque o chat como "Negócio Fechado" quando a negociação for finalizada com sucesso. Isso encerra o chat e registra o negócio.
-                        </p>
-                      </div>
-
-                      <div className="bg-red-50 dark:bg-red-950/40 border-l-4 border-red-500 dark:border-red-400 p-3 rounded-r-lg">
-                        <h4 className="font-bold text-red-900 dark:text-red-100 mb-1.5 flex items-center gap-2 text-sm">
-                          <XCircle size={16} />
-                          Cancelar
-                        </h4>
-                        <p className="text-xs text-red-800 dark:text-red-200 leading-relaxed">
-                          Cancele e exclua o chat se a negociação não for adiante. Esta ação não pode ser desfeita.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="bg-purple-50 dark:bg-purple-950/40 border-l-4 border-purple-500 dark:border-purple-400 p-3 rounded-r-lg">
-                      <h4 className="font-bold text-purple-900 dark:text-purple-100 mb-1.5 text-sm">📋 Dica</h4>
-                      <p className="text-xs text-purple-800 dark:text-purple-200 leading-relaxed">
-                        Chats encerrados podem ser excluídos usando o botão "Excluir Encerrados" na lista de conversas. 
-                        Uma barra verde vertical indica chats ativos, facilitando a identificação das negociações em andamento.
-                      </p>
-                    </div>
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`flex ${isMinha ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+                          >
+                            <div
+                              className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-md ${
+                                isMinha
+                                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
+                                  : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
+                              }`}
+                            >
+                              {msg.imagemUrl && (
+                                <img
+                                  src={msg.imagemUrl}
+                                  alt="Imagem"
+                                  className="rounded-xl mb-2 max-w-full cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => window.open(msg.imagemUrl, '_blank')}
+                                />
+                              )}
+                              {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
+                              <span
+                                className={`text-xs mt-2 block ${
+                                  isMinha ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300'
+                                }`}
+                              >
+                                {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={messagesEndRef} />
                   </div>
-                </div>
-              </div>
-            )}
+
+                  {/* Input de Mensagem */}
+                  <div className="p-3 sm:p-5 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+                    {/* Para autopeça: mostrar como encerrado se ela fechou
+                        Para oficina: mostrar como encerrado apenas se não estiver aguardando confirmação */}
+                    {((userData?.tipo === 'autopeca' && chatSelecionado.encerrado) ||
+                      (userData?.tipo === 'oficina' && chatSelecionado.encerrado && !chatSelecionado.aguardandoConfirmacao)) ? (
+                      <div className="text-center py-4 sm:py-6 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+                        <XCircle size={28} className="mx-auto mb-2 sm:mb-3 text-gray-700 dark:text-gray-300" />
+                        <p className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">Chat Encerrado</p>
+                        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-1">Este chat foi finalizado e não aceita mais mensagens.</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col">
+                         {imagemUpload && (
+                           <div className="mb-2 sm:mb-3 flex items-center justify-between bg-blue-50 dark:bg-blue-950/40 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700">
+                             <span className="text-xs sm:text-sm text-gray-700 dark:text-blue-200 truncate flex items-center">
+                               <ImageIcon size={16} className="mr-2 text-blue-600 dark:text-blue-400" />
+                               <span className="font-medium">{imagemUpload.name}</span>
+                             </span>
+                             <button
+                               onClick={() => {
+                                 setImagemUpload(null);
+                                 if (fileInputRef.current) {
+                                   fileInputRef.current.value = '';
+                                 }
+                               }}
+                               className="text-red-600 hover:text-red-800 transition-colors"
+                             >
+                               <X size={18} />
+                             </button>
+                           </div>
+                         )}
+                         
+                         <form onSubmit={enviarMensagem} className="flex items-center space-x-2 sm:space-x-3">
+                           <input
+                             type="file"
+                             ref={fileInputRef}
+                             onChange={handleImagemSelecionada}
+                             accept="image/*"
+                             className="hidden"
+                           />
+                           
+                           <button
+                             type="button"
+                             onClick={() => fileInputRef.current?.click()}
+                             className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex-shrink-0"
+                             title="Enviar imagem"
+                           >
+                             <ImageIcon size={20} />
+                           </button>
+                           
+                           <input
+                             type="text"
+                             value={mensagem}
+                             onChange={(e) => setMensagem(e.target.value)}
+                             placeholder="Digite sua mensagem..."
+                             className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                           />
+                           
+                           <button
+                             type="submit"
+                             disabled={enviando || (!mensagem.trim() && !imagemUpload)}
+                             className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                             title="Enviar mensagem"
+                           >
+                             {enviando ? (
+                               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                             ) : (
+                               <Send size={20} />
+                             )}
+                           </button>
+                         </form>
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               ) : (
+                 <div className="flex-1 flex items-center justify-center text-gray-900 dark:text-gray-100 p-3 sm:p-4 py-8 sm:py-12">
+                   <div className="w-full max-w-3xl">
+                     <div className="space-y-3">
+                       <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 p-3 rounded-r-lg">
+                         <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-1.5 text-sm">💬 Sobre os Chats</h3>
+                         <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
+                           Os chats são criados automaticamente quando uma autopeça faz uma oferta em um pedido que você criou, 
+                           ou quando você faz uma oferta em um pedido. Use esta área para negociar diretamente com seus parceiros de negócio.
+                         </p>
+                       </div>
+
+                       <div className="grid md:grid-cols-2 gap-3">
+                         <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-3 rounded-r-lg">
+                           <h4 className="font-bold text-green-900 dark:text-green-100 mb-1.5 flex items-center gap-2 text-sm">
+                             <Phone size={16} />
+                             WhatsApp
+                           </h4>
+                           <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
+                             Abra uma conversa no WhatsApp com o número cadastrado do outro usuário, já com uma mensagem pré-formatada pronta para enviar.
+                           </p>
+                         </div>
+
+                         <div className="bg-yellow-50 dark:bg-yellow-950/40 border-l-4 border-yellow-500 dark:border-yellow-400 p-3 rounded-r-lg">
+                           <h4 className="font-bold text-yellow-900 dark:text-yellow-100 mb-1.5 flex items-center gap-2 text-sm">
+                             <Truck size={16} />
+                             Entregador
+                           </h4>
+                           <p className="text-xs text-yellow-800 dark:text-yellow-200 leading-relaxed">
+                             Solicite um entregador para buscar ou entregar a peça. Você pode escolher entre os entregadores disponíveis na sua região.
+                           </p>
+                         </div>
+
+                         <div className="bg-green-50 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-400 p-3 rounded-r-lg">
+                           <h4 className="font-bold text-green-900 dark:text-green-100 mb-1.5 flex items-center gap-2 text-sm">
+                             <CheckCircle size={16} />
+                             Negócio Fechado
+                           </h4>
+                           <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
+                             Marque o chat como "Negócio Fechado" quando a negociação for finalizada com sucesso. Isso encerra o chat e registra o negócio.
+                           </p>
+                         </div>
+
+                         <div className="bg-red-50 dark:bg-red-950/40 border-l-4 border-red-500 dark:border-red-400 p-3 rounded-r-lg">
+                           <h4 className="font-bold text-red-900 dark:text-red-100 mb-1.5 flex items-center gap-2 text-sm">
+                             <XCircle size={16} />
+                             Cancelar
+                           </h4>
+                           <p className="text-xs text-red-800 dark:text-red-200 leading-relaxed">
+                             Cancele e exclua o chat se a negociação não for adiante. Esta ação não pode ser desfeita.
+                           </p>
+                         </div>
+                       </div>
+
+                       <div className="bg-purple-50 dark:bg-purple-950/40 border-l-4 border-purple-500 dark:border-purple-400 p-3 rounded-r-lg">
+                         <h4 className="font-bold text-purple-900 dark:text-purple-100 mb-1.5 text-sm">📋 Dica</h4>
+                         <p className="text-xs text-purple-800 dark:text-purple-200 leading-relaxed">
+                           Chats encerrados podem ser excluídos usando o botão "Excluir Encerrados" na lista de conversas. 
+                           Uma barra verde vertical indica chats ativos, facilitando a identificação das negociações em andamento.
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Modal de Entregadores */}
-      <EntregadoresModal 
-        isOpen={mostrarEntregadores}
-        onClose={() => {
-          setMostrarEntregadores(false);
-          setDadosEntregador(null);
-        }}
-        nomePeca={chatSelecionado?.nomePeca}
-        nomeAutopeca={dadosEntregador?.nomeAutopeca}
-        enderecoAutopeca={dadosEntregador?.enderecoAutopeca}
-        nomeOficina={dadosEntregador?.nomeOficina}
-        enderecoOficina={dadosEntregador?.enderecoOficina}
-        onCriarPedidoFrete={async () => {
-          const sucesso = await criarPedidoFreteAutomatico();
-          if (sucesso) {
+        <EntregadoresModal 
+          isOpen={mostrarEntregadores}
+          onClose={() => {
             setMostrarEntregadores(false);
             setDadosEntregador(null);
-          }
-        }}
-        carregandoPedidoFrete={criandoPedidoFrete}
-      />
+          }}
+          nomePeca={chatSelecionado?.nomePeca}
+          nomeAutopeca={dadosEntregador?.nomeAutopeca}
+          enderecoAutopeca={dadosEntregador?.enderecoAutopeca}
+          nomeOficina={dadosEntregador?.nomeOficina}
+          enderecoOficina={dadosEntregador?.enderecoOficina}
+          onCriarPedidoFrete={async () => {
+            const sucesso = await criarPedidoFreteAutomatico();
+            if (sucesso) {
+              setMostrarEntregadores(false);
+              setDadosEntregador(null);
+            }
+          }}
+          carregandoPedidoFrete={criandoPedidoFrete}
+        />
 
-      {/* Modal - Endereço da Loja/Oficina */}
-      {mostrarModalEndereco && dadosEndereco && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setMostrarModalEndereco(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <MapPin className="text-blue-600" />
-                Endereço e Contato
-              </h2>
-              <button
-                onClick={() => setMostrarModalEndereco(false)}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-                title="Fechar"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {dadosEndereco.estado && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Estado</p>
-                  <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.estado}</p>
-                </div>
-              )}
-              
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
-                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Cidade</p>
-                <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.cidade}</p>
-              </div>
-              
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">Endereço</p>
-                <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                  {dadosEndereco.endereco}
-                  {dadosEndereco.numero && `, ${dadosEndereco.numero}`}
-                  {dadosEndereco.complemento && ` - ${dadosEndereco.complemento}`}
-                  {dadosEndereco.bairro && `, ${dadosEndereco.bairro}`}
-                  {dadosEndereco.cep && ` - CEP: ${dadosEndereco.cep}`}
-                </p>
-              </div>
-              
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wider mb-1">Telefone</p>
-                <a
-                  href={`tel:${dadosEndereco.telefone}`}
-                  className="text-lg font-bold text-green-600 dark:text-green-400 hover:underline flex items-center gap-2"
+        {/* Modal - Endereço da Loja/Oficina */}
+        {mostrarModalEndereco && dadosEndereco && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setMostrarModalEndereco(false)}>
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <MapPin className="text-blue-600" />
+                  Endereço e Contato
+                </h2>
+                <button
+                  onClick={() => setMostrarModalEndereco(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  title="Fechar"
                 >
-                  <Phone size={18} />
-                  {dadosEndereco.telefone}
-                </a>
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {dadosEndereco.estado && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Estado</p>
+                    <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.estado}</p>
+                  </div>
+                )}
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Cidade</p>
+                  <p className="text-base font-bold text-gray-900 dark:text-gray-100">{dadosEndereco.cidade}</p>
+                </div>
+                
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">Endereço</p>
+                  <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                    {dadosEndereco.endereco}
+                    {dadosEndereco.numero && `, ${dadosEndereco.numero}`}
+                    {dadosEndereco.complemento && ` - ${dadosEndereco.complemento}`}
+                    {dadosEndereco.bairro && `, ${dadosEndereco.bairro}`}
+                    {dadosEndereco.cep && ` - CEP: ${dadosEndereco.cep}`}
+                  </p>
+                </div>
+                
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                  <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wider mb-1">Telefone</p>
+                  <a
+                    href={`tel:${dadosEndereco.telefone}`}
+                    className="text-lg font-bold text-green-600 dark:text-green-400 hover:underline flex items-center gap-2"
+                  >
+                    <Phone size={18} />
+                    {dadosEndereco.telefone}
+                  </a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
+
+  return renderContent();
 }
