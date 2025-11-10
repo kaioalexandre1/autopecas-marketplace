@@ -94,10 +94,11 @@ export default function ChatsPage() {
   } | null>(null);
   const [mostrarMenuMaisInfo, setMostrarMenuMaisInfo] = useState(false);
   const [criandoPedidoFrete, setCriandoPedidoFrete] = useState(false);
-const [infoAutopecas, setInfoAutopecas] = useState<Record<string, InfoAutopeca>>({});
-const [infoAutopecaCarregando, setInfoAutopecaCarregando] = useState<string | null>(null);
-const [infoAutopecaErro, setInfoAutopecaErro] = useState<{ id: string; mensagem: string } | null>(null);
-const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null);
+  const [infoAutopecas, setInfoAutopecas] = useState<Record<string, InfoAutopeca>>({});
+  const [infoAutopecaCarregando, setInfoAutopecaCarregando] = useState<string | null>(null);
+  const [infoAutopecaErro, setInfoAutopecaErro] = useState<{ id: string; mensagem: string } | null>(null);
+  const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null);
+  const [mostrarDetalhesLoja, setMostrarDetalhesLoja] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selecaoManualRef = useRef<string | null>(null); // Rastrear seleção manual para evitar sobrescrita
@@ -211,6 +212,12 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
       carregarInfoAutopeca(chatSelecionado.autopecaId);
     }
   }, [mostrarMenuMaisInfo, chatSelecionado]);
+
+  useEffect(() => {
+    if (!mostrarMenuMaisInfo) {
+      setMostrarDetalhesLoja(false);
+    }
+  }, [mostrarMenuMaisInfo]);
 
   // Verificar timeout de 24h para confirmações pendentes
   useEffect(() => {
@@ -1868,105 +1875,121 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                             <>
                               <div 
                                 className="fixed inset-0 z-10" 
-                                onClick={() => setMostrarMenuMaisInfo(false)}
+                                onClick={() => {
+                                  setMostrarMenuMaisInfo(false);
+                                  setMostrarDetalhesLoja(false);
+                                }}
                               />
-                              <div className="absolute top-full left-0 right-0 sm:right-auto sm:min-w-[200px] mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                              <div className="absolute top-[calc(100%+0.5rem)] sm:left-auto sm:right-0 left-0 sm:min-w-[220px] mt-0 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 z-40 overflow-hidden pointer-events-auto">
+                                <button
+                                  onClick={() => setMostrarDetalhesLoja((prev) => !prev)}
+                                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-900/80 text-slate-100 font-semibold uppercase tracking-wide text-xs"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <Store size={16} />
+                                    Informações da loja
+                                  </span>
+                                  <ChevronDown size={18} className={`transition-transform ${mostrarDetalhesLoja ? 'rotate-180' : ''}`} />
+                                </button>
+                                {mostrarDetalhesLoja && (
                                 <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-                                  {(() => {
-                                    const infoAtual = chatSelecionado?.autopecaId
-                                      ? infoAutopecas[chatSelecionado.autopecaId]
-                                      : undefined;
-                                    const carregando = infoAutopecaCarregando === chatSelecionado?.autopecaId;
-                                    const erroAtual = infoAutopecaErro?.id === chatSelecionado?.autopecaId ? infoAutopecaErro.mensagem : null;
+                                   {(() => {
+                                     const infoAtual = chatSelecionado?.autopecaId
+                                       ? infoAutopecas[chatSelecionado.autopecaId]
+                                       : undefined;
+                                     const carregando = infoAutopecaCarregando === chatSelecionado?.autopecaId;
+                                     const erroAtual = infoAutopecaErro?.id === chatSelecionado?.autopecaId ? infoAutopecaErro.mensagem : null;
 
-                                    if (carregando) {
-                                      return (
-                                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                                          Carregando informações da loja...
-                                        </p>
-                                      );
-                                    }
+                                     if (carregando) {
+                                       return (
+                                         <p className="text-xs text-gray-600 dark:text-gray-300">
+                                           Carregando informações da loja...
+                                         </p>
+                                       );
+                                     }
 
-                                    if (erroAtual) {
-                                      return (
-                                        <p className="text-xs text-red-500">
-                                          {erroAtual}
-                                        </p>
-                                      );
-                                    }
+                                     if (erroAtual) {
+                                       return (
+                                         <p className="text-xs text-red-500">
+                                           {erroAtual}
+                                         </p>
+                                       );
+                                     }
 
-                                    if (!infoAtual) {
-                                      return (
-                                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                                          Informações da loja indisponíveis no momento.
-                                        </p>
-                                      );
-                                    }
+                                     if (!infoAtual) {
+                                       return (
+                                         <p className="text-xs text-gray-600 dark:text-gray-300">
+                                           Informações da loja indisponíveis no momento.
+                                         </p>
+                                       );
+                                     }
 
-                                    const rankingTexto = infoAtual.rankingPosicao
-                                      ? `${infoAtual.rankingPosicao}º${infoAtual.totalAutopecas ? ` de ${infoAtual.totalAutopecas}` : ''}`
-                                      : 'Sem ranking registrado';
+                                     const rankingTexto = infoAtual.rankingPosicao
+                                       ? `${infoAtual.rankingPosicao}º${infoAtual.totalAutopecas ? ` de ${infoAtual.totalAutopecas}` : ''}`
+                                       : 'Sem ranking registrado';
 
-                                    return (
-                                      <div className="space-y-3 text-xs text-gray-700 dark:text-gray-200">
-                                        <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100">
-                                          <Store size={15} className="text-green-600 dark:text-green-400" />
-                                          <span className="font-semibold uppercase tracking-wide">
-                                            Informações da loja
-                                          </span>
-                                        </div>
-                                        <div className="space-y-2">
-                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                              <Clock size={14} className="text-blue-500" />
-                                              <span className="font-semibold">Tempo na plataforma</span>
-                                            </div>
-                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                              {infoAtual.tempoCadastrado || '—'}
-                                            </span>
-                                          </div>
+                                     return (
+                                       <div className="space-y-3 text-xs text-gray-700 dark:text-gray-200">
+                                         <div className="flex items-center gap-2 text-gray-800 dark:text-gray-100">
+                                           <Store size={15} className="text-green-600 dark:text-green-400" />
+                                           <span className="font-semibold uppercase tracking-wide">
+                                             Informações da loja
+                                           </span>
+                                         </div>
+                                         <div className="space-y-2">
+                                           <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                               <Clock size={14} className="text-blue-500" />
+                                               <span className="font-semibold">Tempo na plataforma</span>
+                                             </div>
+                                             <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                               {infoAtual.tempoCadastrado || '—'}
+                                             </span>
+                                           </div>
 
-                                          {infoAtual.cadastradoEmTexto && (
-                                            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                                <Calendar size={14} className="text-blue-500" />
-                                                <span className="font-semibold">Cadastrada em</span>
-                                              </div>
-                                              <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                                {infoAtual.cadastradoEmTexto}
-                                              </span>
-                                            </div>
-                                          )}
+                                           {infoAtual.cadastradoEmTexto && (
+                                             <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                               <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                                 <Calendar size={14} className="text-blue-500" />
+                                                 <span className="font-semibold">Cadastrada em</span>
+                                               </div>
+                                               <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                                 {infoAtual.cadastradoEmTexto}
+                                               </span>
+                                             </div>
+                                           )}
 
-                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                              <TrendingUp size={14} className="text-emerald-500" />
-                                              <span className="font-semibold">Vendas registradas</span>
-                                            </div>
-                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                              {infoAtual.vendas}
-                                            </span>
-                                          </div>
+                                           <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                               <TrendingUp size={14} className="text-emerald-500" />
+                                               <span className="font-semibold">Vendas registradas</span>
+                                             </div>
+                                             <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                               {infoAtual.vendas}
+                                             </span>
+                                           </div>
 
-                                          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
-                                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                                              <Award size={14} className="text-yellow-500" />
-                                              <span className="font-semibold">Ranking de vendas</span>
-                                            </div>
-                                            <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
-                                              {rankingTexto}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
+                                           <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800/80">
+                                             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                                               <Award size={14} className="text-yellow-500" />
+                                               <span className="font-semibold">Ranking de vendas</span>
+                                             </div>
+                                             <span className="text-right text-gray-900 dark:text-gray-100 font-medium">
+                                               {rankingTexto}
+                                             </span>
+                                           </div>
+                                         </div>
+                                       </div>
+                                     );
+                                   })()}
                                 </div>
+                                )}
                                 {/* Botão Endereço da loja */}
                                 <button
                                   onClick={() => {
                                     abrirModalEndereco();
                                     setMostrarMenuMaisInfo(false);
+                                    setMostrarDetalhesLoja(false);
                                   }}
                                   className="w-full px-4 py-3 bg-blue-500 text-white hover:bg-blue-600 font-medium flex items-center transition-all text-sm"
                                 >
@@ -1979,6 +2002,7 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                                     onClick={() => {
                                       abrirWhatsApp();
                                       setMostrarMenuMaisInfo(false);
+                                      setMostrarDetalhesLoja(false);
                                     }}
                                     className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
                             >
@@ -1994,6 +2018,7 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                                     }
                                     setMostrarEntregadores(true);
                                     setMostrarMenuMaisInfo(false);
+                                    setMostrarDetalhesLoja(false);
                                   }}
                                   className="w-full px-4 py-3 bg-yellow-500 text-white hover:bg-yellow-600 font-medium flex items-center transition-all text-sm"
                           >
@@ -2019,6 +2044,7 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                                     onClick={() => {
                                       finalizarNegociacao();
                                       setMostrarMenuMaisInfo(false);
+                                      setMostrarDetalhesLoja(false);
                                     }}
                                     className="w-full px-4 py-3 bg-green-500 text-white hover:bg-green-600 font-medium flex items-center transition-all text-sm"
                                   >
@@ -2031,6 +2057,7 @@ const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null)
                                   onClick={() => {
                                     excluirChat();
                                     setMostrarMenuMaisInfo(false);
+                                    setMostrarDetalhesLoja(false);
                                   }}
                             disabled={excluindo}
                                   className="w-full px-4 py-3 bg-red-500 text-white hover:bg-red-600 font-medium flex items-center transition-all disabled:opacity-50 text-sm"
