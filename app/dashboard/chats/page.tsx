@@ -1696,21 +1696,11 @@ export default function ChatsPage() {
                   return (
                     <div
                       key={chat.id}
-                      className={`relative p-3 sm:p-4 rounded-xl border-2 transition-all cursor-pointer h-40 sm:h-44 flex flex-col justify-between ${
-                        chat.isSuporte 
-                          ? chatSelecionado?.id === chat.id
-                            ? 'border-green-400 shadow-lg bg-green-50 dark:bg-green-900/20'
-                            : ((userData?.tipo === 'autopeca' && chat.encerrado) ||
-                               (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao))
-                            ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700 border-l-4 border-l-gray-400'
-                            : 'bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 border-l-4 border-l-blue-500 dark:border-l-blue-400'
-                          : chatSelecionado?.id === chat.id 
-                          ? 'bg-green-100 dark:bg-green-900/50 border-l-4 border-l-green-600 dark:border-l-green-500' 
-                          : ((userData?.tipo === 'autopeca' && chat.encerrado) ||
-                             (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao))
-                          ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700'
-                          : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
-                      } ${chats[chats.length - 1]?.id !== chat.id ? 'pb-6' : ''}`}
+                      className={`relative p-3 sm:p-4 rounded-xl border-2 transition-all cursor-pointer h-32 sm:h-36 flex flex-col gap-2 ${
+                         isSelecionado
+                           ? 'border-green-400 shadow-lg bg-green-50 dark:bg-green-900/20'
+                           : 'border-transparent hover:border-blue-300 bg-white/80 dark:bg-gray-800/80'
+                      }`}
                       onClick={() => {
                         if (chatSelecionado?.id !== chat.id) {
                           registrarSelecaoManual(chat.id);
@@ -1719,7 +1709,7 @@ export default function ChatsPage() {
                       }}
                     >
                       {chats[chats.length - 1]?.id !== chat.id && (
-                        <div className="absolute inset-x-0 bottom-[-7px] h-[2px] bg-black/50"></div>
+                        <div className="pointer-events-none absolute inset-x-0 bottom-[-6px] h-[1.5px] bg-black/40"></div>
                       )}
                       
                       {/* Botão de excluir para chats de suporte */}
