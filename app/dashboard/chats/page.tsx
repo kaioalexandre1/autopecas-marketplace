@@ -1855,23 +1855,19 @@ export default function ChatsPage() {
                         )
                       )}
 
-                      {/* Última Mensagem */}
-                      {chat.mensagens.length > 0 && (
-                        <div className="mt-1">
-                          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate italic">
-                            {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Badge de mensagens não lidas */}
-                      {naoLidas && quantidadeNaoLidas > 0 && (
-                        <div className="mt-1">
-                          <span className="text-xs font-semibold text-red-600 dark:text-red-400">
+                      {/* Última Mensagem e badge */}
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate italic">
+                          {chat.mensagens.length > 0
+                            ? chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'
+                            : 'Clique para enviar mensagem'}
+                        </p>
+                        {naoLidas && quantidadeNaoLidas > 0 && (
+                          <span className="text-xs font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
                             {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
                           </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   );
                 })
