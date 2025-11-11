@@ -953,7 +953,10 @@ export default function Navbar() {
                 <div className="text-base font-bold text-white mb-2 flex items-center gap-2">
                   <span>{userData?.nome}</span>
                   {userData && (userData.verificado || userData.dadosConfirmados) && (
-                    <BadgeCheck size={16} className="text-blue-200" aria-label="Conta verificada" />
+                    <span className="flex items-center gap-1 text-xs font-semibold uppercase text-blue-100">
+                      <BadgeCheck size={14} />
+                      Loja verificada
+                    </span>
                   )}
                 </div>
                 <div className={`text-sm px-3 py-1.5 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`}>
@@ -969,7 +972,10 @@ export default function Navbar() {
                       <div className="text-sm font-bold text-white flex items-center gap-2">
                         <span>{userData?.nomeLoja || userData?.nome || 'Minha Loja'}</span>
                         {userData && (userData.verificado || userData.dadosConfirmados) && (
-                          <BadgeCheck size={14} className="text-blue-200" aria-label="Conta verificada" />
+                          <span className="flex items-center gap-1 text-[11px] font-semibold uppercase text-blue-100">
+                            <BadgeCheck size={12} />
+                            Loja verificada
+                          </span>
                         )}
                       </div>
                     </div>

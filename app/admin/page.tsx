@@ -51,6 +51,7 @@ export default function AdminPage() {
   // Estados para filtros
   const [periodoSelecionado, setPeriodoSelecionado] = useState<'hoje' | 'semana' | 'mes'>('hoje');
   const [tipoUsuarioFiltro, setTipoUsuarioFiltro] = useState<'todos' | 'oficina' | 'autopeca' | 'entregador'>('todos');
+  const [statusVerificacaoFiltro, setStatusVerificacaoFiltro] = useState<'todos' | 'verificado' | 'nao-verificado'>('todos');
   
   // Estados para configuração do Mercado Pago
   const [mostrarConfigMP, setMostrarConfigMP] = useState(false);
@@ -560,9 +561,19 @@ export default function AdminPage() {
   });
 
   // Filtrar usuários por tipo
-  const usuariosFiltrados = tipoUsuarioFiltro === 'todos' 
-    ? usuarios 
-    : usuarios.filter(u => u.tipo === tipoUsuarioFiltro);
+  const usuariosFiltrados = usuarios.filter((usuario) => {
+    const correspondeTipo =
+      tipoUsuarioFiltro === 'todos' || usuario.tipo === tipoUsuarioFiltro;
+
+    const verificado = Boolean(usuario.verificado || usuario.dadosConfirmados);
+
+    const correspondeVerificacao =
+      statusVerificacaoFiltro === 'todos' ||
+      (statusVerificacaoFiltro === 'verificado' && verificado) ||
+      (statusVerificacaoFiltro === 'nao-verificado' && !verificado);
+
+    return correspondeTipo && correspondeVerificacao;
+  });
 
   // Estatísticas gerais
   const totalOficinas = usuarios.filter(u => u.tipo === 'oficina').length;
@@ -816,8 +827,26 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {/* Filtro de Verificação */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {(['todos', 'verificado', 'nao-verificado'] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusVerificacaoFiltro(status)}
+                className={`px-4 py-2 rounded-lg font-semibold transition-all uppercase text-xs sm:text-sm ${
+                  statusVerificacaoFiltro === status
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {status === 'todos' ? 'Todos' : status === 'verificado' ? 'Verificados' : 'Não verificados'}
+              </button>
+            ))}
+          </div>
+
           {/* Tabela de Usuários */}
           <div className="overflow-x-auto">
+            <div className="max-h-[480px] overflow-y-auto rounded-xl border border-blue-100 shadow-inner">
             <table className="w-full">
               <thead>
                 <tr className="bg-blue-50 border-b-2 border-blue-200">
@@ -871,7 +900,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           {verificado && (
                             <span className="flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full uppercase">
-                              <BadgeCheck size={12} /> Verificado
+                              <BadgeCheck size={12} /> Loja verificada
                             </span>
                           )}
                           {usuario.contaBloqueada && (
@@ -937,6 +966,7 @@ export default function AdminPage() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 

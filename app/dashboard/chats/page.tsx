@@ -1714,7 +1714,12 @@ export default function ChatsPage() {
                                 if (chat.isSuporte) return null;
                                 const parceiroId = userData?.tipo === 'oficina' ? chat.autopecaId : chat.oficinaId;
                                 if (parceiroId && usuariosVerificados[parceiroId]) {
-                                  return <BadgeCheck size={14} className="text-blue-500" aria-label="Conta verificada" />;
+                                  return (
+                                    <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-300">
+                                      <BadgeCheck size={12} />
+                                      Loja verificada
+                                    </span>
+                                  );
                                 }
                                 return null;
                               })()}
@@ -1876,7 +1881,12 @@ export default function ChatsPage() {
                                   if (chatSelecionado.isSuporte) return null;
                                   const parceiroId = userData?.tipo === 'oficina' ? chatSelecionado.autopecaId : chatSelecionado.oficinaId;
                                   if (parceiroId && usuariosVerificados[parceiroId]) {
-                                    return <BadgeCheck size={16} className="text-blue-200" aria-label="Conta verificada" />;
+                                    return (
+                                      <span className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold uppercase text-blue-100">
+                                        <BadgeCheck size={14} />
+                                        Loja verificada
+                                      </span>
+                                    );
                                   }
                                   return null;
                                 })()}
