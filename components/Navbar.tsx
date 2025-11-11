@@ -77,6 +77,7 @@ import {
   BadgeCheck,
   Trophy
 } from 'lucide-react';
+import clsx from 'clsx';
 import ModalSuporte from './ModalSuporte';
 import { useUnreadChats } from '@/hooks/useUnreadChats';
 
@@ -821,16 +822,17 @@ export default function Navbar() {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               const showBadge = item.href === '/dashboard/chats' && unreadChatsCount > 0;
-              
+              const isChatsLink = item.href === '/dashboard/chats';
+ 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative flex items-center px-4 py-2.5 rounded-lg font-medium ${
-                    isActive
-                      ? 'bg-yellow-400 text-blue-900 font-bold shadow-lg'
-                      : 'text-white'
-                  }`}
+                  className={clsx(
+                    'relative flex items-center px-4 py-2.5 rounded-lg font-medium transition-colors',
+                    isActive ? 'bg-yellow-400 text-blue-900 font-bold shadow-lg' : 'text-white',
+                    showBadge && isChatsLink ? 'animate-[pulse-red_2s_ease-in-out_infinite]' : ''
+                  )}
                 >
                   <Icon size={20} className="mr-2" />
                   {item.label}
@@ -913,7 +915,10 @@ export default function Navbar() {
             {userData?.tipo !== 'entregador' && (
               <Link
                 href="/dashboard/chats"
-                className="p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all"
+                className={clsx(
+                  'p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all',
+                  unreadChatsCount > 0 ? 'animate-[pulse-red_2s_ease-in-out_infinite]' : ''
+                )}
                 style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
                 title="Chats"
               >
@@ -1020,11 +1025,11 @@ export default function Navbar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setMenuMobileAberto(false)}
-                      className={`relative flex items-center px-4 py-3.5 rounded-lg font-semibold text-base ${
-                        isActive
-                          ? 'bg-yellow-400 text-blue-900 shadow-lg'
-                          : 'bg-blue-700 text-white'
-                      }`}
+                      className={clsx(
+                        'relative flex items-center px-4 py-3.5 rounded-lg font-semibold text-base',
+                        isActive ? 'bg-yellow-400 text-blue-900 shadow-lg' : 'bg-blue-700 text-white',
+                        item.href === '/dashboard/chats' && unreadChatsCount > 0 ? 'animate-[pulse-red_2s_ease-in-out_infinite]' : ''
+                      )}
                     >
                       <Icon size={24} className="mr-3" />
                       {item.label}
@@ -1096,5 +1101,17 @@ export default function Navbar() {
       />
     </nav>
   );
+}
+
+declare global {
+  interface WindowOrGlobal { }
+}
+
+const style = typeof document !== 'undefined' ? document.getElementById('pulse-red-style') : null;
+if (!style && typeof document !== 'undefined') {
+  const el = document.createElement('style');
+  el.id = 'pulse-red-style';
+  el.innerHTML = `@keyframes pulse-red { 0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } }`;
+  document.head.appendChild(el);
 }
 

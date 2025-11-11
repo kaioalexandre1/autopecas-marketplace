@@ -2306,7 +2306,7 @@ export default function ChatsPage() {
                               {isMinha && (
                                 <span
                                   className={`ml-1 text-sm leading-none ${
-                                    mensagemFoiLidaPeloOutro(msg) ? 'text-cyan-200' : 'text-white'
+                                    mensagemFoiLidaPeloOutro(msg) ? 'text-cyan-400' : 'text-white'
                                   }`}
                                   aria-label={mensagemFoiLidaPeloOutro(msg) ? 'Mensagem lida' : 'Mensagem enviada'}
                                 >
