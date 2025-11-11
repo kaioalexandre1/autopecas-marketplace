@@ -584,31 +584,52 @@ export default function ChatsPage() {
         }
       }
       
-      // Ordenar chats pela última mensagem recebida (estilo WhatsApp)
-      // Chats com mensagens mais recentes aparecem primeiro
+      const obterTimestampOrdenacao = (chat: Chat) => {
+        if (chat.mensagens.length > 0) {
+          const ultimaMsg = chat.mensagens[chat.mensagens.length - 1];
+          return ultimaMsg.createdAt?.getTime?.() || 0;
+        }
+        return chat.updatedAt?.getTime?.() || chat.createdAt?.getTime?.() || 0;
+      };
+
+      const possuiNaoLidasParaUsuarioAtual = (chat: Chat) => {
+        if (!userData) return false;
+        if (chat.mensagens.length === 0) return false;
+
+        const ultimaLeitura = userData.tipo === 'oficina'
+          ? chat.ultimaLeituraOficina
+          : chat.ultimaLeituraAutopeca;
+
+        if (!ultimaLeitura) {
+          return chat.mensagens.some(msg => msg.remetenteId !== userData.id);
+        }
+
+        return chat.mensagens.some(
+          msg => msg.createdAt > ultimaLeitura && msg.remetenteId !== userData.id
+        );
+      };
+
+      // Ordenar chats priorizando novos, depois não lidos e, por fim, os mais recentes
       chatsData.sort((a, b) => {
-        const ultimaMsgA = a.mensagens && a.mensagens.length > 0 
-          ? a.mensagens[a.mensagens.length - 1].createdAt 
-          : null;
-        const ultimaMsgB = b.mensagens && b.mensagens.length > 0 
-          ? b.mensagens[b.mensagens.length - 1].createdAt 
-          : null;
-        
-        // Se ambos têm mensagens, ordenar pela última mensagem (mais recente primeiro)
-        if (ultimaMsgA && ultimaMsgB) {
-          return ultimaMsgB.getTime() - ultimaMsgA.getTime();
+        const novoA = a.mensagens.length === 0 ? 1 : 0;
+        const novoB = b.mensagens.length === 0 ? 1 : 0;
+        if (novoA !== novoB) {
+          return novoB - novoA; // chats recém-criados primeiro
         }
-        
-        // Se apenas um tem mensagens, ele vem primeiro
-        if (ultimaMsgA && !ultimaMsgB) {
-          return -1;
+
+        const naoLidasA = possuiNaoLidasParaUsuarioAtual(a) ? 1 : 0;
+        const naoLidasB = possuiNaoLidasParaUsuarioAtual(b) ? 1 : 0;
+        if (naoLidasA !== naoLidasB) {
+          return naoLidasB - naoLidasA; // chats com não lidas primeiro
         }
-        if (!ultimaMsgA && ultimaMsgB) {
-          return 1;
+
+        const tempoA = obterTimestampOrdenacao(a);
+        const tempoB = obterTimestampOrdenacao(b);
+        if (tempoA !== tempoB) {
+          return tempoB - tempoA; // mais recentes primeiro
         }
-        
-        // Se nenhum tem mensagens, ordenar por updatedAt (mais recente primeiro)
-        return b.updatedAt.getTime() - a.updatedAt.getTime();
+
+        return (b.createdAt?.getTime?.() || 0) - (a.createdAt?.getTime?.() || 0);
       });
       
       setChats(chatsData);
