@@ -41,6 +41,7 @@ export interface User {
   veiculoModelo?: string;
   veiculoAno?: string;
   veiculoPlaca?: string;
+  fretesManuais?: Array<{ descricao: string; valor: number; data?: Date }>;
   testePlatinumUsado?: boolean; // Se já usou o teste de 30 dias grátis do Platinum
   dataInicioTestePlatinum?: Date; // Data em que iniciou o teste de 30 dias
   linkAprovacaoPlatinum?: string; // Link para aprovar novo Preapproval após trial

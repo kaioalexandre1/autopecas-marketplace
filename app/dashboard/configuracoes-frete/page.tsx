@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Truck, DollarSign, Clock, TrendingUp, Save } from 'lucide-react';
 import { formatarPreco } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { format } from 'date-fns';
 
 export default function ConfiguracoesFretePage() {
   const { userData } = useAuth();
@@ -26,6 +27,10 @@ export default function ConfiguracoesFretePage() {
 
   const [totalFretes, setTotalFretes] = useState(0);
   const [totalLucro, setTotalLucro] = useState(0);
+  const [registroDescricao, setRegistroDescricao] = useState('');
+  const [registroValor, setRegistroValor] = useState('');
+  const [registrandoFrete, setRegistrandoFrete] = useState(false);
+  const [fretesManuais, setFretesManuais] = useState<{ descricao: string; valor: number; data?: Date }[]>([]);
 
   useEffect(() => {
     if (!userData) {
@@ -57,6 +62,11 @@ export default function ConfiguracoesFretePage() {
         setVeiculoModelo(data.veiculoModelo || '');
         setVeiculoAno(data.veiculoAno || '');
         setVeiculoPlaca(data.veiculoPlaca || '');
+        setFretesManuais(data.fretesManuais?.map((item: any) => ({
+          descricao: item.descricao || '',
+          valor: Number(item.valor || 0),
+          data: item.data?.toDate ? item.data.toDate() : item.data ? new Date(item.data) : undefined,
+        })) || []);
       }
 
       const ofertasQuery = query(
@@ -121,6 +131,11 @@ export default function ConfiguracoesFretePage() {
         veiculoModelo: veiculoModelo.trim(),
         veiculoAno: veiculoAno.trim(),
         veiculoPlaca: veiculoPlaca.trim(),
+        fretesManuais: fretesManuais.map((item) => ({
+          descricao: item.descricao,
+          valor: item.valor,
+          data: item.data ? Timestamp.fromDate(item.data) : Timestamp.now(),
+        })),
       });
 
       toast.success('Configurações salvas com sucesso!');
@@ -129,6 +144,42 @@ export default function ConfiguracoesFretePage() {
       toast.error('Erro ao salvar configurações');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const registrarFreteManual = async () => {
+    if (!userData) return;
+
+    const valorNumero = parseFloat(registroValor.replace(',', '.'));
+    if (!registroDescricao.trim() || isNaN(valorNumero)) {
+      toast.error('Informe descrição e valor válido');
+      return;
+    }
+
+    setRegistrandoFrete(true);
+    try {
+      const novoFrete = {
+        descricao: registroDescricao.trim(),
+        valor: valorNumero,
+        data: Timestamp.now(),
+      };
+
+      await updateDoc(doc(db, 'users', userData.id), {
+        fretesManuais: arrayUnion(novoFrete),
+      });
+
+      setFretesManuais((prev) => [
+        { descricao: novoFrete.descricao, valor: valorNumero, data: new Date() },
+        ...prev,
+      ]);
+      setRegistroDescricao('');
+      setRegistroValor('');
+      toast.success('Corrida registrada!');
+    } catch (error) {
+      console.error('Erro ao registrar corrida manual:', error);
+      toast.error('Erro ao registrar corrida');
+    } finally {
+      setRegistrandoFrete(false);
     }
   };
 
@@ -368,6 +419,58 @@ export default function ConfiguracoesFretePage() {
                   ) : (
                     <p className="text-sm text-gray-300">Informe os dados do veículo para que as oficinas saibam quem fará a entrega.</p>
                   )}
+                </div>
+
+                <div className="bg-gradient-to-r from-green-900 to-green-800 rounded-xl p-4 text-white shadow-inner border border-green-700">
+                  <h3 className="text-sm font-bold uppercase text-green-200 flex items-center gap-2 mb-3">
+                    <DollarSign size={16} /> Registrar Corridas Manualmente
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-green-100 uppercase mb-1">Descrição</label>
+                      <input
+                        type="text"
+                        value={registroDescricao}
+                        onChange={(e) => setRegistroDescricao(e.target.value)}
+                        placeholder="Ex: Entrega bairro centro"
+                        className="w-full px-3 py-2 rounded-lg bg-green-900/50 border border-green-500 text-white placeholder-green-200 focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-green-100 uppercase mb-1">Valor</label>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-2 bg-green-900/50 border border-green-500 rounded-lg text-white font-bold">R$</span>
+                        <input
+                          type="text"
+                          value={registroValor}
+                          onChange={(e) => setRegistroValor(e.target.value.replace(/[^0-9.,]/g, ''))}
+                          placeholder="0,00"
+                          className="flex-1 px-3 py-2 rounded-lg bg-green-900/50 border border-green-500 text-white placeholder-green-200 focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={registrarFreteManual}
+                      disabled={registrandoFrete}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-lg shadow-lg transition-all disabled:opacity-60"
+                    >
+                      {registrandoFrete ? 'Registrando...' : 'Adicionar corrida' }
+                    </button>
+                    {fretesManuais.length > 0 && (
+                      <div className="pt-4 border-t border-green-700/60 space-y-2 max-h-48 overflow-y-auto">
+                        <p className="text-xs uppercase text-green-200 font-semibold">Histórico</p>
+                        {fretesManuais.map((item, idx) => (
+                          <div key={idx} className="bg-green-900/60 rounded-lg px-3 py-2 flex items-center justify-between text-sm">
+                            <div>
+                              <p className="font-semibold text-white">{item.descricao}</p>
+                              <p className="text-xs text-green-200">{item.data ? format(item.data, 'dd/MM/yyyy HH:mm') : ''}</p>
+                            </div>
+                            <span className="text-green-300 font-bold">{formatarPreco(item.valor)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

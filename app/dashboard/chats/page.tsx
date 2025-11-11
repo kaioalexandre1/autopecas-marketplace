@@ -2616,48 +2616,40 @@ export default function ChatsPage() {
                 entregadoresDisponiveis.map((entregador) => (
                   <div
                     key={entregador.id}
-                    className="border border-yellow-200 dark:border-yellow-600/40 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-5 shadow-sm"
+                    className="border border-yellow-200 dark:border-yellow-600/40 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 sm:p-5 shadow-sm"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="space-y-1">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{entregador.nome}</h3>
                         <p className="text-xs text-gray-600 dark:text-gray-300">
                           {entregador.cidade || 'Cidade não informada'}
                         </p>
                         {entregador.telefone && (
-                          <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
+                          <p className="text-sm text-gray-700 dark:text-gray-200 mt-0.5">
                             {formatarTelefone(entregador.telefone)}
                           </p>
                         )}
-                        {entregador.veiculoTipo && (
-                          <div className="mt-3 text-xs text-gray-700 dark:text-gray-200 space-y-1">
-                            <p className="font-semibold uppercase text-gray-600 dark:text-gray-300">
-                              Veículo
-                            </p>
-                            <p>
-                              <span className="font-semibold">Tipo:</span> {entregador.veiculoTipo === 'MOTO' ? 'Moto' : entregador.veiculoTipo === 'UTILITARIO' ? 'Utilitário' : 'Caminhão'}
-                            </p>
-                            <p>
-                              <span className="font-semibold">Marca / Modelo:</span> {entregador.veiculoMarca || '-'}{entregador.veiculoModelo ? ` • ${entregador.veiculoModelo}` : ''}
-                            </p>
-                            {(entregador.veiculoAno || entregador.veiculoPlaca) && (
-                              <p>
-                                {entregador.veiculoAno && (
-                                  <span className="mr-2"><span className="font-semibold">Ano:</span> {entregador.veiculoAno}</span>
-                                )}
-                                {entregador.veiculoPlaca && (
-                                  <span><span className="font-semibold">Placa:</span> {entregador.veiculoPlaca}</span>
-                                )}
-                              </p>
-                            )}
-                          </div>
-                        )}
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs uppercase text-gray-500 dark:text-gray-300">Dentro da cidade</p>
-                        <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
-                          {entregador.valorDentroCidade > 0 ? formatarPreco(entregador.valorDentroCidade) : 'Sob consulta'}
-                        </p>
+
+                      <div className="flex flex-col items-start sm:items-end gap-1">
+                        {entregador.veiculoTipo && (
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                            {[
+                              entregador.veiculoTipo === 'MOTO' ? 'MOTO' : entregador.veiculoTipo === 'UTILITARIO' ? 'UTILITÁRIO' : 'CAMINHÃO',
+                              [entregador.veiculoMarca, entregador.veiculoModelo, entregador.veiculoAno].filter(Boolean).join(' '),
+                              entregador.veiculoPlaca,
+                            ]
+                              .filter(Boolean)
+                              .join(', ')
+                              .replace(/\s+/g, ' ')}
+                          </p>
+                        )}
+                        <div className="text-right">
+                          <p className="text-xs uppercase text-gray-500 dark:text-gray-300">Dentro da cidade</p>
+                          <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                            {entregador.valorDentroCidade > 0 ? formatarPreco(entregador.valorDentroCidade) : 'Sob consulta'}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
