@@ -62,11 +62,15 @@ export default function ConfiguracoesFretePage() {
         setVeiculoModelo(data.veiculoModelo || '');
         setVeiculoAno(data.veiculoAno || '');
         setVeiculoPlaca(data.veiculoPlaca || '');
-        setFretesManuais(data.fretesManuais?.map((item: any) => ({
+        const fretesManuaisLista = data.fretesManuais?.map((item: any) => ({
           descricao: item.descricao || '',
           valor: Number(item.valor || 0),
           data: item.data?.toDate ? item.data.toDate() : item.data ? new Date(item.data) : undefined,
-        })) || []);
+        })) || [];
+
+        setFretesManuais(fretesManuaisLista);
+        setTotalFretes(totalFretes + fretesManuaisLista.length);
+        setTotalLucro(totalLucro + fretesManuaisLista.reduce((acc, item) => acc + item.valor, 0));
       }
 
       const ofertasQuery = query(
@@ -168,10 +172,12 @@ export default function ConfiguracoesFretePage() {
         fretesManuais: arrayUnion(novoFrete),
       });
 
-      setFretesManuais((prev) => [
-        { descricao: novoFrete.descricao, valor: valorNumero, data: new Date() },
-        ...prev,
-      ]);
+      setFretesManuais((prev) => {
+        const atualizada = [{ descricao: novoFrete.descricao, valor: valorNumero, data: new Date() }, ...prev];
+        setTotalFretes((prevTotal) => prevTotal + 1);
+        setTotalLucro((prevLucro) => prevLucro + valorNumero);
+        return atualizada;
+      });
       setRegistroDescricao('');
       setRegistroValor('');
       toast.success('Corrida registrada!');
