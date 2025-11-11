@@ -1565,6 +1565,19 @@ export default function ChatsPage() {
     ).length;
   };
 
+  const mensagemFoiLidaPeloOutro = (msg: Mensagem): boolean => {
+    if (!chatSelecionado) return false;
+    if (msg.remetenteId !== userData?.id) return false;
+
+    const ultimaLeituraOutro = userData?.tipo === 'oficina'
+      ? chatSelecionado.ultimaLeituraAutopeca
+      : chatSelecionado.ultimaLeituraOficina;
+
+    if (!ultimaLeituraOutro) return false;
+
+    return ultimaLeituraOutro >= msg.createdAt;
+  };
+
   const textoDicaSeguranca = userData?.tipo === 'oficina'
     ? 'EFETUE O PAGAMENTO PARA A AUTOPEÇA APENAS QUANDO A PEÇA ESTIVER EM SUAS MÃOS, O MOTOBOY SÓ IRÁ LIBERAR A PEÇA COM O PAGAMENTO FEITO !'
     : userData?.tipo === 'autopeca'
@@ -2282,13 +2295,25 @@ export default function ChatsPage() {
                               />
                             )}
                             {msg.texto && <p className="text-sm leading-relaxed">{msg.texto}</p>}
-                            <span
-                              className={`text-xs mt-2 block ${
-                                isMinha ? 'text-blue-100' : 'text-gray-600 dark:text-gray-300'
+                            <div
+                              className={`text-xs mt-2 flex items-center gap-1 ${
+                                isMinha ? 'justify-end text-blue-100' : 'justify-start text-gray-600 dark:text-gray-300'
                               }`}
                             >
-                              {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
-                            </span>
+                              <span>
+                                {formatDistanceToNow(msg.createdAt, { addSuffix: true, locale: ptBR })}
+                              </span>
+                              {isMinha && (
+                                <span
+                                  className={`ml-1 text-sm leading-none ${
+                                    mensagemFoiLidaPeloOutro(msg) ? 'text-cyan-200' : 'text-white'
+                                  }`}
+                                  aria-label={mensagemFoiLidaPeloOutro(msg) ? 'Mensagem lida' : 'Mensagem enviada'}
+                                >
+                                  ✔✔
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
