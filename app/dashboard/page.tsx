@@ -407,6 +407,11 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [cidadesSelecionadas, userData, filtroPedidos]);
 
+  useEffect(() => {
+    if (userData?.tipo === 'entregador') {
+      router.replace('/dashboard/configuracoes-frete');
+    }
+  }, [userData, router]);
 
   const criarPedido = async (e: React.FormEvent) => {
     e.preventDefault();
