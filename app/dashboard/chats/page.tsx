@@ -1696,10 +1696,10 @@ export default function ChatsPage() {
                   return (
                     <div
                       key={chat.id}
-                      className={`relative p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${
+                      className={`relative p-3 sm:p-4 rounded-xl border-2 transition-all cursor-pointer h-40 sm:h-44 flex flex-col justify-between ${
                         chat.isSuporte 
                           ? chatSelecionado?.id === chat.id
-                            ? 'bg-blue-100 dark:bg-blue-900/50 border-l-4 border-l-blue-600 dark:border-l-blue-500'
+                            ? 'border-green-400 shadow-lg bg-green-50 dark:bg-green-900/20'
                             : ((userData?.tipo === 'autopeca' && chat.encerrado) ||
                                (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao))
                             ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700 border-l-4 border-l-gray-400'
@@ -1710,25 +1710,18 @@ export default function ChatsPage() {
                              (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao))
                           ? 'bg-gray-100 dark:bg-gray-700/50 opacity-70 hover:bg-gray-150 dark:hover:bg-gray-700'
                           : 'bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 border-l-4 border-l-green-500 dark:border-l-green-400'
-                      }`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (!excluindoChatSuporte) {
-                          console.log('🖱️ Seleção MANUAL do chat:', {
-                            chatId: chat.id,
-                            nomePeca: chat.nomePeca || 'Suporte',
-                            pedidoId: chat.pedidoId,
-                            chatSelecionadoAtual: chatSelecionado?.id
-                          });
-                          // Marcar como seleção manual para evitar sobrescrita pelo useEffect
-                          selecaoManualRef.current = chat.id;
-                          // Selecionar imediatamente
-                          setChatSelecionado(chat);
-                          marcarComoLido(chat);
+                      } ${chats[chats.length - 1]?.id !== chat.id ? 'pb-6' : ''}`}
+                      onClick={() => {
+                        if (chatSelecionado?.id !== chat.id) {
+                          registrarSelecaoManual(chat.id);
+                          setMostrarMenuMaisInfo(false);
                         }
                       }}
                     >
+                      {chats[chats.length - 1]?.id !== chat.id && (
+                        <div className="absolute inset-x-0 bottom-[-7px] h-[2px] bg-black/50"></div>
+                      )}
+                      
                       {/* Botão de excluir para chats de suporte */}
                       {chat.isSuporte && (
                         <button
