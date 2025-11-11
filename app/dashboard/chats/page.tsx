@@ -129,6 +129,7 @@ export default function ChatsPage() {
   const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null);
   const [mostrarDetalhesLoja, setMostrarDetalhesLoja] = useState(false);
   const [usuariosVerificados, setUsuariosVerificados] = useState<Record<string, boolean>>({});
+  const [dicasSegurancaOcultas, setDicasSegurancaOcultas] = useState<Record<string, boolean>>({});
   const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
   const [entregadoresDisponiveis, setEntregadoresDisponiveis] = useState<EntregadorResumo[]>([]);
   const [carregandoEntregadores, setCarregandoEntregadores] = useState(false);
@@ -924,6 +925,8 @@ export default function ChatsPage() {
         fileInputRef.current.value = '';
       }
 
+      setDicasSegurancaOcultas((prev) => ({ ...prev, [chatSelecionado.id]: true }));
+
       toast.success('Mensagem enviada!');
     } catch (error: any) {
       console.error('❌ Erro ao enviar mensagem:', error);
@@ -1540,6 +1543,23 @@ export default function ChatsPage() {
       msg.createdAt > ultimaLeitura && msg.remetenteId !== userData.id
     ).length;
   };
+
+  const textoDicaSeguranca = userData?.tipo === 'oficina'
+    ? 'EFETUE O PAGAMENTO PARA A AUTOPEÇA APENAS QUANDO A PEÇA ESTIVER EM SUAS MÃOS, O MOTOBOY SÓ IRÁ LIBERAR A PEÇA COM O PAGAMENTO FEITO !'
+    : userData?.tipo === 'autopeca'
+      ? 'AVISE O MOTOBOY PARA LIBERAR A PEÇA APENAS QUANDO VOCÊ CONFIRMAR QUE RECEBEU O PAGAMENTO, O COMPRADOR SERÁ ORIENTADO A PAGAR SOMENTE QUANDO O MOTOBOY MOSTRAR A PEÇA EM MÃOS !'
+      : null;
+
+  const usuarioJaEnviouMensagem = chatSelecionado?.mensagens?.some(
+    (msg) => msg.remetenteId === userData?.id
+  );
+
+  const mostrarDicaSeguranca = Boolean(
+    chatSelecionado &&
+    textoDicaSeguranca &&
+    !usuarioJaEnviouMensagem &&
+    !dicasSegurancaOcultas[chatSelecionado.id]
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-400 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-6 relative">
@@ -2297,6 +2317,30 @@ export default function ChatsPage() {
                           >
                             <X size={18} />
                           </button>
+                        </div>
+                      )}
+                      
+                      {mostrarDicaSeguranca && textoDicaSeguranca && chatSelecionado && (
+                        <div className="mb-3 sm:mb-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-700 rounded-xl p-3 sm:p-4 shadow-sm relative">
+                          <button
+                            type="button"
+                            onClick={() => setDicasSegurancaOcultas((prev) => ({ ...prev, [chatSelecionado.id]: true }))}
+                            className="absolute top-2 right-2 text-blue-600/70 dark:text-blue-200 hover:text-blue-800 dark:hover:text-blue-100"
+                            aria-label="Dispensar aviso de segurança"
+                          >
+                            <X size={16} />
+                          </button>
+                          <div className="flex items-start gap-3">
+                            <Shield className="text-blue-600 dark:text-blue-300 mt-0.5 flex-shrink-0" size={20} />
+                            <div>
+                              <p className="text-xs sm:text-sm font-semibold text-blue-900 dark:text-blue-100 leading-snug uppercase">
+                                {textoDicaSeguranca}
+                              </p>
+                              <p className="text-[11px] sm:text-xs text-blue-700/80 dark:text-blue-200/80 mt-2">
+                                Segurança em primeiro lugar: esse aviso some assim que você enviar a primeira mensagem neste chat.
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       )}
                       
