@@ -36,6 +36,11 @@ export interface User {
   verificado?: boolean; // Usuário verificado com selo azul
   verificadoEm?: Date; // Data da verificação
   verificadoPor?: string; // Admin responsável pela verificação
+  veiculoTipo?: 'MOTO' | 'UTILITARIO' | 'CAMINHÃO';
+  veiculoMarca?: string;
+  veiculoModelo?: string;
+  veiculoAno?: string;
+  veiculoPlaca?: string;
   testePlatinumUsado?: boolean; // Se já usou o teste de 30 dias grátis do Platinum
   dataInicioTestePlatinum?: Date; // Data em que iniciou o teste de 30 dias
   linkAprovacaoPlatinum?: string; // Link para aprovar novo Preapproval após trial

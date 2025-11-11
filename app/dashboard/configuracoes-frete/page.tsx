@@ -18,6 +18,11 @@ export default function ConfiguracoesFretePage() {
   const [valorFrete, setValorFrete] = useState<string>('');
   const [prazoColeta, setPrazoColeta] = useState<string>('');
   const [prazoEntrega, setPrazoEntrega] = useState<string>('');
+  const [veiculoTipo, setVeiculoTipo] = useState<'MOTO' | 'UTILITARIO' | 'CAMINHÃO' | ''>('');
+  const [veiculoMarca, setVeiculoMarca] = useState('');
+  const [veiculoModelo, setVeiculoModelo] = useState('');
+  const [veiculoAno, setVeiculoAno] = useState('');
+  const [veiculoPlaca, setVeiculoPlaca] = useState('');
 
   const [totalFretes, setTotalFretes] = useState(0);
   const [totalLucro, setTotalLucro] = useState(0);
@@ -47,6 +52,11 @@ export default function ConfiguracoesFretePage() {
         setValorFrete(data.valorFreteDentroCidade?.toString() || '');
         setPrazoColeta(data.prazoColeta || '');
         setPrazoEntrega(data.prazoEntrega || '');
+        setVeiculoTipo(data.veiculoTipo || '');
+        setVeiculoMarca(data.veiculoMarca || '');
+        setVeiculoModelo(data.veiculoModelo || '');
+        setVeiculoAno(data.veiculoAno || '');
+        setVeiculoPlaca(data.veiculoPlaca || '');
       }
 
       const ofertasQuery = query(
@@ -89,6 +99,16 @@ export default function ConfiguracoesFretePage() {
       return;
     }
 
+    if (!veiculoTipo) {
+      toast.error('Selecione o tipo de veículo');
+      return;
+    }
+
+    if (!veiculoMarca.trim() || !veiculoModelo.trim()) {
+      toast.error('Informe marca e modelo do veículo');
+      return;
+    }
+
     setSalvando(true);
     try {
       await updateDoc(doc(db, 'users', userData.id), {
@@ -96,6 +116,11 @@ export default function ConfiguracoesFretePage() {
         prazoColeta: prazoColeta.trim(),
         prazoEntrega: prazoEntrega.trim(),
         updatedAt: new Date(),
+        veiculoTipo,
+        veiculoMarca: veiculoMarca.trim(),
+        veiculoModelo: veiculoModelo.trim(),
+        veiculoAno: veiculoAno.trim(),
+        veiculoPlaca: veiculoPlaca.trim(),
       });
 
       toast.success('Configurações salvas com sucesso!');
@@ -145,6 +170,76 @@ export default function ConfiguracoesFretePage() {
               </h2>
 
               <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    Tipo de Veículo *
+                  </label>
+                  <select
+                    value={veiculoTipo}
+                    onChange={(e) => setVeiculoTipo(e.target.value as 'MOTO' | 'UTILITARIO' | 'CAMINHÃO' | '')}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+                  >
+                    <option value="">Selecione</option>
+                    <option value="MOTO">Moto</option>
+                    <option value="UTILITARIO">Utilitário</option>
+                    <option value="CAMINHÃO">Caminhão</option>
+                  </select>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                      Marca *
+                    </label>
+                    <input
+                      type="text"
+                      value={veiculoMarca}
+                      onChange={(e) => setVeiculoMarca(e.target.value)}
+                      placeholder="Ex: Honda"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                      Modelo *
+                    </label>
+                    <input
+                      type="text"
+                      value={veiculoModelo}
+                      onChange={(e) => setVeiculoModelo(e.target.value)}
+                      placeholder="Ex: CG 160"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                      Ano
+                    </label>
+                    <input
+                      type="text"
+                      value={veiculoAno}
+                      onChange={(e) => setVeiculoAno(e.target.value)}
+                      placeholder="Ex: 2021"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                      Placa
+                    </label>
+                    <input
+                      type="text"
+                      value={veiculoPlaca}
+                      onChange={(e) => setVeiculoPlaca(e.target.value.toUpperCase())}
+                      placeholder="Ex: ABC1D23"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 dark:text-gray-900 bg-white"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                     Valor do Frete (Dentro da Cidade) *
@@ -217,9 +312,9 @@ export default function ConfiguracoesFretePage() {
                 Estatísticas
               </h2>
 
-              <div className="space-y-6">
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-700">
-                  <div className="flex items-center justify-between mb-2">
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-blue-900 to-blue-700 rounded-xl p-4 text-white shadow-inner">
+                  <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                       Total de Fretes Realizados
                     </span>
@@ -230,7 +325,7 @@ export default function ConfiguracoesFretePage() {
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border-2 border-green-200 dark:border-green-700">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border-2 border-green-200 dark:border-green-700">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                       Total Lucrado
@@ -257,6 +352,22 @@ export default function ConfiguracoesFretePage() {
                       Entrega: <span className="font-normal">{prazoEntrega || 'Não configurado'}</span>
                     </p>
                   </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-4 text-white shadow-inner border border-gray-700">
+                  <h3 className="text-sm font-bold uppercase text-gray-300 flex items-center gap-2 mb-3">
+                    <Truck size={16} /> Veículo Cadastrado
+                  </h3>
+                  {veiculoTipo ? (
+                    <div className="space-y-1 text-sm">
+                      <p><span className="text-gray-400 uppercase text-xs">Tipo:</span> {veiculoTipo === 'MOTO' ? 'Moto' : veiculoTipo === 'UTILITARIO' ? 'Utilitário' : 'Caminhão'}</p>
+                      <p><span className="text-gray-400 uppercase text-xs">Marca / Modelo:</span> {veiculoMarca || '-'} {veiculoModelo ? `• ${veiculoModelo}` : ''}</p>
+                      <p><span className="text-gray-400 uppercase text-xs">Ano:</span> {veiculoAno || '-'}</p>
+                      <p><span className="text-gray-400 uppercase text-xs">Placa:</span> {veiculoPlaca || '-'}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-300">Informe os dados do veículo para que as oficinas saibam quem fará a entrega.</p>
+                  )}
                 </div>
               </div>
             </div>

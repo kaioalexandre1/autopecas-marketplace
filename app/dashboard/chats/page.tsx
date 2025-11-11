@@ -90,6 +90,11 @@ interface EntregadorResumo {
   whatsapp: string;
   valorDentroCidade: number;
   cidade?: string;
+  veiculoTipo?: 'MOTO' | 'UTILITARIO' | 'CAMINHÃO';
+  veiculoMarca?: string;
+  veiculoModelo?: string;
+  veiculoAno?: string;
+  veiculoPlaca?: string;
 }
 
 interface DadosEntregaChat {
@@ -246,6 +251,11 @@ export default function ChatsPage() {
         whatsapp,
         valorDentroCidade: Number(dados.valorFreteDentroCidade || dados.valorDentroCidade || 0),
         cidade: dados.cidade || undefined,
+        veiculoTipo: dados.veiculoTipo as 'MOTO' | 'UTILITARIO' | 'CAMINHÃO',
+        veiculoMarca: dados.veiculoMarca,
+        veiculoModelo: dados.veiculoModelo,
+        veiculoAno: dados.veiculoAno,
+        veiculoPlaca: dados.veiculoPlaca,
       } as EntregadorResumo;
     });
 
@@ -258,6 +268,11 @@ export default function ChatsPage() {
           whatsapp: '44999991111',
           valorDentroCidade: 15,
           cidade: 'Maringá-PR',
+          veiculoTipo: 'MOTO',
+          veiculoMarca: 'Honda',
+          veiculoModelo: 'CG 160',
+          veiculoAno: '2020',
+          veiculoPlaca: 'ABC-1234',
         },
         {
           id: 'exemplo-2',
@@ -266,6 +281,11 @@ export default function ChatsPage() {
           whatsapp: '44999992222',
           valorDentroCidade: 18,
           cidade: 'Maringá-PR',
+          veiculoTipo: 'CAMINHÃO',
+          veiculoMarca: 'Volvo',
+          veiculoModelo: 'FH 16',
+          veiculoAno: '2022',
+          veiculoPlaca: 'DEF-5678',
         },
       ];
     }
@@ -2608,6 +2628,29 @@ export default function ChatsPage() {
                           <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
                             {formatarTelefone(entregador.telefone)}
                           </p>
+                        )}
+                        {entregador.veiculoTipo && (
+                          <div className="mt-3 text-xs text-gray-700 dark:text-gray-200 space-y-1">
+                            <p className="font-semibold uppercase text-gray-600 dark:text-gray-300">
+                              Veículo
+                            </p>
+                            <p>
+                              <span className="font-semibold">Tipo:</span> {entregador.veiculoTipo === 'MOTO' ? 'Moto' : entregador.veiculoTipo === 'UTILITARIO' ? 'Utilitário' : 'Caminhão'}
+                            </p>
+                            <p>
+                              <span className="font-semibold">Marca / Modelo:</span> {entregador.veiculoMarca || '-'}{entregador.veiculoModelo ? ` • ${entregador.veiculoModelo}` : ''}
+                            </p>
+                            {(entregador.veiculoAno || entregador.veiculoPlaca) && (
+                              <p>
+                                {entregador.veiculoAno && (
+                                  <span className="mr-2"><span className="font-semibold">Ano:</span> {entregador.veiculoAno}</span>
+                                )}
+                                {entregador.veiculoPlaca && (
+                                  <span><span className="font-semibold">Placa:</span> {entregador.veiculoPlaca}</span>
+                                )}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div className="text-right">
