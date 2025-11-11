@@ -1689,33 +1689,51 @@ export default function ChatsPage() {
                   </p>
                 </div>
               ) : (
-                chats.map((chat) => {
+                chats.map((chat, index) => {
                   const naoLidas = temMensagensNaoLidas(chat);
                   const quantidadeNaoLidas = contarMensagensNaoLidas(chat);
-                  
+                  const selecionado = chatSelecionado?.id === chat.id;
+
+                  const handleSelecionarChat = () => {
+                    if (chatSelecionado?.id === chat.id) {
+                      return;
+                    }
+                    selecaoManualRef.current = chat.id;
+                    setChatSelecionado(chat);
+                    marcarComoLido(chat);
+                    setMostrarMenuMaisInfo(false);
+                    setMostrarDetalhesLoja(false);
+                  };
+
                   return (
                     <div
                       key={chat.id}
-                      className={`relative p-3 sm:p-4 rounded-xl border-2 transition-all cursor-pointer h-32 sm:h-36 flex flex-col gap-2 ${
-                         isSelecionado
-                           ? 'border-green-400 shadow-lg bg-green-50 dark:bg-green-900/20'
-                           : 'border-transparent hover:border-blue-300 bg-white/80 dark:bg-gray-800/80'
-                      }`}
-                      onClick={() => {
-                        if (chatSelecionado?.id !== chat.id) {
-                          registrarSelecaoManual(chat.id);
-                          setMostrarMenuMaisInfo(false);
+                      role="button"
+                      tabIndex={0}
+                      onClick={handleSelecionarChat}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleSelecionarChat();
                         }
                       }}
+                      className={`relative px-3 sm:px-4 py-3 sm:py-4 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl border ${
+                        selecionado
+                          ? 'border-green-400 shadow-lg bg-green-50 dark:bg-green-900/20'
+                          : 'border-transparent hover:border-blue-300 bg-white/80 dark:bg-gray-800/80'
+                      } ${index < chats.length - 1 ? 'mb-3 sm:mb-3.5' : ''}`}
                     >
-                      {chats[chats.length - 1]?.id !== chat.id && (
-                        <div className="pointer-events-none absolute inset-x-0 bottom-[-6px] h-[1.5px] bg-black/40"></div>
+                      {index < chats.length - 1 && (
+                        <div className="pointer-events-none absolute left-4 right-4 bottom-[-4px] h-px bg-black/30"></div>
                       )}
-                      
+
                       {/* Botão de excluir para chats de suporte */}
                       {chat.isSuporte && (
                         <button
-                          onClick={(e) => excluirChatSuporte(chat.id, e)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            excluirChatSuporte(chat.id, e);
+                          }}
                           disabled={excluindoChatSuporte === chat.id}
                           className="absolute top-3 right-3 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed z-10"
                           title="Excluir este chat de suporte"
@@ -1723,145 +1741,121 @@ export default function ChatsPage() {
                           <Trash2 size={14} />
                         </button>
                       )}
-                      
-                      {/* Nome da Loja ou Suporte */}
-                      <div className="mb-1.5 flex justify-between items-center pr-8">
-                        <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-                          {chat.isSuporte ? (
-                            <h3 className="font-bold text-xs text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1">
-                              🎧 Suporte
-                            </h3>
-                          ) : (
-                            <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase flex items-center gap-1">
-                              {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
-                              {(() => {
-                                if (chat.isSuporte) return null;
-                                const parceiroId = userData?.tipo === 'oficina' ? chat.autopecaId : chat.oficinaId;
-                                if (parceiroId && usuariosVerificados[parceiroId]) {
+
+                      <div className="flex flex-col gap-1.5 min-h-[110px] sm:min-h-[118px]">
+                        {/* Cabeçalho: nome e status */}
+                        <div className="flex justify-between items-start gap-2 pr-6">
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                              {chat.isSuporte ? (
+                                <h3 className="font-bold text-xs text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1">
+                                  🎧 Suporte
+                                </h3>
+                              ) : (
+                                <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase truncate flex items-center gap-1">
+                                  {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
+                                  {(() => {
+                                    if (chat.isSuporte) return null;
+                                    const parceiroId = userData?.tipo === 'oficina' ? chat.autopecaId : chat.oficinaId;
+                                    if (parceiroId && usuariosVerificados[parceiroId]) {
+                                      return (
+                                        <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-300">
+                                          <BadgeCheck size={12} />
+                                          Loja verificada
+                                        </span>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </h3>
+                              )}
+
+                              {userData?.tipo === 'oficina' && (() => {
+                                const plano = planosAutopecas[chat.autopecaId] || 'basico';
+                                const cores: {[key: string]: string} = {
+                                  basico: 'text-gray-600 dark:text-gray-400',
+                                  premium: 'text-blue-600 dark:text-blue-400',
+                                  gold: 'text-yellow-600 dark:text-yellow-500',
+                                  platinum: 'text-purple-600 dark:text-purple-400'
+                                };
+                                const emojis: {[key: string]: string} = {
+                                  basico: '',
+                                  premium: '💎',
+                                  gold: '🏆',
+                                  platinum: '👑'
+                                };
+                                const nomesPlanos: {[key: string]: string} = {
+                                  basico: '',
+                                  premium: 'Silver',
+                                  gold: 'Gold',
+                                  platinum: 'Platinum'
+                                };
+                                if (plano !== 'basico') {
                                   return (
-                                    <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-300">
-                                      <BadgeCheck size={12} />
-                                      Loja verificada
+                                    <span className={`font-bold ${cores[plano]} text-xs sm:text-sm flex items-center gap-1`}>
+                                      {emojis[plano]} {nomesPlanos[plano]}
                                     </span>
                                   );
                                 }
                                 return null;
                               })()}
-                            </h3>
-                          )}
-                          {/* Plano da autopeça com coroinha (apenas para oficinas) */}
-                          {userData?.tipo === 'oficina' && (() => {
-                            const plano = planosAutopecas[chat.autopecaId] || 'basico';
-                            const cores: {[key: string]: string} = {
-                              basico: 'text-gray-600 dark:text-gray-400',
-                              premium: 'text-blue-600 dark:text-blue-400',
-                              gold: 'text-yellow-600 dark:text-yellow-500',
-                              platinum: 'text-purple-600 dark:text-purple-400'
-                            };
-                            const emojis: {[key: string]: string} = {
-                              basico: '',
-                              premium: '💎',
-                              gold: '🏆',
-                              platinum: '👑'
-                            };
-                            const nomesPlanos: {[key: string]: string} = {
-                              basico: '',
-                              premium: 'Silver',
-                              gold: 'Gold',
-                              platinum: 'Platinum'
-                            };
-                            if (plano !== 'basico') {
-                              return (
-                                <span className={`font-bold ${cores[plano]} text-xs sm:text-sm flex items-center gap-1`}>
-                                  {emojis[plano]} {nomesPlanos[plano]}
-                            </span>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {chat.mensagens.length > 0 && (
-                            <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                            {formatDistanceToNow(
-                              chat.mensagens[chat.mensagens.length - 1].createdAt,
-                              { addSuffix: true, locale: ptBR }
-                            )}
-                          </span>
-                        )}
-                          {/* Círculo verde estilo WhatsApp com número de mensagens não lidas */}
-                          {naoLidas && quantidadeNaoLidas > 0 && (
-                            <div className="flex-shrink-0">
-                              <div className="bg-green-500 rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
-                                <span className="text-white text-[10px] font-bold">
-                                  {quantidadeNaoLidas > 99 ? '99+' : quantidadeNaoLidas}
-                                </span>
-                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Linha neon separadora (verde para chats normais, azul para suporte) */}
-                      {chat.isSuporte ? (
-                        <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
-                      ) : (
-                        <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent mb-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
-                      )}
 
-                      {/* Informações do Pedido (ocultar para chats de suporte) */}
-                      {!chat.isSuporte && (
-                        <div className="mb-1.5">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                              {chat.nomePeca}
-                            </span>
-                            {/* Para autopeça: mostrar encerrado se ela fechou
-                                Para oficina: mostrar encerrado apenas se não estiver aguardando confirmação */}
-                            {((userData?.tipo === 'autopeca' && chat.encerrado) ||
-                              (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao)) && (
-                              <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
-                            Encerrado
-                          </span>
-                        )}
-                            {chat.aguardandoConfirmacao && userData?.tipo === 'oficina' && (
-                              <span className="px-1 py-0.5 bg-blue-200 dark:bg-blue-600 text-blue-700 dark:text-blue-200 rounded text-[10px] font-semibold">
-                                Aguardando Confirmação
+                            {!chat.isSuporte && (
+                              <div className="flex items-center gap-1.5 flex-wrap text-[10px] sm:text-xs text-gray-600 dark:text-gray-300">
+                                <strong className="uppercase text-gray-900 dark:text-gray-100">
+                                  {chat.nomePeca}
+                                </strong>
+                                <span className="uppercase text-blue-700 dark:text-blue-400 font-semibold">
+                                  {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
+                                </span>
+                                {((userData?.tipo === 'autopeca' && chat.encerrado) ||
+                                  (userData?.tipo === 'oficina' && chat.encerrado && !chat.aguardandoConfirmacao)) && (
+                                  <span className="px-1 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold">
+                                    Encerrado
+                                  </span>
+                                )}
+                                {chat.aguardandoConfirmacao && userData?.tipo === 'oficina' && (
+                                  <span className="px-1 py-0.5 bg-blue-200 dark:bg-blue-600 text-blue-700 dark:text-blue-200 rounded text-[10px] font-semibold">
+                                    Aguardando Confirmação
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            {chat.mensagens.length > 0 && (
+                              <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                {formatDistanceToNow(
+                                  chat.mensagens[chat.mensagens.length - 1].createdAt,
+                                  { addSuffix: true, locale: ptBR }
+                                )}
                               </span>
                             )}
-                      </div>
-                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">
-                        {chat.marcaCarro} {chat.modeloCarro} {chat.anoCarro}
-                      </p>
-                        </div>
-                      )}
-                      
-                      {/* Linha neon separadora antes da última mensagem */}
-                      {chat.mensagens.length > 0 && (
-                        chat.isSuporte ? (
-                          <div className="h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent my-1.5 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
-                        ) : (
-                          <div className="h-[1px] bg-gradient-to-r from-transparent via-green-400 to-transparent my-1.5 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
-                        )
-                      )}
 
-                      {/* Última Mensagem */}
-                      {chat.mensagens.length > 0 && (
-                        <div className="mt-1">
-                          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate italic">
-                              {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
-                            </p>
+                            {naoLidas && quantidadeNaoLidas > 0 && (
+                              <div className="flex items-center gap-1">
+                                <div className="bg-green-500 rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                                  <span className="text-white text-[10px] font-bold">
+                                    {quantidadeNaoLidas > 99 ? '99+' : quantidadeNaoLidas}
+                                  </span>
+                                </div>
+                                <span className="text-[10px] sm:text-xs font-semibold text-red-600 dark:text-red-400">
+                                  {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                      )}
-                      
-                      {/* Badge de mensagens não lidas */}
-                      {naoLidas && quantidadeNaoLidas > 0 && (
-                        <div className="mt-1">
-                          <span className="text-xs font-semibold text-red-600 dark:text-red-400">
-                            {quantidadeNaoLidas === 1 ? '1 nova mensagem' : `${quantidadeNaoLidas} novas mensagens`}
-                          </span>
                         </div>
-                      )}
+
+                        {/* Prévia da última mensagem */}
+                        {chat.mensagens.length > 0 && (
+                          <div className="text-xs text-gray-700 dark:text-gray-300 italic truncate">
+                            {chat.mensagens[chat.mensagens.length - 1].texto || '📷 Imagem'}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })
