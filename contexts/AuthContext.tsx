@@ -310,6 +310,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const data = { id: user.uid, ...userDoc.data() } as User;
+
+          if (data.contaBloqueada) {
+            toast.error('Sua conta está bloqueada. Entre em contato com o suporte.');
+
+            // Remover sessão atual (se existir)
+            try {
+              if (typeof window !== 'undefined') {
+                const sessionId = localStorage.getItem('sessionId');
+                if (sessionId) {
+                  await deleteDoc(doc(db, 'user_sessions', sessionId));
+                  localStorage.removeItem('sessionId');
+                  localStorage.removeItem('userId');
+                }
+              }
+            } catch (erroSessao) {
+              console.error('Erro ao remover sessão bloqueada:', erroSessao);
+            }
+
+            await firebaseSignOut(auth);
+            setUserData(null);
+            document.documentElement.classList.remove('dark');
+            setLoading(false);
+            return;
+          }
           
           // Verificar vencimento do plano e ativar básico se necessário
           if (data.tipo === 'autopeca' && data.plano && data.plano !== 'basico' && data.dataProximoPagamento && data.assinaturaAtiva) {

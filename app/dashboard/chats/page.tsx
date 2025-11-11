@@ -59,7 +59,8 @@ import {
   ClipboardCheck,
   Calendar,
   Package,
-  MessageCircle
+  MessageCircle,
+  BadgeCheck
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -73,6 +74,7 @@ interface InfoAutopeca {
   vendas: number;
   rankingPosicao?: number | null;
   totalAutopecas?: number;
+  verificado?: boolean;
   cidadeEstado?: string;
 }
 
@@ -126,6 +128,7 @@ export default function ChatsPage() {
   const [infoAutopecaErro, setInfoAutopecaErro] = useState<{ id: string; mensagem: string } | null>(null);
   const [rankingCacheState, setRankingCache] = useState<RankingCache | null>(null);
   const [mostrarDetalhesLoja, setMostrarDetalhesLoja] = useState(false);
+  const [usuariosVerificados, setUsuariosVerificados] = useState<Record<string, boolean>>({});
   const [mostrarEntregadores, setMostrarEntregadores] = useState(false);
   const [entregadoresDisponiveis, setEntregadoresDisponiveis] = useState<EntregadorResumo[]>([]);
   const [carregandoEntregadores, setCarregandoEntregadores] = useState(false);
@@ -370,6 +373,7 @@ export default function ChatsPage() {
         vendas: rankingInfo ? rankingInfo.quantidade : 0,
         rankingPosicao: rankingInfo ? rankingInfo.posicao : null,
         totalAutopecas: rankingCache.total || undefined,
+        verificado: Boolean(autopecaData.verificado || autopecaData.dadosConfirmados),
         cidadeEstado,
       };
 
@@ -608,30 +612,46 @@ export default function ChatsPage() {
       
       setChats(chatsData);
       
-      // Buscar planos das autopeças para mostrar nas ofertas
-      if (userData.tipo === 'oficina') {
-        const autopecaIds = new Set(chatsData.map(chat => chat.autopecaId).filter(Boolean));
-        const novosPlanos: {[key: string]: string} = {};
-        
-        const promessasPlanos = Array.from(autopecaIds).map(async (autopecaId) => {
-          if (!planosAutopecas[autopecaId]) {
-            try {
-              const userDoc = await getDoc(doc(db, 'users', autopecaId));
-              if (userDoc.exists()) {
-                const userData = userDoc.data();
-                novosPlanos[autopecaId] = userData.plano || 'basico';
-              }
-            } catch (error) {
-              console.error(`Erro ao buscar plano da autopeça ${autopecaId}:`, error);
+      const participantesIds = new Set<string>();
+      chatsData.forEach((chat) => {
+        if (chat.autopecaId) participantesIds.add(chat.autopecaId);
+        if (chat.oficinaId) participantesIds.add(chat.oficinaId);
+      });
+
+      const novosPlanos: {[key: string]: string} = {};
+      const novosVerificados: Record<string, boolean> = {};
+
+      await Promise.all(Array.from(participantesIds).map(async (usuarioId) => {
+        try {
+          const usuarioDoc = await getDoc(doc(db, 'users', usuarioId));
+          if (!usuarioDoc.exists()) {
+            return;
+          }
+
+          const dadosUsuario = usuarioDoc.data();
+          const verificadoAtual = Boolean(dadosUsuario.verificado || dadosUsuario.dadosConfirmados);
+
+          if (usuariosVerificados[usuarioId] !== verificadoAtual) {
+            novosVerificados[usuarioId] = verificadoAtual;
+          }
+
+          if (userData.tipo === 'oficina' && dadosUsuario.tipo === 'autopeca') {
+            const planoAtual = dadosUsuario.plano || 'basico';
+            if (planosAutopecas[usuarioId] !== planoAtual) {
+              novosPlanos[usuarioId] = planoAtual;
             }
           }
-        });
-        
-        await Promise.all(promessasPlanos);
-        
-        if (Object.keys(novosPlanos).length > 0) {
-          setPlanosAutopecas(prev => ({ ...prev, ...novosPlanos }));
+        } catch (error) {
+          console.error(`Erro ao buscar dados do usuário ${usuarioId}:`, error);
         }
+      }));
+
+      if (Object.keys(novosPlanos).length > 0) {
+        setPlanosAutopecas((prev) => ({ ...prev, ...novosPlanos }));
+      }
+
+      if (Object.keys(novosVerificados).length > 0) {
+        setUsuariosVerificados((prev) => ({ ...prev, ...novosVerificados }));
       }
     });
 
@@ -1688,9 +1708,17 @@ export default function ChatsPage() {
                               🎧 Suporte
                             </h3>
                           ) : (
-                            <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase">
-                            {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
-                          </h3>
+                            <h3 className="font-bold text-xs text-gray-900 dark:text-gray-100 uppercase flex items-center gap-1">
+                              {userData?.tipo === 'oficina' ? chat.autopecaNome : chat.oficinaNome}
+                              {(() => {
+                                if (chat.isSuporte) return null;
+                                const parceiroId = userData?.tipo === 'oficina' ? chat.autopecaId : chat.oficinaId;
+                                if (parceiroId && usuariosVerificados[parceiroId]) {
+                                  return <BadgeCheck size={14} className="text-blue-500" aria-label="Conta verificada" />;
+                                }
+                                return null;
+                              })()}
+                            </h3>
                           )}
                           {/* Plano da autopeça com coroinha (apenas para oficinas) */}
                           {userData?.tipo === 'oficina' && (() => {
@@ -1840,11 +1868,19 @@ export default function ChatsPage() {
                                 🎧 Suporte
                               </h2>
                             ) : (
-                              <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase">
-                            {userData?.tipo === 'oficina' 
-                              ? chatSelecionado.autopecaNome 
-                              : chatSelecionado.oficinaNome}
-                          </h2>
+                              <h2 className="font-black text-xs sm:text-sm text-white truncate uppercase flex items-center gap-1">
+                                {userData?.tipo === 'oficina' 
+                                  ? chatSelecionado.autopecaNome 
+                                  : chatSelecionado.oficinaNome}
+                                {(() => {
+                                  if (chatSelecionado.isSuporte) return null;
+                                  const parceiroId = userData?.tipo === 'oficina' ? chatSelecionado.autopecaId : chatSelecionado.oficinaId;
+                                  if (parceiroId && usuariosVerificados[parceiroId]) {
+                                    return <BadgeCheck size={16} className="text-blue-200" aria-label="Conta verificada" />;
+                                  }
+                                  return null;
+                                })()}
+                              </h2>
                             )}
                             {/* Plano da autopeça com coroinha (apenas para oficinas e chats normais) */}
                             {userData?.tipo === 'oficina' && !chatSelecionado.isSuporte && (() => {

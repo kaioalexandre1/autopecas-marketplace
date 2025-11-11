@@ -5,7 +5,78 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { RamoVeiculo } from '@/types';
-import { LogOut, Radio, MessageSquare, CheckCircle, User, Settings, Car, Wrench, MapPin, ChevronDown, Shield, ChevronRight, Menu, X, Zap, Crown, Store, Headphones, Trophy, Truck } from 'lucide-react';
+import {
+  Menu,
+  X,
+  Bell,
+  Search,
+  Settings,
+  LogOut,
+  Shield,
+  MessageSquare,
+  CheckCircle,
+  Filter,
+  SlidersHorizontal,
+  MapPin,
+  Clock,
+  Truck,
+  AlertCircle,
+  ChevronRight,
+  ChevronLeft,
+  Star,
+  Phone,
+  Mail,
+  Store,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Sparkles,
+  DollarSign,
+  Crown,
+  Radio,
+  Flag,
+  Target,
+  Globe,
+  Loader2,
+  CalendarRange,
+  Info,
+  Cpu,
+  BarChart3,
+  HelpCircle,
+  Gift,
+  ArrowRight,
+  ArrowLeft,
+  FileText,
+  ClipboardList,
+  UserPlus,
+  Users,
+  Download,
+  Upload,
+  FileDown,
+  Wallet,
+  Activity,
+  History,
+  Repeat,
+  FileCheck,
+  MessageCircle,
+  Camera,
+  Trash2,
+  ChevronDown,
+  ArrowUpRight,
+  LayoutDashboard,
+  Map,
+  Lock,
+  Unlock,
+  Copy,
+  LucideIcon,
+  PlusCircle,
+  MinusCircle,
+  ArrowUp,
+  ArrowDown,
+  BadgeCheck,
+  Trophy
+} from 'lucide-react';
 import ModalSuporte from './ModalSuporte';
 import { useUnreadChats } from '@/hooks/useUnreadChats';
 
@@ -290,7 +361,9 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { href: '/dashboard', label: 'Pedidos ao Vivo', icon: Radio },
+    ...(userData?.tipo !== 'entregador'
+      ? [{ href: '/dashboard', label: 'Pedidos ao Vivo', icon: Radio }]
+      : []),
     ...(userData?.tipo !== 'entregador'
       ? [
           { href: '/dashboard/chats', label: 'Chats', icon: MessageSquare },
@@ -849,14 +922,16 @@ export default function Navbar() {
             )}
 
             {/* Botão Pedidos */}
-            <Link
-              href="/dashboard"
-              className="p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all"
-              style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
-              title="Pedidos ao Vivo"
-            >
-              📋
-            </Link>
+            {userData?.tipo !== 'entregador' && (
+              <Link
+                href="/dashboard"
+                className="p-3 text-white rounded-lg border-2 border-white min-w-[50px] min-h-[50px] flex items-center justify-center text-2xl hover:bg-white/20 transition-all"
+                style={{ opacity: 1, color: 'rgb(255, 255, 255)', borderColor: 'rgb(255, 255, 255)' }}
+                title="Pedidos ao Vivo"
+              >
+                📜
+              </Link>
+            )}
           </div>
 
           {/* Menu Hamburger - Mobile */}
@@ -875,7 +950,12 @@ export default function Navbar() {
             <div className="py-4 px-3 space-y-2">
               {/* User Info Mobile */}
               <div className="pb-4 mb-4 border-b-2 border-blue-600">
-                <div className="text-base font-bold text-white mb-2">{userData?.nome}</div>
+                <div className="text-base font-bold text-white mb-2 flex items-center gap-2">
+                  <span>{userData?.nome}</span>
+                  {userData && (userData.verificado || userData.dadosConfirmados) && (
+                    <BadgeCheck size={16} className="text-blue-200" aria-label="Conta verificada" />
+                  )}
+                </div>
                 <div className={`text-sm px-3 py-1.5 rounded-full inline-block font-semibold ${getTipoBadgeColor()}`}>
                   {getTipoLabel()}
                 </div>
@@ -886,8 +966,11 @@ export default function Navbar() {
                     <Store size={16} className="text-yellow-400" />
                     <div>
                       <div className="text-xs text-white/80 font-medium">Loja</div>
-                      <div className="text-sm font-bold text-white">
-                        {userData?.nomeLoja || userData?.nome || 'Minha Loja'}
+                      <div className="text-sm font-bold text-white flex items-center gap-2">
+                        <span>{userData?.nomeLoja || userData?.nome || 'Minha Loja'}</span>
+                        {userData && (userData.verificado || userData.dadosConfirmados) && (
+                          <BadgeCheck size={14} className="text-blue-200" aria-label="Conta verificada" />
+                        )}
                       </div>
                     </div>
                   </div>

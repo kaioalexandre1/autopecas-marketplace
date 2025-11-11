@@ -24,7 +24,10 @@ import {
   Ban,
   Headphones,
   MessageSquare,
-  Trash2
+  Trash2,
+  BadgeCheck,
+  UserCheck,
+  UserX
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -41,6 +44,9 @@ export default function AdminPage() {
   const [usuarios, setUsuarios] = useState<User[]>([]);
   const [negocios, setNegocios] = useState<NegocioFechado[]>([]);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [usuarioVerificando, setUsuarioVerificando] = useState<string | null>(null);
+  const [usuarioBloqueando, setUsuarioBloqueando] = useState<string | null>(null);
+  const [usuarioExcluindo, setUsuarioExcluindo] = useState<string | null>(null);
   
   // Estados para filtros
   const [periodoSelecionado, setPeriodoSelecionado] = useState<'hoje' | 'semana' | 'mes'>('hoje');
@@ -435,6 +441,106 @@ export default function AdminPage() {
     }
   };
 
+  const atualizarUsuarioLocal = (id: string, dados: Partial<User>) => {
+    setUsuarios((prev) => prev.map((usuario) => (usuario.id === id ? { ...usuario, ...dados } : usuario)));
+  };
+
+  const handleToggleVerificacao = async (usuario: User) => {
+    const novoValor = !(usuario.verificado || usuario.dadosConfirmados);
+    const confirmacao = novoValor
+      ? window.confirm(`Confirmar os dados de ${usuario.nome} e aplicar o selo verificado?`)
+      : window.confirm(`Remover o selo de verificado de ${usuario.nome}?`);
+
+    if (!confirmacao) return;
+
+    setUsuarioVerificando(usuario.id);
+
+    try {
+      await updateDoc(doc(db, 'users', usuario.id), {
+        dadosConfirmados: novoValor,
+        verificado: novoValor,
+        verificadoEm: novoValor ? Timestamp.now() : null,
+        verificadoPor: novoValor ? userData?.id || null : null,
+      });
+
+      atualizarUsuarioLocal(usuario.id, {
+        dadosConfirmados: novoValor,
+        verificado: novoValor,
+        verificadoEm: novoValor ? new Date() : undefined,
+        verificadoPor: novoValor ? userData?.id : undefined,
+      });
+
+      toast.success(novoValor ? `${usuario.nome} agora está verificado!` : `Selo removido de ${usuario.nome}.`);
+    } catch (error: any) {
+      console.error('Erro ao atualizar verificação do usuário:', error);
+      toast.error('Não foi possível atualizar a verificação. Tente novamente.');
+    } finally {
+      setUsuarioVerificando(null);
+    }
+  };
+
+  const handleToggleBloqueio = async (usuario: User) => {
+    const novoValor = !usuario.contaBloqueada;
+    const confirmacao = window.confirm(
+      `Deseja ${novoValor ? 'bloquear' : 'desbloquear'} a conta de ${usuario.nome}?`
+    );
+
+    if (!confirmacao) return;
+
+    setUsuarioBloqueando(usuario.id);
+
+    try {
+      await updateDoc(doc(db, 'users', usuario.id), {
+        contaBloqueada: novoValor,
+        bloqueadoEm: novoValor ? Timestamp.now() : null,
+        bloqueadoPor: novoValor ? userData?.id || null : null,
+      });
+
+      atualizarUsuarioLocal(usuario.id, {
+        contaBloqueada: novoValor,
+        bloqueadoEm: novoValor ? new Date() : undefined,
+        bloqueadoPor: novoValor ? userData?.id : undefined,
+      });
+
+      toast.success(
+        novoValor
+          ? `${usuario.nome} foi bloqueado e não poderá acessar a plataforma.`
+          : `${usuario.nome} foi desbloqueado.`
+      );
+    } catch (error: any) {
+      console.error('Erro ao atualizar bloqueio do usuário:', error);
+      toast.error('Não foi possível atualizar o bloqueio. Tente novamente.');
+    } finally {
+      setUsuarioBloqueando(null);
+    }
+  };
+
+  const handleRemoverUsuario = async (usuario: User) => {
+    if (usuario.id === userData?.id) {
+      toast.error('Você não pode remover o seu próprio cadastro.');
+      return;
+    }
+
+    const confirmacao = window.confirm(
+      `Tem certeza que deseja REMOVER o cadastro de ${usuario.nome}? Esta ação é permanente.`
+    );
+
+    if (!confirmacao) return;
+
+    setUsuarioExcluindo(usuario.id);
+
+    try {
+      await deleteDoc(doc(db, 'users', usuario.id));
+      setUsuarios((prev) => prev.filter((item) => item.id !== usuario.id));
+      toast.success(`${usuario.nome} foi removido da plataforma.`);
+    } catch (error: any) {
+      console.error('Erro ao remover usuário:', error);
+      toast.error('Não foi possível remover o usuário. Tente novamente.');
+    } finally {
+      setUsuarioExcluindo(null);
+    }
+  };
+ 
   // Filtrar negócios por período
   const negociosFiltrados = negocios.filter(negocio => {
     const hoje = startOfDay(new Date());
@@ -721,38 +827,114 @@ export default function AdminPage() {
                   <th className="text-left p-4 font-black text-gray-900">Telefone</th>
                   <th className="text-left p-4 font-black text-gray-900">Documento</th>
                   <th className="text-left p-4 font-black text-gray-900">Cadastro</th>
+                  <th className="text-left p-4 font-black text-gray-900">Status</th>
+                  <th className="text-right p-4 font-black text-gray-900">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {usuariosFiltrados.map((usuario) => (
-                  <tr key={usuario.id} className="border-b border-gray-100 hover:bg-blue-50 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900">{usuario.nome}</span>
-                        {usuario.role === 'admin' && (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs font-black px-2 py-1 rounded-full">
-                            ADMIN
+                {usuariosFiltrados.map((usuario) => {
+                  const verificado = Boolean(usuario.verificado || usuario.dadosConfirmados);
+
+                  return (
+                    <tr key={usuario.id} className="border-b border-gray-100 hover:bg-blue-50 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-gray-900 flex items-center gap-1">
+                            {usuario.nome}
                           </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                        usuario.tipo === 'oficina' ? 'bg-orange-100 text-orange-800' :
-                        usuario.tipo === 'autopeca' ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {usuario.tipo}
-                      </span>
-                    </td>
-                    <td className="p-4 text-gray-700">{usuario.cidade}</td>
-                    <td className="p-4 text-gray-700">{usuario.telefone}</td>
-                    <td className="p-4 text-gray-700 font-mono text-sm">{usuario.documento}</td>
-                    <td className="p-4 text-gray-600 text-sm">
-                      {format(usuario.createdAt, "dd/MM/yyyy", { locale: ptBR })}
-                    </td>
-                  </tr>
-                ))}
+                          {verificado && (
+                            <BadgeCheck size={16} className="text-blue-500" title="Usuário verificado" />
+                          )}
+                          {usuario.role === 'admin' && (
+                            <span className="bg-yellow-100 text-yellow-800 text-xs font-black px-2 py-1 rounded-full">
+                              ADMIN
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          usuario.tipo === 'oficina' ? 'bg-orange-100 text-orange-800' :
+                          usuario.tipo === 'autopeca' ? 'bg-blue-100 text-blue-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {usuario.tipo}
+                        </span>
+                      </td>
+                      <td className="p-4 text-gray-700">{usuario.cidade}</td>
+                      <td className="p-4 text-gray-700">{usuario.telefone}</td>
+                      <td className="p-4 text-gray-700 font-mono text-sm">{usuario.documento}</td>
+                      <td className="p-4 text-gray-600 text-sm">
+                        {format(usuario.createdAt, 'dd/MM/yyyy', { locale: ptBR })}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {verificado && (
+                            <span className="flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full uppercase">
+                              <BadgeCheck size={12} /> Verificado
+                            </span>
+                          )}
+                          {usuario.contaBloqueada && (
+                            <span className="flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full uppercase">
+                              <Ban size={12} /> Bloqueado
+                            </span>
+                          )}
+                          {!verificado && !usuario.contaBloqueada && (
+                            <span className="text-xs text-gray-500 font-medium uppercase">Pendente</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            onClick={() => handleToggleVerificacao(usuario)}
+                            disabled={usuarioVerificando === usuario.id}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase transition-colors ${
+                              verificado
+                                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            } ${usuarioVerificando === usuario.id ? 'opacity-70 cursor-wait' : ''}`}
+                          >
+                            <UserCheck size={14} />
+                            {usuarioVerificando === usuario.id
+                              ? 'Salvando...'
+                              : verificado
+                                ? 'Remover selo'
+                                : 'Verificar'}
+                          </button>
+
+                          <button
+                            onClick={() => handleToggleBloqueio(usuario)}
+                            disabled={usuarioBloqueando === usuario.id}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase transition-colors ${
+                              usuario.contaBloqueada
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-red-600 text-white hover:bg-red-700'
+                            } ${usuarioBloqueando === usuario.id ? 'opacity-70 cursor-wait' : ''}`}
+                          >
+                            {usuario.contaBloqueada ? <Unlock size={14} /> : <Ban size={14} />}
+                            {usuarioBloqueando === usuario.id
+                              ? 'Processando...'
+                              : usuario.contaBloqueada
+                                ? 'Desbloquear'
+                                : 'Bloquear'}
+                          </button>
+
+                          <button
+                            onClick={() => handleRemoverUsuario(usuario)}
+                            disabled={usuarioExcluindo === usuario.id}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors ${
+                              usuarioExcluindo === usuario.id ? 'opacity-70 cursor-wait' : ''
+                            }`}
+                          >
+                            <UserX size={14} />
+                            {usuarioExcluindo === usuario.id ? 'Removendo...' : 'Remover'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

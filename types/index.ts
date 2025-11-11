@@ -30,6 +30,12 @@ export interface User {
   cancelamentoAgendado?: boolean; // Se o cancelamento ao fim do período foi solicitado
   dataCancelamentoAgendado?: Date; // Data em que o plano será cancelado (normalmente o vencimento atual)
   contaBloqueada?: boolean; // Se a conta foi bloqueada pelo admin
+  bloqueadoEm?: Date; // Quando a conta foi bloqueada
+  bloqueadoPor?: string; // Quem bloqueou a conta
+  dadosConfirmados?: boolean; // Admin confirmou os dados cadastrais
+  verificado?: boolean; // Usuário verificado com selo azul
+  verificadoEm?: Date; // Data da verificação
+  verificadoPor?: string; // Admin responsável pela verificação
   testePlatinumUsado?: boolean; // Se já usou o teste de 30 dias grátis do Platinum
   dataInicioTestePlatinum?: Date; // Data em que iniciou o teste de 30 dias
   linkAprovacaoPlatinum?: string; // Link para aprovar novo Preapproval após trial
