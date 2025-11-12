@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import MercadoPagoSDKChecker from '@/components/MercadoPagoSDKChecker';
+import Script from 'next/script';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -33,6 +34,18 @@ export default function RootLayout({
         ></script>
       </head>
       <body className={`${inter.className} antialiased`}>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-16650517315"
+          strategy="afterInteractive"
+        />
+        <Script id="google-ads-gtag" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-16650517315');
+          `}
+        </Script>
         <MercadoPagoSDKChecker />
         <AuthProvider>
           {children}
