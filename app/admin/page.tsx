@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, getDocs, query, orderBy, Timestamp, doc, updateDoc, setDoc, getDoc, onSnapshot, deleteDoc, where } from 'firebase/firestore';
+import { collection, getDocs, query, Timestamp, doc, updateDoc, setDoc, getDoc, onSnapshot, deleteDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User, NegocioFechado, Pedido, PlanoAssinatura, PRECOS_PLANOS } from '@/types';
 import { 
@@ -93,8 +93,7 @@ export default function AdminPage() {
     // Buscar chats de suporte da coleção 'chats' onde isSuporte === true
     const suporteQuery = query(
       collection(db, 'chats'),
-      where('isSuporte', '==', true),
-      orderBy('updatedAt', 'desc')
+      where('isSuporte', '==', true)
     );
     
     const unsubscribe = onSnapshot(suporteQuery, async (snapshot) => {
@@ -106,7 +105,7 @@ export default function AdminPage() {
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
         };
-      });
+      }).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
       
       // Verificar e excluir chats de suporte expirados (48 horas)
       const chatsSuporteExpirados: string[] = [];
@@ -165,8 +164,7 @@ export default function AdminPage() {
       // Buscar chats de suporte da coleção 'chats' onde isSuporte === true
       const suporteSnapshot = await getDocs(query(
         collection(db, 'chats'),
-        where('isSuporte', '==', true),
-        orderBy('updatedAt', 'desc')
+        where('isSuporte', '==', true)
       ));
       const chatsData = suporteSnapshot.docs.map(doc => {
         const data = doc.data();
@@ -176,7 +174,7 @@ export default function AdminPage() {
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
         };
-      });
+      }).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
       
       // Verificar e excluir chats de suporte expirados (48 horas)
       const chatsSuporteExpirados: string[] = [];
