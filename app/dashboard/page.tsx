@@ -2265,17 +2265,17 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold mb-4 text-gray-900">Novo Pedido</h2>
             
             {/* Informações sobre cidade e ramo */}
-            <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
-              <p className="text-sm text-blue-900 dark:text-blue-100 font-semibold mb-1">
+            <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-700/70 rounded-lg">
+              <p className="text-sm text-blue-900 dark:text-blue-50 font-semibold mb-1">
                 ℹ️ Informações do Pedido:
               </p>
-              <p className="text-xs text-blue-800 dark:text-blue-200">
+              <p className="text-xs text-blue-800 dark:text-blue-100">
                 <strong>Cidade:</strong> {userData?.cidade || 'Não informada'}
               </p>
-              <p className="text-xs text-blue-800 dark:text-blue-200">
+              <p className="text-xs text-blue-800 dark:text-blue-100">
                 <strong>Tipo de Veículo:</strong> {userData?.ramo || 'Não informado'}
               </p>
-              <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 italic">
+              <p className="text-xs text-blue-700 dark:text-blue-200 mt-2 italic">
                 O pedido sempre será criado na sua cidade de cadastro e com o tipo de veículo do seu cadastro.
               </p>
             </div>
