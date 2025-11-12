@@ -1956,7 +1956,7 @@ export default function DashboardPage() {
                     <Car size={24} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-black text-2xl sm:text-3xl text-gray-900 dark:text-gray-100 uppercase leading-tight tracking-tight mb-2">
+                    <div className="font-black text-2xl sm:text-3xl text-gray-900 uppercase leading-tight tracking-tight mb-2">
                       {pedido.marcaCarro} {pedido.modeloCarro}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1964,7 +1964,7 @@ export default function DashboardPage() {
                         {pedido.anoCarro}
                       </span>
                       {pedido.especificacaoMotor && (
-                        <span className="inline-flex items-center px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 rounded-lg font-semibold text-sm border-2 border-blue-300 dark:border-blue-600">
+                        <span className="inline-flex items-center px-3 py-1.5 bg-white text-blue-700 rounded-lg font-semibold text-sm border-2 border-blue-300">
                           ⚙️ {pedido.especificacaoMotor}
                         </span>
                       )}
@@ -1975,29 +1975,29 @@ export default function DashboardPage() {
 
               {/* Especificações Adicionais - Layout Melhorado */}
               {(pedido.notaFiscal || pedido.observacao) && (
-                <div className="bg-white dark:bg-gray-50 rounded-xl p-5 mb-4 shadow-lg border-2 border-gray-200 dark:border-gray-700">
-                  <div className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-5 mb-4 shadow-lg border-2 border-gray-200 dark:border-gray-600">
+                  <div className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <span className="text-lg">📋</span>
                     Informações Complementares
                   </div>
                   <div className="space-y-3">
                     {pedido.notaFiscal && (
-                      <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                      <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/40 rounded-lg border border-purple-200 dark:border-purple-600">
                         <span className="text-2xl">📄</span>
                         <div className="flex-1">
-                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Nota Fiscal:</span>
-                          <span className="text-base text-purple-700 dark:text-purple-400 font-bold ml-2 capitalize">
+                          <span className="text-sm font-bold text-gray-700 dark:text-purple-100">Nota Fiscal:</span>
+                          <span className="text-base text-purple-700 dark:text-purple-200 font-bold ml-2 capitalize">
                             {pedido.notaFiscal}
                           </span>
                         </div>
                       </div>
                     )}
                     {pedido.observacao && (
-                      <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-300 dark:border-yellow-700">
+                      <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/40 rounded-lg border-2 border-yellow-300 dark:border-yellow-600">
                         <span className="text-2xl mt-0.5">💬</span>
                         <div className="flex-1">
-                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1">Observação:</span>
-                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                          <span className="text-sm font-bold text-gray-700 dark:text-yellow-100 block mb-1">Observação:</span>
+                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-100 leading-relaxed">
                             {pedido.observacao}
                           </p>
                         </div>
