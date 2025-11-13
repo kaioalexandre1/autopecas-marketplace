@@ -256,7 +256,7 @@ export default function CadastroPage() {
                   }`}
                 >
                   <Wrench className={tipo === 'oficina' ? 'text-cyan-300' : 'text-white/60'} size={28} strokeWidth={2.5} />
-                  <span className={`mt-2 font-bold text-sm ${tipo === 'oficina' ? 'text-white' : 'text-white/70'}`}>Oficina</span>
+                  <span className={`mt-2 font-bold text-sm ${tipo === 'oficina' ? 'text-white' : 'text-white/70'}`}>Oficina/Funilaria</span>
                 </button>
 
                 <button

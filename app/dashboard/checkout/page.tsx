@@ -118,6 +118,22 @@ export default function CheckoutPage() {
       duration: 3000,
       id: 'pagamento-aprovado-unico'
     });
+
+    try {
+      if (typeof window !== 'undefined' && typeof (window as any).gtag === 'function') {
+        (window as any).gtag('event', 'conversion', {
+          send_to: 'AW-16650517315/ic2sCKbc_b4bEMP2yoM-',
+          value: 1.0,
+          currency: 'BRL',
+        });
+        console.log('📈 Evento de conversão Google Ads disparado');
+      } else {
+        console.warn('gtag não está disponível para disparar a conversão');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar conversão para o Google Ads:', error);
+    }
+
     try {
       localStorage.removeItem('pendingSubscriptionId');
       localStorage.removeItem('pendingSubscriptionPlano');
